@@ -223,6 +223,7 @@ export default function AvailabilityPage() {
                     <TableHead>Branch</TableHead>
                     <TableHead>Color</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -238,6 +239,9 @@ export default function AvailabilityPage() {
                       <TableCell>{c.color}</TableCell>
                       <TableCell>
                         <Badge>{c.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button className="bg-brand-emerald text-white hover:brightness-95">Book</Button>
                       </TableCell>
                     </TableRow>
                   ))}
