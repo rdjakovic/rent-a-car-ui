@@ -31,3 +31,30 @@ export async function findAvailableCars(params: AvailabilityParams) {
   if (res.error) throw res.error;
   return res.data as PageCarListResponseDto;
 }
+
+// Car catalog queries
+export type CarFilterParams = {
+  page?: number;
+  size?: number;
+  category?: CarListResponseDto["category"];
+  transmission?: CarListResponseDto["transmission"];
+  fuelType?: CarListResponseDto["fuelType"];
+  minSeats?: number;
+  maxPrice?: number;
+  search?: string;
+  sort?: string[];
+};
+
+export async function listCars(params: CarFilterParams = {}) {
+  const res = await api.GET("/api/cars", { params: { query: params } });
+  if (res.error) throw res.error;
+  return res.data as PageCarListResponseDto;
+}
+
+export type CarResponseDto = components["schemas"]["CarResponseDto"];
+
+export async function getCarById(id: number) {
+  const res = await api.GET("/api/cars/{id}", { params: { path: { id } } });
+  if (res.error) throw res.error;
+  return res.data as CarResponseDto;
+}

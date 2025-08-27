@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import BranchesPage from '@/features/branches/BranchesPage'
 import AvailabilityPage from '@/features/availability/AvailabilityPage'
+import CarsPage from '@/features/cars/CarsPage'
 
 export default function App() {
   return (
@@ -28,7 +29,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AvailabilityPage />} />
           <Route path="/branches" element={<BranchesPage />} />
-          <Route path="/cars" element={<div>Cars</div>} />
+          <Route path="/cars" element={<CarsPage />} />
           <Route path="/customers" element={<div>Customers</div>} />
           <Route path="/reservations" element={<div>Reservations</div>} />
           <Route path="/maintenance" element={<div>Maintenance</div>} />
