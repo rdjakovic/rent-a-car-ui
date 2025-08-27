@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-500: 99 102 241;
+}
+
+html, body, #root {
+  height: 100%;
+}
