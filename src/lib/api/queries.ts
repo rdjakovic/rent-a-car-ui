@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type { components } from "./schema";
+import { normalizeError } from "./errors";
 
 export type PageBranchResponseDto = components["schemas"]["PageBranchResponseDto"];
 export type BranchResponseDto = components["schemas"]["BranchResponseDto"];
@@ -7,9 +8,13 @@ export type PageCarListResponseDto = components["schemas"]["PageCarListResponseD
 export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
 export async function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
-  const res = await api.GET("/api/branches", { params: { query: params } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as PageBranchResponseDto;
+  try {
+    const res = await api.GET("/api/branches", { params: { query: params } });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as PageBranchResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
 }
 
 export type AvailabilityParams = {
@@ -84,16 +89,93 @@ export async function getCustomerById(id: number) {
 }
 
 export async function createCustomer(customer: CustomerRequestDto) {
-  const res = await api.POST("/api/customers", { body: customer });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as CustomerResponseDto;
+  try {
+    const res = await api.POST("/api/customers", { body: customer });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as CustomerResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
 }
 
 export async function updateCustomer(id: number, customer: CustomerRequestDto) {
-  const res = await api.PUT("/api/customers/{id}", {
-    params: { path: { id } },
-    body: customer
-  });
+  try {
+    const res = await api.PUT("/api/customers/{id}", {
+      params: { path: { id } },
+      body: customer
+    });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as CustomerResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+// Reservation queries
+export type PageReservationResponseDto = components["schemas"]["PageReservationResponseDto"];
+export type ReservationResponseDto = components["schemas"]["ReservationResponseDto"];
+export type ReservationRequestDto = components["schemas"]["ReservationRequestDto"];
+
+export type ReservationSearchParams = {
+  page?: number;
+  size?: number;
+  customerId?: number;
+  carId?: number;
+  status?: ReservationResponseDto["status"];
+  startDate?: string; // yyyy-mm-dd
+  endDate?: string;   // yyyy-mm-dd
+  sort?: string[];
+};
+
+export async function listReservations(params: ReservationSearchParams = {}) {
+  const res = await api.GET("/api/reservations", { params: { query: params } });
   if ((res as any).error) throw (res as any).error;
-  return res.data as CustomerResponseDto;
+  return res.data as PageReservationResponseDto;
+}
+
+export async function getReservationById(id: number) {
+  const res = await api.GET("/api/reservations/{id}", { params: { path: { id } } });
+  if ((res as any).error) throw (res as any).error;
+  return res.data as ReservationResponseDto;
+}
+
+export async function createReservation(reservation: ReservationRequestDto) {
+  try {
+    const res = await api.POST("/api/reservations", { body: reservation });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as ReservationResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export async function updateReservation(id: number, reservation: ReservationRequestDto) {
+  try {
+    const res = await api.PUT("/api/reservations/{id}", {
+      params: { path: { id } },
+      body: reservation
+    });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as ReservationResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export async function confirmReservation(id: number) {
+  const res = await api.POST("/api/reservations/{id}/confirm", { params: { path: { id } } });
+  if ((res as any).error) throw (res as any).error;
+  return res.data as ReservationResponseDto;
+}
+
+export async function cancelReservation(id: number) {
+  const res = await api.POST("/api/reservations/{id}/cancel", { params: { path: { id } } });
+  if ((res as any).error) throw (res as any).error;
+  return res.data as ReservationResponseDto;
+}
+
+export async function completeReservation(id: number) {
+  const res = await api.POST("/api/reservations/{id}/complete", { params: { path: { id } } });
+  if ((res as any).error) throw (res as any).error;
+  return res.data as ReservationResponseDto;
 }

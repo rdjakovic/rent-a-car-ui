@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "api:gen": "openapi-typescript http://localhost:8080/api-docs -o src/lib/api/schema.d.ts"
+    "api:gen": "openapi-typescript http://localhost:8080/api-docs -o src/lib/api/schema.d.ts",
+    "msw:init": "node scripts/init-msw.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
