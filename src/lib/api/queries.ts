@@ -58,3 +58,42 @@ export async function getCarById(id: number) {
   if (res.error) throw res.error;
   return res.data as CarResponseDto;
 }
+
+// Customer queries
+export type PageCustomerResponseDto = components["schemas"]["PageCustomerResponseDto"];
+export type CustomerResponseDto = components["schemas"]["CustomerResponseDto"];
+export type CustomerRequestDto = components["schemas"]["CustomerRequestDto"];
+
+export type CustomerSearchParams = {
+  page?: number;
+  size?: number;
+  search?: string; // Search by name, email, or phone
+  sort?: string[];
+};
+
+export async function listCustomers(params: CustomerSearchParams = {}) {
+  const res = await api.GET("/api/customers", { params: { query: params } });
+  if (res.error) throw res.error;
+  return res.data as PageCustomerResponseDto;
+}
+
+export async function getCustomerById(id: number) {
+  const res = await api.GET("/api/customers/{id}", { params: { path: { id } } });
+  if (res.error) throw res.error;
+  return res.data as CustomerResponseDto;
+}
+
+export async function createCustomer(customer: CustomerRequestDto) {
+  const res = await api.POST("/api/customers", { body: customer });
+  if (res.error) throw res.error;
+  return res.data as CustomerResponseDto;
+}
+
+export async function updateCustomer(id: number, customer: CustomerRequestDto) {
+  const res = await api.PUT("/api/customers/{id}", { 
+    params: { path: { id } }, 
+    body: customer 
+  });
+  if (res.error) throw res.error;
+  return res.data as CustomerResponseDto;
+}
