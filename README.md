@@ -1,69 +1,113 @@
-# React + TypeScript + Vite
+## NextStep Rent‑a‑Car UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React frontend for the Rent‑a‑Car API (Spring Boot 3.5.5, Java 21). It provides availability search, branch listing, and a car catalog, with room for customer, reservation, and maintenance features.
 
-Currently, two official plugins are available:
+For backend details, see docs/BACKEND.md.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Tech stack
+- React 19 + Vite 7 + TypeScript
+- React Router 7 for routing
+- TanStack Query 5 for server state and caching
+- Tailwind CSS 3 with a small shadcn-style component library (src/components/ui)
+- Radix UI primitives and lucide-react icons
+- openapi-fetch + generated types via openapi-typescript
+- Zustand (light client state), React Hook Form + Zod (installed, to be used more broadly)
+- Vitest + Testing Library (unit/integration)
 
-## Expanding the ESLint configuration
+## Features
+- Availability search (home route /)
+  - Filters: branch, dates, category, transmission, fuel, min seats, max daily price
+  - Paginated results from GET /api/cars/available
+- Branches list (/branches)
+  - Paginated table of branches from GET /api/branches
+- Car catalog (/cars)
+  - Free‑text search and filters, paginated cards from GET /api/cars
+- Global toast system and Tailwind‑based theme with brand palette
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Planned/placeholder routes:
+- /customers, /reservations, /maintenance (not yet implemented in UI)
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting started
+### Prerequisites
+- Node.js 20+ and npm 10+
+- A running backend (see docs/BACKEND.md for profiles and commands)
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 1) Configure environment
+Create a .env.local file in the project root with the API base URL:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+VITE_API_BASE_URL=http://localhost:8080
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2) Install and run
+- npm install
+- npm run dev
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The app runs at http://localhost:3000 by default.
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Tip: You can start the backend from PowerShell via scripts/start-backend.ps1 (edit path if needed).
+
+## NPM scripts
+- dev – start Vite dev server
+- build – typecheck and build for production
+- preview – preview built app
+- test – run vitest in CLI
+- test:ui – run vitest UI
+- api:gen – generate TypeScript types from backend OpenAPI (requires backend running at /api-docs)
+
+## API typing and client
+This project uses openapi-typescript to generate types into src/lib/api/schema.d.ts and openapi-fetch for a typed API client:
+- src/lib/api/client.ts configures baseUrl from VITE_API_BASE_URL
+- src/lib/api/queries.ts contains domain‑specific query functions used by pages
+
+To regenerate types after backend changes:
+1) Start the backend locally (serving /api-docs)
+2) Run npm run api:gen
+
+## Project structure
+- src/main.tsx – app bootstrap, QueryClient, BrowserRouter
+- src/App.tsx – routes and header navigation
+- src/features/* – feature pages (availability, branches, cars)
+- src/components/ui – small, reusable UI primitives
+- src/lib/api – openapi client, generated schema, and query wrappers
+- src/stores – Zustand stores (e.g., useSearchStore)
+- src/index.css + tailwind.config.js – theme and brand colors
+
+Path alias: @ resolves to src/ (see vite.config.ts).
+
+## Routing
+- / – AvailabilityPage: builds parameters and requests available cars; shows results table with pagination
+- /branches – BranchesPage: paginated branches table
+- /cars – CarsPage: card grid with search and filter controls, pagination
+- /customers, /reservations, /maintenance – placeholders for upcoming features
+
+## Theming & UI
+- Tailwind configured with brand colors: navy, steel, emerald, orange, silver, light, charcoal
+- CSS variables define light/dark tokens; Tailwind maps them to shadcn‑style tokens (background, primary, etc.)
+- Reusable components in src/components/ui (button, card, table, select, toast, etc.)
+
+## Data fetching
+- TanStack Query provides caching, loading states, and pagination helpers
+- All network calls go through openapi-fetch with types from schema.d.ts
+- Extend src/lib/api/queries.ts with new endpoint wrappers when needed
+
+## Testing
+- Vitest + jsdom + @testing-library/react configured in vite.config.ts
+- Setup file: src/setupTests.ts
+- Run: npm test (or npm run test:ui)
+
+## Development notes
+- Env var VITE_API_BASE_URL is required for API calls
+- Backend dev URLs (when using local profile):
+  - App: http://localhost:8080
+  - Swagger UI: http://localhost:8080/swagger-ui.html
+  - API docs (OpenAPI): http://localhost:8080/api-docs
+- Path alias @ for imports
+
+## Roadmap (high level)
+See docs/TODO.md for detailed tasks. Highlights:
+- Implement Customers UI with CRUD and RHF+Zod validation
+- Booking flow from availability results (Book button)
+- Car detail page and booking handoff (View Details)
+- Authentication (JWT login, token storage, auth guard)
+- Reservations and Maintenance feature UIs
+- API error handling patterns and global error boundary
+- MSW fixtures and broader test coverage

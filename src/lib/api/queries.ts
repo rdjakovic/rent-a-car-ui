@@ -8,7 +8,7 @@ export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
 export async function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
   const res = await api.GET("/api/branches", { params: { query: params } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as PageBranchResponseDto;
 }
 
@@ -28,7 +28,7 @@ export type AvailabilityParams = {
 
 export async function findAvailableCars(params: AvailabilityParams) {
   const res = await api.GET("/api/cars/available", { params: { query: params } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as PageCarListResponseDto;
 }
 
@@ -47,7 +47,7 @@ export type CarFilterParams = {
 
 export async function listCars(params: CarFilterParams = {}) {
   const res = await api.GET("/api/cars", { params: { query: params } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as PageCarListResponseDto;
 }
 
@@ -55,7 +55,7 @@ export type CarResponseDto = components["schemas"]["CarResponseDto"];
 
 export async function getCarById(id: number) {
   const res = await api.GET("/api/cars/{id}", { params: { path: { id } } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as CarResponseDto;
 }
 
@@ -73,27 +73,27 @@ export type CustomerSearchParams = {
 
 export async function listCustomers(params: CustomerSearchParams = {}) {
   const res = await api.GET("/api/customers", { params: { query: params } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as PageCustomerResponseDto;
 }
 
 export async function getCustomerById(id: number) {
   const res = await api.GET("/api/customers/{id}", { params: { path: { id } } });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as CustomerResponseDto;
 }
 
 export async function createCustomer(customer: CustomerRequestDto) {
   const res = await api.POST("/api/customers", { body: customer });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as CustomerResponseDto;
 }
 
 export async function updateCustomer(id: number, customer: CustomerRequestDto) {
-  const res = await api.PUT("/api/customers/{id}", { 
-    params: { path: { id } }, 
-    body: customer 
+  const res = await api.PUT("/api/customers/{id}", {
+    params: { path: { id } },
+    body: customer
   });
-  if (res.error) throw res.error;
+  if ((res as any).error) throw (res as any).error;
   return res.data as CustomerResponseDto;
 }

@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster'
 import BranchesPage from '@/features/branches/BranchesPage'
 import AvailabilityPage from '@/features/availability/AvailabilityPage'
 import CarsPage from '@/features/cars/CarsPage'
+import CustomersPage from '@/features/customers/CustomersPage'
 
 export default function App() {
   return (
@@ -30,7 +31,7 @@ export default function App() {
           <Route path="/" element={<AvailabilityPage />} />
           <Route path="/branches" element={<BranchesPage />} />
           <Route path="/cars" element={<CarsPage />} />
-          <Route path="/customers" element={<div>Customers</div>} />
+          <Route path="/customers" element={<CustomersPage />} />
           <Route path="/reservations" element={<div>Reservations</div>} />
           <Route path="/maintenance" element={<div>Maintenance</div>} />
         </Routes>
