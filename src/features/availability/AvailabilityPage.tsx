@@ -93,22 +93,24 @@ export default function AvailabilityPage() {
   return (
     <div className="min-h-screen bg-brand-light">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-brand-navy to-brand-steel text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            NextStep <span className="text-brand-emerald">RentACar</span>
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-brand-silver max-w-2xl mx-auto">
-            Your journey starts here. Premium car rentals with unmatched service and competitive rates.
-          </p>
-          <button className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg hover:shadow-xl">
-            Rent Now
-          </button>
+      <section className="bg-brand-light py-2">
+        <div className="container mx-auto px-4">
+          <div className="bg-gradient-to-br from-brand-navy to-brand-steel text-white py-12 rounded-2xl text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              NextStep <span className="text-brand-emerald">RentACar</span>
+            </h1>
+            <p className="text-lg md:text-xl mb-6 text-brand-silver max-w-xl mx-auto">
+              Your journey starts here. Premium car rentals with unmatched service and competitive rates.
+            </p>
+            <button className="bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-3 rounded-lg text-base font-semibold transition-colors shadow-lg hover:shadow-xl">
+              Rent Now
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Search Section */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-2">
         <div className="grid gap-6">
           <Card>
         <CardHeader>
