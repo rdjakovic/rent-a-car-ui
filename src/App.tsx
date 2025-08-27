@@ -5,12 +5,14 @@ import AvailabilityPage from '@/features/availability/AvailabilityPage'
 
 export default function App() {
   return (
-    <div className="min-h-dvh bg-brand-light text-brand-charcoal">
+      <div className="min-h-screen text-charcoal">
       <header className="bg-transparent">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3 rounded-2xl bg-brand-navy text-white shadow-lg px-4 py-3">
-            <img src="/logo.svg" alt="logo" className="h-8 w-8" />
-            <h1 className="text-xl font-semibold">NextStep RentACar</h1>
+            <NavLink to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+              <img src="/logo.svg" alt="logo" className="h-10 w-10" />
+              <h1 className="text-xl font-semibold">NextStep RentACar</h1>
+            </NavLink>
             <nav className="ml-auto flex gap-6">
               <NavLink className={({isActive}) => `text-white/90 hover:text-white ${isActive ? 'underline underline-offset-4' : ''}`} to="/">Availability</NavLink>
               <NavLink className={({isActive}) => `text-white/90 hover:text-white ${isActive ? 'underline underline-offset-4' : ''}`} to="/branches">Branches</NavLink>
@@ -22,7 +24,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main className="container mx-auto py-6 px-4">
+      <main>
         <Routes>
           <Route path="/" element={<AvailabilityPage />} />
           <Route path="/branches" element={<BranchesPage />} />

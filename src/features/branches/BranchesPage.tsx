@@ -27,7 +27,8 @@ export default function BranchesPage() {
   const hasNext = totalPages ? current < totalPages - 1 : false;
 
   return (
-    <Card>
+    <div className="container mx-auto py-6 px-4">
+      <Card>
       <CardHeader>
         <CardTitle>Branches</CardTitle>
       </CardHeader>
@@ -100,5 +101,6 @@ export default function BranchesPage() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
