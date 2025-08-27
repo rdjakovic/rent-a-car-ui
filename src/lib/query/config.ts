@@ -1,4 +1,5 @@
-import { QueryClient, DefaultOptions } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import type { DefaultOptions } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { normalizeError, isNetworkError, getErrorMessage, type ApiError } from '@/lib/api/errors';
 
