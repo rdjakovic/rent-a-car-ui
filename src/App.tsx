@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
+import BranchesPage from '@/features/branches/BranchesPage'
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
       <main className="container mx-auto py-6">
         <Routes>
           <Route path="/" element={<div>Availability Search</div>} />
-          <Route path="/branches" element={<div>Branch Directory</div>} />
+          <Route path="/branches" element={<BranchesPage />} />
           <Route path="/cars" element={<div>Cars</div>} />
           <Route path="/customers" element={<div>Customers</div>} />
           <Route path="/reservations" element={<div>Reservations</div>} />
