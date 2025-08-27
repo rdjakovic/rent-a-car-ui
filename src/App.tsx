@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import { Toaster } from '@/components/ui/toaster'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/maintenance" element={<div>Maintenance</div>} />
         </Routes>
       </main>
+      <Toaster />
     </div>
   )
 }
