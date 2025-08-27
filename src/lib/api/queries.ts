@@ -72,14 +72,35 @@ export type CustomerRequestDto = components["schemas"]["CustomerRequestDto"];
 export type CustomerSearchParams = {
   page?: number;
   size?: number;
-  search?: string; // Search by name, email, or phone
+  search?: string; // Search by name, email, phone, or city
   sort?: string[];
 };
 
+export async function searchCustomers(params: CustomerSearchParams = {}) {
+  try {
+    // Use the new searchany endpoint for enhanced search
+    const res = await (api as any).GET("/api/customers/searchany", { params: { query: params } });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as PageCustomerResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
 export async function listCustomers(params: CustomerSearchParams = {}) {
-  const res = await api.GET("/api/customers", { params: { query: params } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as PageCustomerResponseDto;
+  try {
+    // Use the search endpoint if search parameter is provided for better results
+    if (params.search) {
+      return searchCustomers(params);
+    } else {
+      // Use the regular list endpoint for non-search queries
+      const res = await api.GET("/api/customers", { params: { query: params } });
+      if ((res as any).error) throw (res as any).error;
+      return res.data as PageCustomerResponseDto;
+    }
+  } catch (error) {
+    throw normalizeError(error);
+  }
 }
 
 export async function getCustomerById(id: number) {

@@ -52,12 +52,15 @@ export default function CustomersPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="md:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-medium mb-1">Search by name, email, or phone</label>
+                <label className="block text-sm font-medium mb-1">Search customers</label>
                 <Input
-                  placeholder="e.g. Jane, jane@acme.com, +1 555..."
+                  placeholder="Search by name, email, phone, city..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Search across first name, last name, email, phone, city, and license number
+                </p>
               </div>
             </div>
           </CardContent>
@@ -90,7 +93,7 @@ export default function CustomersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((c) => (
+                    {rows.map((c: CustomerResponseDto) => (
                       <TableRow key={c.id} data-testid="customer-row">
                         <TableCell>{c.fullName ?? `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}</TableCell>
                         <TableCell>{c.email}</TableCell>

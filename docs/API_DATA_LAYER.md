@@ -45,6 +45,44 @@ All reservation types are properly typed using the generated OpenAPI schema:
 - `PageReservationResponseDto` - Paginated reservation responses
 - `ReservationSearchParams` - Query parameters for filtering reservations
 
+## Enhanced Customer Search
+
+### New Search Endpoint
+
+The customer search functionality has been enhanced to use the new backend endpoint `/api/customers/searchany` which provides more comprehensive search capabilities.
+
+### Implementation
+
+```typescript
+// New dedicated search function
+searchCustomers(params: CustomerSearchParams)
+
+// Updated listCustomers function automatically uses enhanced search when search parameter is provided
+listCustomers(params: CustomerSearchParams)
+```
+
+### Search Capabilities
+
+The enhanced search now covers:
+- First name
+- Last name
+- Email address
+- Phone number
+- City
+- Driver license number
+
+### Usage
+
+The search is automatically used when a search parameter is provided:
+
+```typescript
+// This will use the enhanced /api/customers/searchany endpoint
+const results = await listCustomers({ search: 'smith', page: 0, size: 10 });
+
+// This will use the regular /api/customers endpoint
+const allCustomers = await listCustomers({ page: 0, size: 10 });
+```
+
 ## 2. Error Normalization Utility
 
 ### Location
@@ -67,7 +105,7 @@ try {
 } catch (error) {
   const normalizedError = normalizeError(error);
   const message = getErrorMessage(normalizedError);
-  
+
   if (isValidationError(normalizedError)) {
     const fieldErrors = extractValidationErrors(normalizedError);
     // Handle form field errors
@@ -170,7 +208,7 @@ Realistic seed data includes:
 All major API endpoints are mocked:
 - Branches: List with pagination
 - Cars: List, search, availability check, details
-- Customers: CRUD operations with validation
+- Customers: CRUD operations with validation, enhanced search via `/api/customers/searchany`
 - Reservations: Full lifecycle management
 
 ### Usage
