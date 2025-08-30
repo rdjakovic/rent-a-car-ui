@@ -8,9 +8,8 @@ import type { CarListResponseDto, CustomerResponseDto } from '@/lib/api/queries'
 const mockCarDetails: CarListResponseDto = {
   id: 1,
   displayName: 'Toyota Camry',
-  category: 'MIDSIZE',
+  category: 'INTERMEDIATE',
   dailyPrice: 50,
-  branchId: 1,
   branchName: 'Downtown Branch',
 };
 
@@ -296,7 +295,6 @@ describe('useBookingFlow', () => {
         displayName: 'Unknown Car',
         category: 'ECONOMY',
         dailyPrice: 75.50,
-        branchId: 2,
         branchName: 'Unknown Branch',
       });
       
@@ -336,7 +334,6 @@ describe('useBookingFlow', () => {
         displayName: 'Honda Accord',
         category: 'MIDSIZE',
         dailyPrice: 75.50,
-        branchId: 2,
         branchName: 'Airport Branch',
       });
     });

@@ -20,10 +20,10 @@ export default function BookingWizard() {
     }
   }, [searchParams, navigate, bookingFlow.bookingDetails, bookingFlow.initializeFromUrlParams]); // Only depend on specific values
 
-  const handleComplete = (reservationId: number) => {
-    // Navigate to reservations page or show success
-    navigate(`/reservations/${reservationId}`);
-  };
+  // const handleComplete = (reservationId: number) => {
+  //   // Navigate to reservations page or show success
+  //   navigate(`/reservations/${reservationId}`);
+  // };
 
   const handleCancel = () => {
     bookingFlow.reset();

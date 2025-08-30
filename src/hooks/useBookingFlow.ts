@@ -1,5 +1,5 @@
 import { useBookingFlowStore } from "@/stores/useBookingFlowStore";
-import type { CustomerResponseDto, CarListResponseDto, ReservationResponseDto } from "@/lib/api/queries";
+import type { CarListResponseDto } from "@/lib/api/queries";
 import type { BookingDetails } from "@/stores/useBookingFlowStore";
 
 export function useBookingFlow() {
@@ -64,9 +64,8 @@ export function useBookingFlow() {
       const carDetails: CarListResponseDto = {
         id: parseInt(carId),
         displayName: carDisplayName || 'Unknown Car',
-        category: carCategory as any || 'ECONOMY',
+        category: (carCategory as any) || 'ECONOMY',
         dailyPrice: parseFloat(dailyPrice),
-        branchId: parseInt(branchId),
         branchName: branchName || 'Unknown Branch',
       };
 

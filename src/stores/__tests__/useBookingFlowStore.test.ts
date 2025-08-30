@@ -6,7 +6,7 @@ import type { CarListResponseDto, CustomerResponseDto, ReservationResponseDto } 
 const mockCarDetails: CarListResponseDto = {
   id: 1,
   displayName: 'Toyota Camry',
-  category: 'MIDSIZE',
+  category: 'INTERMEDIATE',
   dailyPrice: 50,
   branchId: 1,
   branchName: 'Downtown Branch',
