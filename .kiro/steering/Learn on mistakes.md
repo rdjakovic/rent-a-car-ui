@@ -1,1 +1,2 @@
-Learn on mistakes. When you see that a terminal command, part of code that you added, or test failed and you see it produce bad results and errors, remember it, and also remember the right solution, so you don't repeat the same mistake.
+Learn from mistakes. When you see that a terminal command, part of code that you added, or test failed and you see it produce bad results and errors, remember it, and also remember the right solution, so you don't repeat the same mistake.
+

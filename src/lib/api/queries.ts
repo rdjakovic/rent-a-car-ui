@@ -145,6 +145,7 @@ export type ReservationSearchParams = {
   status?: ReservationResponseDto["status"];
   startDate?: string; // yyyy-mm-dd
   endDate?: string;   // yyyy-mm-dd
+  search?: string;    // Multi-field search term
   sort?: string[];
 };
 
