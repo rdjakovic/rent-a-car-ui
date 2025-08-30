@@ -14,8 +14,8 @@ export default function App() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3 rounded-2xl bg-brand-navy text-white shadow-lg px-4 py-3">
             <NavLink to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-              <img src="/logo.svg" alt="logo" className="h-10 w-10" />
-              <h1 className="text-xl font-semibold">NextStep RentACar</h1>
+              <img src="/logo.svg" alt="logo" className="h-12 w-12" />
+              <h1 className="text-2xl font-semibold">NextStep <span className="text-brand-emerald">RentACar</span></h1>
             </NavLink>
             <nav className="ml-auto flex gap-6">
               <NavLink className={({isActive}) => `text-white/90 hover:text-white ${isActive ? 'underline underline-offset-4' : ''}`} to="/">Availability</NavLink>
