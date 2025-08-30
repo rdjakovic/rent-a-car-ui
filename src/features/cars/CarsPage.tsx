@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel } from "lucide-react";
@@ -96,11 +97,10 @@ export default function CarsPage() {
               {/* Search */}
               <div className="md:col-span-2 lg:col-span-1">
                 <label className="block text-sm font-medium mb-1">Search</label>
-                <Input
-                  type="text"
+                <SearchInput
                   placeholder="Car name, make, model..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={setSearch}
                 />
               </div>
 
