@@ -29,7 +29,7 @@ export default function ReservationsPage() {
   // Filter state
   const [search, setSearch] = useState("");
   const [reservationIdSearch, setReservationIdSearch] = useState("");
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>("ALL");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [page, setPage] = useState(0);
@@ -157,7 +157,7 @@ export default function ReservationsPage() {
   const clearFilters = () => {
     setSearch("");
     setReservationIdSearch("");
-    setStatus("");
+    setStatus("ALL");
     setStartDate("");
     setEndDate("");
     setPage(0);
@@ -254,9 +254,16 @@ export default function ReservationsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">General Search</label>
                 <SearchInput
+                  key={`search-${search}-${reservationIdSearch}`}
                   placeholder="Customer name, email, phone, car, or branch..."
                   value={search}
-                  onChange={setSearch}
+                  onChange={(value) => {
+                    setSearch(value);
+                    // Clear reservation ID search when using general search
+                    if (value.trim() && reservationIdSearch) {
+                      setReservationIdSearch("");
+                    }
+                  }}
                   disabled={!!reservationIdSearch}
                 />
                 {search.trim() && !reservationIdSearch && (
@@ -273,7 +280,14 @@ export default function ReservationsPage() {
                   type="number"
                   placeholder="Enter reservation ID..."
                   value={reservationIdSearch}
-                  onChange={(e) => setReservationIdSearch(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setReservationIdSearch(value);
+                    // Clear general search when using ID search
+                    if (value.trim() && search) {
+                      setSearch("");
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
                       setReservationIdSearch("");
