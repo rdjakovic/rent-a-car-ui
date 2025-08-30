@@ -24,25 +24,31 @@ export function SearchInput({
   const [isFocused, setIsFocused] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isExternalUpdate = useRef(false);
+  const isClearing = useRef(false);
   
   // Debounce the internal value
   const debouncedValue = useDebounce(internalValue, debounceMs);
   
-  // Update parent when debounced value changes
+  // Update parent when debounced value changes (only if it's a user input, not external update or clearing)
   useEffect(() => {
-    if (debouncedValue !== value) {
+    if (!isExternalUpdate.current && !isClearing.current && debouncedValue !== value) {
       onChange(debouncedValue);
     }
-  }, [debouncedValue, onChange]);
+    isExternalUpdate.current = false;
+    isClearing.current = false;
+  }, [debouncedValue, onChange, value]);
   
   // Update internal value when external value changes (e.g., programmatic reset)
   useEffect(() => {
     if (value !== internalValue) {
+      isExternalUpdate.current = true;
       setInternalValue(value);
     }
   }, [value]);
 
   const handleClear = () => {
+    isClearing.current = true;
     setInternalValue("");
     onChange("");
     inputRef.current?.focus();
@@ -54,7 +60,7 @@ export function SearchInput({
     }
   };
 
-  const showClearButton = internalValue.length > 0 && (isFocused || internalValue.length > 0);
+  const showClearButton = internalValue.length > 0;
 
   return (
     <div className="relative">
@@ -74,11 +80,11 @@ export function SearchInput({
         <button
           type="button"
           onClick={handleClear}
+          onMouseDown={(e) => e.preventDefault()}
           className={cn(
             "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-sm",
             "text-muted-foreground hover:text-foreground",
             "hover:bg-muted transition-colors",
-            "opacity-0 group-hover:opacity-100 focus:opacity-100",
             isFocused ? "opacity-100" : "opacity-0 hover:opacity-100"
           )}
           tabIndex={-1}

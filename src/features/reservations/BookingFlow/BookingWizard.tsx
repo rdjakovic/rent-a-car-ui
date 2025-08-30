@@ -7,6 +7,7 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 import CustomerSelection from "./CustomerSelection";
 import BookingReview from "./BookingReview";
 import BookingConfirmation from "./BookingConfirmation";
+import BookingBreadcrumbs from "../components/BookingBreadcrumbs";
 
 export default function BookingWizard() {
   const [searchParams] = useSearchParams();
@@ -19,11 +20,67 @@ export default function BookingWizard() {
     // Only initialize if we don't already have booking details
     if (!bookingFlow.bookingDetails) {
       try {
+        // Validate required parameters before attempting initialization
+        const requiredParams = ['carId', 'branchId', 'startDate', 'endDate', 'dailyPrice'];
+        const missingParams = requiredParams.filter(param => !searchParams.get(param));
+        
+        if (missingParams.length > 0) {
+          setInitializationError(
+            `Missing required booking parameters: ${missingParams.join(', ')}. Please start from the availability search.`
+          );
+          return;
+        }
+
+        // Validate parameter formats
+        const carId = searchParams.get('carId');
+        const branchId = searchParams.get('branchId');
+        const dailyPrice = searchParams.get('dailyPrice');
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+
+        if (carId && (isNaN(parseInt(carId)) || parseInt(carId) <= 0)) {
+          setInitializationError('Invalid car ID. Please start from the availability search.');
+          return;
+        }
+
+        if (branchId && (isNaN(parseInt(branchId)) || parseInt(branchId) <= 0)) {
+          setInitializationError('Invalid branch ID. Please start from the availability search.');
+          return;
+        }
+
+        if (dailyPrice && (isNaN(parseFloat(dailyPrice)) || parseFloat(dailyPrice) <= 0)) {
+          setInitializationError('Invalid daily price. Please start from the availability search.');
+          return;
+        }
+
+        // Validate dates
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            setInitializationError('Invalid date format. Please start from the availability search.');
+            return;
+          }
+
+          if (start < today) {
+            setInitializationError('Start date cannot be in the past. Please start from the availability search.');
+            return;
+          }
+
+          if (end <= start) {
+            setInitializationError('End date must be after start date. Please start from the availability search.');
+            return;
+          }
+        }
+
         // Try to initialize from URL parameters
         const initialized = bookingFlow.initializeFromUrlParams(searchParams);
         
         if (!initialized) {
-          setInitializationError('Invalid booking parameters. Please start from the availability search.');
+          setInitializationError('Failed to initialize booking. Please start from the availability search.');
         } else {
           setInitializationError(null);
           setRetryCount(0);
@@ -119,6 +176,11 @@ export default function BookingWizard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
+        <BookingBreadcrumbs 
+          currentStep={bookingFlow.currentStep}
+          carDisplayName={bookingFlow.carDetails?.displayName}
+        />
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Book Your Rental</h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600">

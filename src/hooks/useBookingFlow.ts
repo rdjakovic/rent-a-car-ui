@@ -51,29 +51,65 @@ export function useBookingFlow() {
     const carCategory = searchParams.get('carCategory');
     const branchName = searchParams.get('branchName');
 
-    if (carId && branchId && startDate && endDate && dailyPrice) {
+    // Validate all required parameters are present
+    if (!carId || !branchId || !startDate || !endDate || !dailyPrice) {
+      console.error('Missing required URL parameters for booking initialization');
+      return false;
+    }
+
+    try {
+      const parsedCarId = parseInt(carId);
+      const parsedBranchId = parseInt(branchId);
+      const parsedDailyPrice = parseFloat(dailyPrice);
+
+      // Validate parsed values
+      if (isNaN(parsedCarId) || parsedCarId <= 0) {
+        console.error('Invalid carId parameter:', carId);
+        return false;
+      }
+
+      if (isNaN(parsedBranchId) || parsedBranchId <= 0) {
+        console.error('Invalid branchId parameter:', branchId);
+        return false;
+      }
+
+      if (isNaN(parsedDailyPrice) || parsedDailyPrice <= 0) {
+        console.error('Invalid dailyPrice parameter:', dailyPrice);
+        return false;
+      }
+
+      // Validate date format
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        console.error('Invalid date format:', { startDate, endDate });
+        return false;
+      }
+
       const bookingDetails: BookingDetails = {
-        carId: parseInt(carId),
-        branchId: parseInt(branchId),
+        carId: parsedCarId,
+        branchId: parsedBranchId,
         startDate,
         endDate,
-        dailyPrice: parseFloat(dailyPrice),
+        dailyPrice: parsedDailyPrice,
       };
 
-      // Create minimal car details object
+      // Create minimal car details object with fallbacks
       const carDetails: CarListResponseDto = {
-        id: parseInt(carId),
+        id: parsedCarId,
         displayName: carDisplayName || 'Unknown Car',
         category: (carCategory as any) || 'ECONOMY',
-        dailyPrice: parseFloat(dailyPrice),
+        dailyPrice: parsedDailyPrice,
         branchName: branchName || 'Unknown Branch',
       };
 
       store.initializeBooking({ carDetails, bookingDetails });
       return true;
+    } catch (error) {
+      console.error('Error parsing URL parameters:', error);
+      return false;
     }
-    
-    return false;
   };
 
   return {
