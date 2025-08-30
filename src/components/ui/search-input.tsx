@@ -45,7 +45,7 @@ export function SearchInput({
       isExternalUpdate.current = true;
       setInternalValue(value);
     }
-  }, [value]);
+  }, [value, internalValue]);
 
   const handleClear = () => {
     isClearing.current = true;

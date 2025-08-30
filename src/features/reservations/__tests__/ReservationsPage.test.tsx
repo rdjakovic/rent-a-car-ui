@@ -370,9 +370,9 @@ describe('ReservationsPage', () => {
       expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
     });
 
-    // Set some filters first
-    const searchInput = screen.getByPlaceholderText('Customer name or reservation ID...');
-    await user.type(searchInput, 'Alice');
+    // Set some filters first - use date filter which doesn't have debouncing
+    const startDateInput = screen.getByLabelText('From Date');
+    await user.type(startDateInput, '2024-01-01');
 
     // Clear filters button should appear
     await waitFor(() => {
@@ -382,9 +382,9 @@ describe('ReservationsPage', () => {
     const clearButton = screen.getByText('Clear Filters');
     await user.click(clearButton);
 
-    // Search input should be cleared
+    // Date input should be cleared
     await waitFor(() => {
-      expect(searchInput).toHaveValue('');
+      expect(startDateInput).toHaveValue('');
     });
 
     // Should trigger a new API call without filters
@@ -536,9 +536,9 @@ describe('ReservationsPage', () => {
 
     renderWithProviders(<ReservationsPage />);
 
-    // Set a filter first
-    const searchInput = screen.getByPlaceholderText('Customer name or reservation ID...');
-    await user.type(searchInput, 'NonExistent');
+    // Set a filter first - use date filter which doesn't have debouncing
+    const startDateInput = screen.getByLabelText('From Date');
+    await user.type(startDateInput, '2024-01-01');
 
     await waitFor(() => {
       expect(screen.getByText('No reservations found')).toBeInTheDocument();
