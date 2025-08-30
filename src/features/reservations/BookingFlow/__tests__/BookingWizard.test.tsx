@@ -8,7 +8,13 @@ import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
   createReservation: vi.fn(),
-  listCustomers: vi.fn(),
+  listCustomers: vi.fn().mockResolvedValue({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    size: 10,
+    number: 0,
+  }),
 }));
 
 // Mock the navigate function
@@ -337,10 +343,13 @@ describe('BookingWizard', () => {
 
       // Mock the initializeFromUrlParams to throw an error
       const originalInitialize = useBookingFlowStore.getState().initializeBooking;
-      useBookingFlowStore.setState({
-        initializeBooking: vi.fn(() => {
-          throw new Error('Test initialization error');
-        })
+      
+      await act(async () => {
+        useBookingFlowStore.setState({
+          initializeBooking: vi.fn(() => {
+            throw new Error('Test initialization error');
+          })
+        });
       });
 
       render(
@@ -354,22 +363,21 @@ describe('BookingWizard', () => {
       });
 
       // Restore original function
-      useBookingFlowStore.setState({ initializeBooking: originalInitialize });
+      await act(async () => {
+        useBookingFlowStore.setState({ initializeBooking: originalInitialize });
+      });
       consoleSpy.mockRestore();
     });
 
     it('should show skeleton loading state', async () => {
-      // Create a component that will show loading state
-      const TestComponent = () => {
-        const store = useBookingFlowStore();
-        // Clear the store to trigger loading state
-        store.reset();
-        return <BookingWizard />;
-      };
+      // Reset store to trigger loading state
+      await act(async () => {
+        useBookingFlowStore.getState().reset();
+      });
 
       render(
         <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50']}>
-          <TestComponent />
+          <BookingWizard />
         </TestProviders>
       );
 

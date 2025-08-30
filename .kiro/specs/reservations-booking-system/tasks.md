@@ -80,7 +80,9 @@
     - Create tests for booking validation and error handling
     - _Requirements: 3.1, 3.2, 3.3, 4.2, 4.4_
 
-- [-] 4. Implement main BookingWizard orchestration
+- [x] 4. Implement main BookingWizard orchestration
+
+
 
 
 
@@ -100,7 +102,8 @@
     - Create retry mechanisms for failed bookings
     - _Requirements: 4.1, 4.3_
 
-  - [-] 4.3 Create unit tests for BookingWizard orchestration
+  - [x] 4.3 Create unit tests for BookingWizard orchestration
+
 
     - Write tests for wizard step navigation and state persistence
     - Test booking submission and API integration

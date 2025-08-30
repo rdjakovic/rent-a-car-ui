@@ -218,18 +218,21 @@ describe('useBookingFlowStore', () => {
     });
 
     it('should clear submission state when setting reservation', () => {
-      const { setSubmitting, setSubmissionError, setReservation } = useBookingFlowStore.getState();
-      
-      // Set submission state
-      setSubmitting(true);
-      setSubmissionError('Some error');
+      // Set submission state (note: setSubmissionError sets isSubmitting to false)
+      useBookingFlowStore.getState().setSubmitting(true);
       
       let state = useBookingFlowStore.getState();
       expect(state.isSubmitting).toBe(true);
+      
+      // Now set error (this will set isSubmitting to false)
+      useBookingFlowStore.getState().setSubmissionError('Some error');
+      
+      state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(false); // setSubmissionError sets this to false
       expect(state.submissionError).toBe('Some error');
       
       // Set reservation should clear submission state
-      setReservation(mockReservation);
+      useBookingFlowStore.getState().setReservation(mockReservation);
       
       state = useBookingFlowStore.getState();
       expect(state.reservation).toEqual(mockReservation);

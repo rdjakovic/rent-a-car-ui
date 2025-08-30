@@ -415,16 +415,24 @@ describe('useBookingFlow', () => {
       
       act(() => {
         result.current.setSubmitting(true);
+      });
+      
+      // Check state after setting submission state
+      expect(result.current.isSubmitting).toBe(true);
+      
+      act(() => {
         result.current.setSubmissionError('Some error');
       });
       
-      expect(result.current.isSubmitting).toBe(true);
+      // setSubmissionError sets isSubmitting to false
+      expect(result.current.isSubmitting).toBe(false);
       expect(result.current.submissionError).toBe('Some error');
       
       act(() => {
         result.current.setReservation(mockReservation);
       });
       
+      // Check state after setting reservation
       expect(result.current.reservation).toEqual(mockReservation);
       expect(result.current.currentStep).toBe('confirmation');
       expect(result.current.isSubmitting).toBe(false);
@@ -436,16 +444,24 @@ describe('useBookingFlow', () => {
       
       act(() => {
         result.current.setSubmitting(true);
+      });
+      
+      // Check state after setting submission state
+      expect(result.current.isSubmitting).toBe(true);
+      
+      act(() => {
         result.current.setSubmissionError('Some error');
       });
       
-      expect(result.current.isSubmitting).toBe(true);
+      // setSubmissionError sets isSubmitting to false
+      expect(result.current.isSubmitting).toBe(false);
       expect(result.current.submissionError).toBe('Some error');
       
       act(() => {
         result.current.reset();
       });
       
+      // Check state after reset
       expect(result.current.isSubmitting).toBe(false);
       expect(result.current.submissionError).toBeNull();
     });
