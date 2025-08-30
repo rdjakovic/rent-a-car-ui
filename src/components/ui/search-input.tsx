@@ -24,33 +24,28 @@ export function SearchInput({
   const [isFocused, setIsFocused] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
-  const isExternalUpdate = useRef(false);
-  const isClearing = useRef(false);
+  const prevValueRef = useRef(value);
   
   // Debounce the internal value
   const debouncedValue = useDebounce(internalValue, debounceMs);
   
-  // Update parent when debounced value changes (only if it's a user input, not external update or clearing)
+  // Update parent when debounced value changes
   useEffect(() => {
-    if (!isExternalUpdate.current && !isClearing.current && debouncedValue !== value) {
+    if (debouncedValue !== value) {
       onChange(debouncedValue);
     }
-    isExternalUpdate.current = false;
-    isClearing.current = false;
   }, [debouncedValue, onChange, value]);
   
   // Update internal value when external value changes (e.g., programmatic reset)
   useEffect(() => {
-    if (value !== internalValue) {
-      isExternalUpdate.current = true;
+    if (value !== prevValueRef.current) {
       setInternalValue(value);
+      prevValueRef.current = value;
     }
-  }, [value, internalValue]);
+  }, [value]);
 
   const handleClear = () => {
-    isClearing.current = true;
     setInternalValue("");
-    onChange("");
     inputRef.current?.focus();
   };
 
