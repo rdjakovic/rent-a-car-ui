@@ -4,6 +4,8 @@ import BranchesPage from '@/features/branches/BranchesPage'
 import AvailabilityPage from '@/features/availability/AvailabilityPage'
 import CarsPage from '@/features/cars/CarsPage'
 import CustomersPage from '@/features/customers/CustomersPage'
+import ReservationsPage from '@/features/reservations/ReservationsPage'
+import BookingWizard from '@/features/reservations/BookingFlow/BookingWizard'
 
 export default function App() {
   return (
@@ -32,7 +34,9 @@ export default function App() {
           <Route path="/branches" element={<BranchesPage />} />
           <Route path="/cars" element={<CarsPage />} />
           <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/reservations" element={<div>Reservations</div>} />
+          <Route path="/reservations" element={<ReservationsPage />} />
+          <Route path="/reservations/:id" element={<div>Reservation Details</div>} />
+          <Route path="/book" element={<BookingWizard />} />
           <Route path="/maintenance" element={<div>Maintenance</div>} />
         </Routes>
       </main>
