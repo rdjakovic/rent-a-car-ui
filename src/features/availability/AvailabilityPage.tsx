@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { listBranches, findAvailableCars, type AvailabilityParams } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +16,8 @@ const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
 const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 
 export default function AvailabilityPage() {
+  const navigate = useNavigate();
+  
   // Form state
   const [branchId, setBranchId] = useState<string>("");
   const [startDate, setStartDate] = useState("");
@@ -89,6 +92,22 @@ export default function AvailabilityPage() {
   const totalPages = availQuery.data?.totalPages ?? 0;
   const hasPrev = current > 0;
   const hasNext = totalPages ? current < totalPages - 1 : false;
+
+  // Handle booking navigation
+  const handleBookCar = (car: any) => {
+    const bookingParams = new URLSearchParams({
+      carId: String(car.id),
+      branchId: branchId,
+      startDate: startDate,
+      endDate: endDate,
+      dailyPrice: String(car.dailyPrice),
+      carDisplayName: car.displayName || 'Unknown Car',
+      carCategory: car.category || 'ECONOMY',
+      branchName: car.branchName || 'Unknown Branch',
+    });
+    
+    navigate(`/book?${bookingParams.toString()}`);
+  };
 
   return (
     <div className="min-h-screen bg-brand-light">
@@ -261,7 +280,12 @@ export default function AvailabilityPage() {
                         <Badge>{c.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button className="bg-brand-emerald text-white hover:brightness-95">Book</Button>
+                        <Button 
+                          className="bg-brand-emerald text-white hover:brightness-95"
+                          onClick={() => handleBookCar(c)}
+                        >
+                          Book
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

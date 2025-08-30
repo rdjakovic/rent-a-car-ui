@@ -8,7 +8,6 @@ const mockCarDetails: CarListResponseDto = {
   displayName: 'Toyota Camry',
   category: 'INTERMEDIATE',
   dailyPrice: 50,
-  branchId: 1,
   branchName: 'Downtown Branch',
 };
 
