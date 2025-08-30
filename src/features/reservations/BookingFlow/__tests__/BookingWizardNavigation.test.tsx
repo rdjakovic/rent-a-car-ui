@@ -93,6 +93,13 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
       },
     })
     vi.clearAllMocks()
+    
+    // Reset mock state
+    mockBookingFlow.carDetails = null
+    mockBookingFlow.bookingDetails = null
+    mockBookingFlow.currentStep = 'customer'
+    mockBookingFlow.totalDays = 0
+    mockBookingFlow.totalCost = 0
   })
 
   const renderWithProviders = (component: React.ReactElement) => {
@@ -134,11 +141,21 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
 
   it('shows error for missing required URL parameters', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    mockBookingFlow.bookingDetails = null // Ensure no booking details
 
-    // Mock useSearchParams to return incomplete parameters
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    // Create a new mock for this specific test
+    const mockUseSearchParams = vi.fn(() => [
       new URLSearchParams('carId=101&branchId=1') // Missing required params
     ])
+    
+    vi.doMock('react-router-dom', async () => {
+      const actual = await vi.importActual('react-router-dom')
+      return {
+        ...actual,
+        useNavigate: () => mockNavigate,
+        useSearchParams: mockUseSearchParams,
+      }
+    })
 
     renderWithProviders(<BookingWizard />)
 
