@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
+import CustomerSelection from "./CustomerSelection";
+import BookingReview from "./BookingReview";
+import BookingConfirmation from "./BookingConfirmation";
 
 export default function BookingWizard() {
   const [searchParams] = useSearchParams();
@@ -69,67 +72,26 @@ export default function BookingWizard() {
 
         <div className="bg-white rounded-lg shadow-lg p-6">
           {bookingFlow.currentStep === 'customer' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Select Customer</h2>
-              <p className="text-gray-600">Customer selection component will be implemented in the next task.</p>
-              <div className="mt-6 flex justify-between">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={bookingFlow.nextStep}
-                  disabled={!bookingFlow.canProceedToReview()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next: Review
-                </button>
-              </div>
-            </div>
+            <CustomerSelection
+              onBack={handleCancel}
+              onNext={bookingFlow.nextStep}
+            />
           )}
 
           {bookingFlow.currentStep === 'review' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Review Booking</h2>
-              <p className="text-gray-600">Booking review component will be implemented in a later task.</p>
-              <div className="mt-6 flex justify-between">
-                <button
-                  onClick={bookingFlow.previousStep}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => bookingFlow.nextStep()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Confirm Booking
-                </button>
-              </div>
-            </div>
+            <BookingReview
+              onBack={bookingFlow.previousStep}
+              onSubmit={bookingFlow.nextStep}
+            />
           )}
 
           {bookingFlow.currentStep === 'confirmation' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Booking Confirmed</h2>
-              <p className="text-gray-600">Confirmation component will be implemented in a later task.</p>
-              <div className="mt-6 flex justify-between">
-                <button
-                  onClick={() => navigate('/')}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  New Search
-                </button>
-                <button
-                  onClick={() => navigate('/reservations')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  View Reservations
-                </button>
-              </div>
-            </div>
+            <BookingConfirmation
+              onNewBooking={() => {
+                bookingFlow.reset();
+                navigate('/');
+              }}
+            />
           )}
         </div>
 
