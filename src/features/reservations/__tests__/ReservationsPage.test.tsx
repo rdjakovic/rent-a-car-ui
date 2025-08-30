@@ -13,6 +13,7 @@ vi.mock('@/lib/api/queries', () => ({
   confirmReservation: vi.fn(),
   cancelReservation: vi.fn(),
   completeReservation: vi.fn(),
+  searchCustomers: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -24,6 +25,7 @@ const mockListReservations = vi.mocked(queries.listReservations);
 const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
 const mockCompleteReservation = vi.mocked(queries.completeReservation);
+const mockSearchCustomers = vi.mocked(queries.searchCustomers);
 const mockToast = vi.mocked(toast);
 
 const mockReservations = [
@@ -205,6 +207,34 @@ describe('ReservationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListReservations.mockResolvedValue(mockPagedResponse);
+    mockSearchCustomers.mockResolvedValue({
+      content: [
+        {
+          id: 1,
+          firstName: 'Alice',
+          lastName: 'Johnson',
+          email: 'alice.johnson@email.com',
+          phone: '+1-555-0301',
+          driverLicenseNo: 'DL123456789',
+          dateOfBirth: '1985-03-15',
+          address: '789 Oak Street',
+          city: 'New York',
+          country: 'USA',
+          licenseExpiryDate: '2028-03-15',
+          fullName: 'Alice Johnson',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }
+      ],
+      totalPages: 1,
+      totalElements: 1,
+      size: 20,
+      number: 0,
+      first: true,
+      last: true,
+      numberOfElements: 1,
+      empty: false,
+    });
   });
 
   it('renders reservations list correctly', async () => {
@@ -353,7 +383,9 @@ describe('ReservationsPage', () => {
     await user.click(clearButton);
 
     // Search input should be cleared
-    expect(searchInput).toHaveValue('');
+    await waitFor(() => {
+      expect(searchInput).toHaveValue('');
+    });
 
     // Should trigger a new API call without filters
     await waitFor(() => {
