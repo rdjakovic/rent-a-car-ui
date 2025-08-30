@@ -1,7 +1,8 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchInputProps {
   value: string;
@@ -9,6 +10,7 @@ interface SearchInputProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  debounceMs?: number;
 }
 
 export function SearchInput({ 
@@ -16,12 +18,32 @@ export function SearchInput({
   onChange, 
   placeholder = "Search...", 
   className,
-  disabled 
+  disabled,
+  debounceMs = 500
 }: SearchInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [internalValue, setInternalValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Debounce the internal value
+  const debouncedValue = useDebounce(internalValue, debounceMs);
+  
+  // Update parent when debounced value changes
+  useEffect(() => {
+    if (debouncedValue !== value) {
+      onChange(debouncedValue);
+    }
+  }, [debouncedValue, onChange]);
+  
+  // Update internal value when external value changes (e.g., programmatic reset)
+  useEffect(() => {
+    if (value !== internalValue) {
+      setInternalValue(value);
+    }
+  }, [value]);
 
   const handleClear = () => {
+    setInternalValue("");
     onChange("");
     inputRef.current?.focus();
   };
@@ -32,7 +54,7 @@ export function SearchInput({
     }
   };
 
-  const showClearButton = value.length > 0 && (isFocused || value.length > 0);
+  const showClearButton = internalValue.length > 0 && (isFocused || internalValue.length > 0);
 
   return (
     <div className="relative">
@@ -40,8 +62,8 @@ export function SearchInput({
         ref={inputRef}
         type="text"
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={internalValue}
+        onChange={(e) => setInternalValue(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onKeyDown={handleKeyDown}
