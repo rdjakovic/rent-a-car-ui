@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   listReservations, 
+  getReservationById,
   confirmReservation, 
   cancelReservation, 
   completeReservation,
@@ -27,6 +28,7 @@ const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] 
 export default function ReservationsPage() {
   // Filter state
   const [search, setSearch] = useState("");
+  const [reservationIdSearch, setReservationIdSearch] = useState("");
   const [status, setStatus] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -56,21 +58,44 @@ export default function ReservationsPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [search, status, startDate, endDate]);
+  }, [search, status, startDate, endDate, reservationIdSearch]);
 
+  // Query for searching by reservation ID
+  const reservationByIdQuery = useQuery({
+    queryKey: ["reservation", reservationIdSearch],
+    queryFn: () => getReservationById(parseInt(reservationIdSearch)),
+    enabled: !!reservationIdSearch && !isNaN(parseInt(reservationIdSearch)),
+    staleTime: 30_000,
+  });
+
+  // Main reservations query (used when not searching by ID)
   const reservationsQuery = useQuery({
     queryKey: ["reservations", filterParams],
     queryFn: () => listReservations(filterParams),
+    enabled: !reservationIdSearch, // Disable when searching by ID
     staleTime: 30_000,
     placeholderData: (previousData) => previousData,
   });
 
-  const isLoading = reservationsQuery.isLoading || (reservationsQuery.isFetching && !reservationsQuery.data);
-  const reservations = reservationsQuery.data?.content ?? [];
-  const current = reservationsQuery.data?.number ?? page;
-  const totalPages = reservationsQuery.data?.totalPages ?? 0;
-  const hasPrev = current > 0;
-  const hasNext = totalPages ? current < totalPages - 1 : false;
+  // Determine which query to use and handle loading states
+  const isSearchingById = !!reservationIdSearch && !isNaN(parseInt(reservationIdSearch));
+  const isLoading = isSearchingById 
+    ? reservationByIdQuery.isLoading 
+    : (reservationsQuery.isLoading || (reservationsQuery.isFetching && !reservationsQuery.data));
+  
+  // Handle reservations data based on search type
+  const reservations = useMemo(() => {
+    if (isSearchingById) {
+      return reservationByIdQuery.data ? [reservationByIdQuery.data] : [];
+    }
+    return reservationsQuery.data?.content ?? [];
+  }, [isSearchingById, reservationByIdQuery.data, reservationsQuery.data?.content]);
+
+  // Pagination data (only relevant for list queries)
+  const current = isSearchingById ? 0 : (reservationsQuery.data?.number ?? page);
+  const totalPages = isSearchingById ? 1 : (reservationsQuery.data?.totalPages ?? 0);
+  const hasPrev = !isSearchingById && current > 0;
+  const hasNext = !isSearchingById && totalPages ? current < totalPages - 1 : false;
 
   // Mutation for confirming reservation
   const confirmMutation = useMutation({
@@ -131,13 +156,14 @@ export default function ReservationsPage() {
 
   const clearFilters = () => {
     setSearch("");
+    setReservationIdSearch("");
     setStatus("");
     setStartDate("");
     setEndDate("");
     setPage(0);
   };
 
-  const hasActiveFilters = search || (status && status !== "ALL") || startDate || endDate;
+  const hasActiveFilters = search || reservationIdSearch || (status && status !== "ALL") || startDate || endDate;
 
   const getStatusBadgeVariant = (status: ReservationResponseDto["status"]) => {
     switch (status) {
@@ -223,18 +249,42 @@ export default function ReservationsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* General Search */}
               <div>
-                <label className="block text-sm font-medium mb-1">Search</label>
+                <label className="block text-sm font-medium mb-1">General Search</label>
                 <SearchInput
-                  placeholder="Customer name, email, phone, reservation ID, car, or branch..."
+                  placeholder="Customer name, email, phone, car, or branch..."
                   value={search}
                   onChange={setSearch}
+                  disabled={!!reservationIdSearch}
                 />
-                {search.trim() && (
+                {search.trim() && !reservationIdSearch && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Searching across all reservation and customer fields
+                  </p>
+                )}
+              </div>
+
+              {/* Search by Reservation ID */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Search by Reservation ID</label>
+                <Input
+                  type="number"
+                  placeholder="Enter reservation ID..."
+                  value={reservationIdSearch}
+                  onChange={(e) => setReservationIdSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setReservationIdSearch("");
+                    }
+                  }}
+                />
+                {reservationIdSearch && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {reservationByIdQuery.isError 
+                      ? "Reservation not found" 
+                      : "Searching for specific reservation"}
                   </p>
                 )}
               </div>
@@ -242,7 +292,7 @@ export default function ReservationsPage() {
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium mb-1">Status</label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select value={status} onValueChange={setStatus} disabled={!!reservationIdSearch}>
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
@@ -265,6 +315,7 @@ export default function ReservationsPage() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  disabled={!!reservationIdSearch}
                 />
               </div>
 
@@ -276,6 +327,7 @@ export default function ReservationsPage() {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  disabled={!!reservationIdSearch}
                 />
               </div>
             </div>
@@ -290,6 +342,10 @@ export default function ReservationsPage() {
               <p className="text-sm text-muted-foreground">
                 {isLoading ? (
                   "Loading reservations..."
+                ) : isSearchingById ? (
+                  reservationByIdQuery.isError 
+                    ? "Reservation not found"
+                    : `Found ${reservations.length} reservation`
                 ) : (
                   `Showing ${reservations.length} reservations (Page ${current + 1} of ${Math.max(totalPages, 1)})`
                 )}
@@ -312,9 +368,15 @@ export default function ReservationsPage() {
             ) : reservations.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No reservations found</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  {isSearchingById && reservationByIdQuery.isError 
+                    ? "Reservation not found" 
+                    : "No reservations found"}
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  {hasActiveFilters
+                  {isSearchingById && reservationByIdQuery.isError
+                    ? `No reservation found with ID ${reservationIdSearch}`
+                    : hasActiveFilters
                     ? "Try adjusting your search criteria"
                     : "No reservations have been created yet"}
                 </p>
@@ -452,8 +514,8 @@ export default function ReservationsPage() {
                   </TableBody>
                 </Table>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
+                {/* Pagination - only show for list queries */}
+                {!isSearchingById && totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-8">
                     <Button
                       variant="outline"
