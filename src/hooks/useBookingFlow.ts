@@ -85,6 +85,8 @@ export function useBookingFlow() {
     totalDays: store.totalDays,
     totalCost: store.totalCost,
     reservation: store.reservation,
+    isSubmitting: store.isSubmitting,
+    submissionError: store.submissionError,
 
     // Actions
     initializeBooking: store.initializeBooking,
@@ -93,6 +95,8 @@ export function useBookingFlow() {
     nextStep: store.nextStep,
     previousStep: store.previousStep,
     setReservation: store.setReservation,
+    setSubmitting: store.setSubmitting,
+    setSubmissionError: store.setSubmissionError,
     reset: store.reset,
 
     // Computed values and helpers

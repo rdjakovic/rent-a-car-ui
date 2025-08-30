@@ -31,6 +31,10 @@ export interface BookingFlowState {
   // Result after successful booking
   reservation: ReservationResponseDto | null;
   
+  // Loading and error states
+  isSubmitting: boolean;
+  submissionError: string | null;
+  
   // Actions
   initializeBooking: (params: {
     carDetails: CarListResponseDto;
@@ -41,6 +45,8 @@ export interface BookingFlowState {
   nextStep: () => void;
   previousStep: () => void;
   setReservation: (reservation: ReservationResponseDto) => void;
+  setSubmitting: (isSubmitting: boolean) => void;
+  setSubmissionError: (error: string | null) => void;
   reset: () => void;
 }
 
@@ -61,6 +67,8 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   totalDays: 0,
   totalCost: 0,
   reservation: null,
+  isSubmitting: false,
+  submissionError: null,
 
   initializeBooking: (params) => {
     const { carDetails, bookingDetails } = params;
@@ -110,7 +118,20 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   },
 
   setReservation: (reservation) => {
-    set({ reservation, currentStep: 'confirmation' });
+    set({ 
+      reservation, 
+      currentStep: 'confirmation',
+      isSubmitting: false,
+      submissionError: null
+    });
+  },
+
+  setSubmitting: (isSubmitting) => {
+    set({ isSubmitting });
+  },
+
+  setSubmissionError: (error) => {
+    set({ submissionError: error, isSubmitting: false });
   },
 
   reset: () => {
@@ -122,6 +143,8 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
       totalDays: 0,
       totalCost: 0,
       reservation: null,
+      isSubmitting: false,
+      submissionError: null,
     });
   },
 }));

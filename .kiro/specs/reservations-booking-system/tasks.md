@@ -80,20 +80,28 @@
     - Create tests for booking validation and error handling
     - _Requirements: 3.1, 3.2, 3.3, 4.2, 4.4_
 
-- [ ] 4. Implement main BookingWizard orchestration
-  - [ ] 4.1 Create BookingWizard container component
+- [-] 4. Implement main BookingWizard orchestration
+
+
+
+  - [x] 4.1 Create BookingWizard container component
+
+
     - Build multi-step wizard with progress indicator
     - Implement step navigation and state persistence
     - Add URL parameter handling for pre-filled booking data
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 4.2 Add booking submission and API integration
+  - [x] 4.2 Add booking submission and API integration
+
+
     - Implement reservation creation API call
     - Add loading states and error handling for submission
     - Create retry mechanisms for failed bookings
     - _Requirements: 4.1, 4.3_
 
-  - [ ] 4.3 Create unit tests for BookingWizard orchestration
+  - [-] 4.3 Create unit tests for BookingWizard orchestration
+
     - Write tests for wizard step navigation and state persistence
     - Test booking submission and API integration
     - Create tests for URL parameter handling and error scenarios

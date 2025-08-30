@@ -41,6 +41,8 @@ describe('useBookingFlow', () => {
       expect(result.current.totalDays).toBe(0);
       expect(result.current.totalCost).toBe(0);
       expect(result.current.reservation).toBeNull();
+      expect(result.current.isSubmitting).toBe(false);
+      expect(result.current.submissionError).toBeNull();
     });
 
     it('should provide access to all store actions', () => {
@@ -52,6 +54,8 @@ describe('useBookingFlow', () => {
       expect(typeof result.current.nextStep).toBe('function');
       expect(typeof result.current.previousStep).toBe('function');
       expect(typeof result.current.setReservation).toBe('function');
+      expect(typeof result.current.setSubmitting).toBe('function');
+      expect(typeof result.current.setSubmissionError).toBe('function');
       expect(typeof result.current.reset).toBe('function');
     });
   });
@@ -356,6 +360,94 @@ describe('useBookingFlow', () => {
       
       expect(result.current.carDetails?.id).toBeNaN();
       expect(result.current.bookingDetails?.carId).toBeNaN();
+    });
+  });
+
+  describe('submission state management', () => {
+    it('should handle submission state changes', () => {
+      const { result } = renderHook(() => useBookingFlow());
+      
+      act(() => {
+        result.current.setSubmitting(true);
+      });
+      
+      expect(result.current.isSubmitting).toBe(true);
+      
+      act(() => {
+        result.current.setSubmitting(false);
+      });
+      
+      expect(result.current.isSubmitting).toBe(false);
+    });
+
+    it('should handle submission error state', () => {
+      const { result } = renderHook(() => useBookingFlow());
+      
+      const errorMessage = 'Failed to create reservation';
+      
+      act(() => {
+        result.current.setSubmissionError(errorMessage);
+      });
+      
+      expect(result.current.submissionError).toBe(errorMessage);
+      expect(result.current.isSubmitting).toBe(false);
+      
+      act(() => {
+        result.current.setSubmissionError(null);
+      });
+      
+      expect(result.current.submissionError).toBeNull();
+    });
+
+    it('should clear submission state when setting reservation', () => {
+      const { result } = renderHook(() => useBookingFlow());
+      
+      const mockReservation = {
+        id: 1,
+        startDate: '2024-01-01',
+        endDate: '2024-01-05',
+        status: 'CONFIRMED' as const,
+        totalPrice: 200,
+        currency: 'USD',
+        customer: mockCustomer,
+        car: mockCarDetails,
+      };
+      
+      act(() => {
+        result.current.setSubmitting(true);
+        result.current.setSubmissionError('Some error');
+      });
+      
+      expect(result.current.isSubmitting).toBe(true);
+      expect(result.current.submissionError).toBe('Some error');
+      
+      act(() => {
+        result.current.setReservation(mockReservation);
+      });
+      
+      expect(result.current.reservation).toEqual(mockReservation);
+      expect(result.current.currentStep).toBe('confirmation');
+      expect(result.current.isSubmitting).toBe(false);
+      expect(result.current.submissionError).toBeNull();
+    });
+
+    it('should reset submission state when resetting store', () => {
+      const { result } = renderHook(() => useBookingFlow());
+      
+      act(() => {
+        result.current.setSubmitting(true);
+        result.current.setSubmissionError('Some error');
+      });
+      
+      expect(result.current.isSubmitting).toBe(true);
+      expect(result.current.submissionError).toBe('Some error');
+      
+      act(() => {
+        result.current.reset();
+      });
+      
+      expect(result.current.isSubmitting).toBe(false);
+      expect(result.current.submissionError).toBeNull();
     });
   });
 

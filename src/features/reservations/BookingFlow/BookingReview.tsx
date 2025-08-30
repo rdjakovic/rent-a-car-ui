@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
 import { createReservation } from "@/lib/api/queries";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Calendar, Car, User, MapPin, DollarSign } from "lucide-react";
+import { Loader2, Calendar, Car, User, MapPin, DollarSign, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface BookingReviewProps {
   onBack: () => void;
@@ -18,19 +18,37 @@ interface BookingReviewProps {
 export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) {
   const bookingFlow = useBookingFlow();
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const createReservationMutation = useMutation({
     mutationFn: createReservation,
     onSuccess: (reservation) => {
       bookingFlow.setReservation(reservation);
+      setRetryCount(0);
+      setLastError(null);
+      setValidationErrors([]);
       onSubmit();
     },
     onError: (error) => {
       console.error('Failed to create reservation:', error);
-      setValidationErrors([
-        error instanceof Error ? error.message : 'Failed to create reservation. Please try again.'
-      ]);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation. Please try again.';
+      setLastError(errorMessage);
+      setValidationErrors([errorMessage]);
+      setRetryCount(prev => prev + 1);
     },
+    retry: (failureCount, error) => {
+      // Retry up to 3 times for network errors, but not for validation errors
+      if (failureCount < 3) {
+        const errorMessage = error instanceof Error ? error.message : '';
+        // Don't retry for validation errors (400 status codes)
+        if (!errorMessage.includes('validation') && !errorMessage.includes('invalid')) {
+          return true;
+        }
+      }
+      return false;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   const validateBooking = (): string[] => {
@@ -75,7 +93,7 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
     return errors;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const errors = validateBooking();
     
     if (errors.length > 0) {
@@ -102,8 +120,13 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
     };
 
     setValidationErrors([]);
+    setLastError(null);
     createReservationMutation.mutate(reservationRequest);
-  };
+  }, [bookingFlow, createReservationMutation, validateBooking]);
+
+  const handleRetry = useCallback(() => {
+    handleSubmit();
+  }, [handleSubmit]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -134,12 +157,30 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
 
       {validationErrors.length > 0 && (
         <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <ul className="list-disc list-inside space-y-1">
               {validationErrors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
             </ul>
+            {lastError && retryCount > 0 && retryCount < 3 && (
+              <div className="mt-3 pt-3 border-t border-red-200">
+                <p className="text-sm mb-2">
+                  Attempt {retryCount} failed. You can try again.
+                </p>
+                <Button 
+                  onClick={handleRetry}
+                  variant="outline" 
+                  size="sm"
+                  disabled={createReservationMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retry Booking
+                </Button>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -303,7 +344,7 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
           {createReservationMutation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
+              {retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Creating...'}
             </>
           ) : (
             'Confirm Booking'

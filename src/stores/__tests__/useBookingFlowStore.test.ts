@@ -50,6 +50,8 @@ describe('useBookingFlowStore', () => {
       expect(state.totalDays).toBe(0);
       expect(state.totalCost).toBe(0);
       expect(state.reservation).toBeNull();
+      expect(state.isSubmitting).toBe(false);
+      expect(state.submissionError).toBeNull();
     });
   });
 
@@ -214,6 +216,71 @@ describe('useBookingFlowStore', () => {
       expect(state.reservation).toEqual(mockReservation);
       expect(state.currentStep).toBe('confirmation');
     });
+
+    it('should clear submission state when setting reservation', () => {
+      const { setSubmitting, setSubmissionError, setReservation } = useBookingFlowStore.getState();
+      
+      // Set submission state
+      setSubmitting(true);
+      setSubmissionError('Some error');
+      
+      let state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(true);
+      expect(state.submissionError).toBe('Some error');
+      
+      // Set reservation should clear submission state
+      setReservation(mockReservation);
+      
+      state = useBookingFlowStore.getState();
+      expect(state.reservation).toEqual(mockReservation);
+      expect(state.currentStep).toBe('confirmation');
+      expect(state.isSubmitting).toBe(false);
+      expect(state.submissionError).toBeNull();
+    });
+  });
+
+  describe('submission state management', () => {
+    it('should set and clear submission loading state', () => {
+      const { setSubmitting } = useBookingFlowStore.getState();
+      
+      setSubmitting(true);
+      let state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(true);
+      
+      setSubmitting(false);
+      state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(false);
+    });
+
+    it('should set and clear submission error', () => {
+      const { setSubmissionError } = useBookingFlowStore.getState();
+      
+      const errorMessage = 'Failed to create reservation';
+      setSubmissionError(errorMessage);
+      
+      let state = useBookingFlowStore.getState();
+      expect(state.submissionError).toBe(errorMessage);
+      expect(state.isSubmitting).toBe(false); // Should set isSubmitting to false
+      
+      setSubmissionError(null);
+      state = useBookingFlowStore.getState();
+      expect(state.submissionError).toBeNull();
+    });
+
+    it('should handle submission error and stop loading', () => {
+      const { setSubmitting, setSubmissionError } = useBookingFlowStore.getState();
+      
+      // Start submission
+      setSubmitting(true);
+      let state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(true);
+      
+      // Set error should stop loading
+      setSubmissionError('Network error');
+      state = useBookingFlowStore.getState();
+      expect(state.isSubmitting).toBe(false);
+      expect(state.submissionError).toBe('Network error');
+    });
   });
 
   describe('reset', () => {
@@ -250,6 +317,8 @@ describe('useBookingFlowStore', () => {
       expect(state.totalDays).toBe(0);
       expect(state.totalCost).toBe(0);
       expect(state.reservation).toBeNull();
+      expect(state.isSubmitting).toBe(false);
+      expect(state.submissionError).toBeNull();
     });
   });
 
