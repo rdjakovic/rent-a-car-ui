@@ -59,7 +59,7 @@ export default function CustomersPage() {
                   onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Search across first name, last name, email, phone, city, and license number
+                  Search across first name, last name, email, city, and license number
                 </p>
               </div>
             </div>
