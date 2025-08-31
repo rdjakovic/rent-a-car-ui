@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel } from "lucide-react";
 
-const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
-const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
-const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
+const CATEGORIES = ["ECONOMY", "COMPACT", "INTERMEDIATE", "STANDARD", "FULL_SIZE", "PREMIUM", "LUXURY", "SUV", "VAN"] as const;
+const TRANSMISSIONS = ["MANUAL", "AUTOMATIC", "CVT"] as const;
+const FUEL_TYPES = ["GASOLINE", "DIESEL", "HYBRID", "ELECTRIC"] as const;
 
 export default function CarsPage() {
   // Filter state
@@ -107,6 +107,7 @@ export default function CarsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">VIN</label>
                 <SearchInput
+                  key={`vin-${vin}`}
                   placeholder="Vehicle identification number"
                   value={vin}
                   onChange={setVin}
@@ -117,6 +118,7 @@ export default function CarsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Make</label>
                 <SearchInput
+                  key={`make-${make}`}
                   placeholder="e.g. Toyota, Honda, BMW"
                   value={make}
                   onChange={setMake}
@@ -127,6 +129,7 @@ export default function CarsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Model</label>
                 <SearchInput
+                  key={`model-${model}`}
                   placeholder="e.g. Camry, Civic, X3"
                   value={model}
                   onChange={setModel}
@@ -137,6 +140,7 @@ export default function CarsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Year</label>
                 <SearchInput
+                  key={`year-${year}`}
                   placeholder="e.g. 2023"
                   value={year}
                   onChange={setYear}
