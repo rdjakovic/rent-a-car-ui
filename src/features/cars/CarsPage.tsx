@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel } from "lucide-react";
@@ -105,43 +106,40 @@ export default function CarsPage() {
               {/* VIN */}
               <div>
                 <label className="block text-sm font-medium mb-1">VIN</label>
-                <Input
+                <SearchInput
                   placeholder="Vehicle identification number"
                   value={vin}
-                  onChange={(e) => setVin(e.target.value)}
+                  onChange={setVin}
                 />
               </div>
 
               {/* Make */}
               <div>
                 <label className="block text-sm font-medium mb-1">Make</label>
-                <Input
+                <SearchInput
                   placeholder="e.g. Toyota, Honda, BMW"
                   value={make}
-                  onChange={(e) => setMake(e.target.value)}
+                  onChange={setMake}
                 />
               </div>
 
               {/* Model */}
               <div>
                 <label className="block text-sm font-medium mb-1">Model</label>
-                <Input
+                <SearchInput
                   placeholder="e.g. Camry, Civic, X3"
                   value={model}
-                  onChange={(e) => setModel(e.target.value)}
+                  onChange={setModel}
                 />
               </div>
 
               {/* Year */}
               <div>
                 <label className="block text-sm font-medium mb-1">Year</label>
-                <Input
-                  type="number"
-                  min={1900}
-                  max={new Date().getFullYear() + 1}
+                <SearchInput
                   placeholder="e.g. 2023"
                   value={year}
-                  onChange={(e) => setYear(e.target.value)}
+                  onChange={setYear}
                 />
               </div>
 
