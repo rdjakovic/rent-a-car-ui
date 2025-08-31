@@ -16,7 +16,7 @@ export default function BookingBreadcrumbs({ currentStep, carDisplayName }: Book
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
   return (
-    <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6" aria-label="Breadcrumb">
+    <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6" aria-label="Breadcrumb" data-testid="booking-breadcrumbs">
       <Link 
         to="/" 
         className="flex items-center hover:text-gray-900 transition-colors"

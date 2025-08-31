@@ -32,6 +32,7 @@ export interface BookingFlowState {
   reservation: ReservationResponseDto | null;
   
   // Loading and error states
+  isLoading: boolean;
   isSubmitting: boolean;
   submissionError: string | null;
   
@@ -42,9 +43,12 @@ export interface BookingFlowState {
   }) => void;
   setCustomer: (customer: CustomerResponseDto) => void;
   calculateCost: () => void;
+  calculateDuration: (startDate: string, endDate: string) => number;
+  calculateTotalCost: (dailyPrice: number, duration: number) => number;
   nextStep: () => void;
   previousStep: () => void;
   setReservation: (reservation: ReservationResponseDto) => void;
+  setLoading: (isLoading: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setSubmissionError: (error: string | null) => void;
   reset: () => void;
@@ -53,9 +57,17 @@ export interface BookingFlowState {
 const calculateDaysBetween = (startDate: string, endDate: string): number => {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  // Ensure minimum of 1 day for same-day bookings
+  
+  // Reset time to avoid timezone issues
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // For rental calculations, we want the actual number of days between dates
+  // e.g., Jan 1 to Jan 5 = 4 days (Jan 1, 2, 3, 4)
+  // Same-day rentals should be 1 day minimum
   return Math.max(1, diffDays);
 };
 
@@ -67,13 +79,15 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   totalDays: 0,
   totalCost: 0,
   reservation: null,
+  isLoading: false,
   isSubmitting: false,
   submissionError: null,
 
   initializeBooking: (params) => {
     const { carDetails, bookingDetails } = params;
-    const totalDays = calculateDaysBetween(bookingDetails.startDate, bookingDetails.endDate);
-    const totalCost = totalDays * bookingDetails.dailyPrice;
+    const store = get();
+    const totalDays = store.calculateDuration(bookingDetails.startDate, bookingDetails.endDate);
+    const totalCost = store.calculateTotalCost(bookingDetails.dailyPrice, totalDays);
     
     set({
       carDetails,
@@ -94,9 +108,46 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
     const { bookingDetails } = get();
     if (bookingDetails) {
       const totalDays = calculateDaysBetween(bookingDetails.startDate, bookingDetails.endDate);
-      const totalCost = totalDays * bookingDetails.dailyPrice;
+      // Ensure proper cost calculation with validation
+      const dailyPrice = Math.max(0, bookingDetails.dailyPrice);
+      const totalCost = Math.round((totalDays * dailyPrice) * 100) / 100; // Round to 2 decimal places
       set({ totalDays, totalCost });
     }
+  },
+
+  calculateDuration: (startDate: string, endDate: string) => {
+    // Validate input parameters
+    if (!startDate || !endDate) {
+      console.error('Invalid date parameters for duration calculation');
+      return 1;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Validate date objects
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      console.error('Invalid date format for duration calculation');
+      return 1;
+    }
+
+    return calculateDaysBetween(startDate, endDate);
+  },
+
+  calculateTotalCost: (dailyPrice: number, duration: number) => {
+    // Validate input parameters
+    if (typeof dailyPrice !== 'number' || dailyPrice < 0) {
+      console.error('Invalid daily price for cost calculation:', dailyPrice);
+      return 0;
+    }
+
+    if (typeof duration !== 'number' || duration < 1) {
+      console.error('Invalid duration for cost calculation:', duration);
+      return 0;
+    }
+
+    // Calculate and round to 2 decimal places
+    return Math.round((dailyPrice * duration) * 100) / 100;
   },
 
   nextStep: () => {
@@ -126,6 +177,10 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
     });
   },
 
+  setLoading: (isLoading) => {
+    set({ isLoading });
+  },
+
   setSubmitting: (isSubmitting) => {
     set({ isSubmitting });
   },
@@ -143,6 +198,7 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
       totalDays: 0,
       totalCost: 0,
       reservation: null,
+      isLoading: false,
       isSubmitting: false,
       submissionError: null,
     });

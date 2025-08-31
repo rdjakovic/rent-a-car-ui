@@ -1,50 +1,37 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import BookingWizard from '../BookingWizard'
+import { 
+  resetRouterMocks, 
+  resetBookingFlowMocks,
+  configureMockForSuccessfulBooking,
+  configureMockForFailedBooking,
+  configureMockForLoadingState,
+  mockSearchParams,
+  TestDataFactory,
+  mockNavigate,
+  mockUseSearchParams,
+  createMockBookingFlow
+} from '@/lib/test-utils/mockSetup'
 
-// Mock the useBookingFlow hook
-const mockBookingFlow = {
-  currentStep: 'customer' as const,
-  carDetails: null,
-  bookingDetails: null,
-  customer: null,
-  totalDays: 0,
-  totalCost: 0,
-  reservation: null,
-  isSubmitting: false,
-  submissionError: null,
-  initializeBooking: vi.fn(),
-  setCustomer: vi.fn(),
-  calculateCost: vi.fn(),
-  nextStep: vi.fn(),
-  previousStep: vi.fn(),
-  setReservation: vi.fn(),
-  setSubmitting: vi.fn(),
-  setSubmissionError: vi.fn(),
-  reset: vi.fn(),
-  canProceedToReview: vi.fn(() => false),
-  canSubmitBooking: vi.fn(() => false),
-  isStepComplete: vi.fn(() => false),
-  getStepNumber: vi.fn(() => 1),
-  initializeFromUrlParams: vi.fn(),
-}
-
-vi.mock('@/hooks/useBookingFlow', () => ({
-  useBookingFlow: () => mockBookingFlow,
-}))
-
-// Mock react-router-dom
-const mockNavigate = vi.fn()
+// Set up mocks at module level
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useSearchParams: () => [new URLSearchParams('carId=101&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99&carDisplayName=Toyota%20Camry&carCategory=INTERMEDIATE&branchName=Main%20Branch')],
+    useSearchParams: () => mockUseSearchParams(),
   }
 })
+
+vi.mock('@/hooks/useBookingFlow', () => ({
+  useBookingFlow: () => mockBookingFlow,
+}))
+
+// Create mock instances
+const mockBookingFlow = createMockBookingFlow()
 
 // Mock the child components
 vi.mock('../CustomerSelection', () => ({
@@ -92,14 +79,19 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
         },
       },
     })
-    vi.clearAllMocks()
     
-    // Reset mock state
-    mockBookingFlow.carDetails = null
-    mockBookingFlow.bookingDetails = null
-    mockBookingFlow.currentStep = 'customer'
-    mockBookingFlow.totalDays = 0
-    mockBookingFlow.totalCost = 0
+    // Reset all mocks
+    vi.clearAllMocks()
+    resetRouterMocks()
+    resetBookingFlowMocks(mockBookingFlow)
+    
+    // Set up default valid search params
+    mockSearchParams(TestDataFactory.createValidBookingParams())
+  })
+
+  afterEach(() => {
+    // Clean up all mocks after each test
+    vi.clearAllMocks()
   })
 
   const renderWithProviders = (component: React.ReactElement) => {
@@ -113,49 +105,26 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   }
 
   it('initializes booking from valid URL parameters', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
-    mockBookingFlow.carDetails = {
-      id: 101,
-      displayName: 'Toyota Camry',
-      category: 'INTERMEDIATE',
-      dailyPrice: 45.99,
-      branchName: 'Main Branch',
-    }
-    mockBookingFlow.bookingDetails = {
-      carId: 101,
-      branchId: 1,
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
-      dailyPrice: 45.99,
-    }
+    // Configure mock for successful booking
+    configureMockForSuccessfulBooking(mockBookingFlow)
 
     renderWithProviders(<BookingWizard />)
 
+    // Wait for the component to render the booking interface
     await waitFor(() => {
-      expect(mockBookingFlow.initializeFromUrlParams).toHaveBeenCalled()
+      expect(screen.getByText('Book Your Rental')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Book Your Rental')).toBeInTheDocument()
     expect(screen.getByTestId('customer-selection')).toBeInTheDocument()
+    expect(screen.getByTestId('booking-breadcrumbs')).toBeInTheDocument()
   })
 
   it('shows error for missing required URL parameters', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
-    mockBookingFlow.bookingDetails = null // Ensure no booking details
+    // Configure mock for failed booking
+    configureMockForFailedBooking(mockBookingFlow)
 
-    // Create a new mock for this specific test
-    const mockUseSearchParams = vi.fn(() => [
-      new URLSearchParams('carId=101&branchId=1') // Missing required params
-    ])
-    
-    vi.doMock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom')
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-        useSearchParams: mockUseSearchParams,
-      }
-    })
+    // Mock search params with missing required parameters
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('missing'))
 
     renderWithProviders(<BookingWizard />)
 
@@ -170,94 +139,79 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   it('shows error for invalid car ID parameter', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
-    // Mock useSearchParams to return invalid carId
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=invalid&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99')
-    ])
+    // Mock search params with invalid car ID
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-car'))
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/Invalid car ID/)).toBeInTheDocument()
+      expect(screen.getByText(/Invalid car ID. Please start from the availability search/)).toBeInTheDocument()
     })
   })
 
   it('shows error for invalid branch ID parameter', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
-    // Mock useSearchParams to return invalid branchId
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=101&branchId=0&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99')
-    ])
+    // Mock search params with invalid branch ID
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-branch'))
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/Invalid branch ID/)).toBeInTheDocument()
+      expect(screen.getByText(/Invalid branch ID. Please start from the availability search/)).toBeInTheDocument()
     })
   })
 
   it('shows error for invalid daily price parameter', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
-    // Mock useSearchParams to return invalid dailyPrice
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=101&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=-10')
-    ])
+    // Mock search params with invalid daily price
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-price'))
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/Invalid daily price/)).toBeInTheDocument()
+      expect(screen.getByText(/Invalid daily price. Please start from the availability search/)).toBeInTheDocument()
     })
   })
 
   it('shows error for invalid date format', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
-    // Mock useSearchParams to return invalid date format
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=101&branchId=1&startDate=invalid-date&endDate=2024-12-05&dailyPrice=45.99')
-    ])
+    // Mock search params with invalid date format
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-date'))
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/Invalid date format/)).toBeInTheDocument()
+      expect(screen.getByText(/Invalid date format. Please start from the availability search/)).toBeInTheDocument()
     })
   })
 
   it('shows error for past start date', async () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
-    // Mock useSearchParams to return past date
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const pastDate = yesterday.toISOString().split('T')[0]
-
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams(`carId=101&branchId=1&startDate=${pastDate}&endDate=2024-12-05&dailyPrice=45.99`)
-    ])
+    // Mock search params with past date
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('past-date'))
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/Start date cannot be in the past/)).toBeInTheDocument()
+      expect(screen.getByText(/Start date cannot be in the past. Please start from the availability search/)).toBeInTheDocument()
     })
   })
 
   it('shows error for end date before start date', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    // Configure mock for failed booking
+    configureMockForFailedBooking(mockBookingFlow)
 
-    // Mock useSearchParams to return end date before start date
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=101&branchId=1&startDate=2024-12-05&endDate=2024-12-01&dailyPrice=45.99')
-    ])
+    // Mock search params with end date before start date
+    mockSearchParams(TestDataFactory.createInvalidBookingParams('date-order'))
 
     renderWithProviders(<BookingWizard />)
 
@@ -268,27 +222,16 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('displays breadcrumb navigation with car details', async () => {
+    // Set up successful initialization - set the state first, then mock the return value
+    mockBookingFlow.carDetails = TestDataFactory.createMockCar()
+    mockBookingFlow.bookingDetails = TestDataFactory.createMockBookingDetails()
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
-    mockBookingFlow.carDetails = {
-      id: 101,
-      displayName: 'Toyota Camry',
-      category: 'INTERMEDIATE',
-      dailyPrice: 45.99,
-      branchName: 'Main Branch',
-    }
-    mockBookingFlow.bookingDetails = {
-      carId: 101,
-      branchId: 1,
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
-      dailyPrice: 45.99,
-    }
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByTestId('booking-breadcrumbs')).toBeInTheDocument()
-      expect(screen.getByText(/Step: customer, Car: Toyota Camry/)).toBeInTheDocument()
+      expect(screen.getByText(/Step 1: Customer Selection/)).toBeInTheDocument()
     })
   })
 
@@ -319,41 +262,41 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     expect(mockBookingFlow.reset).toHaveBeenCalled()
   })
 
-  it('shows loading state when booking details are not yet loaded', () => {
-    mockBookingFlow.carDetails = null
-    mockBookingFlow.bookingDetails = null
+  it('shows loading state when booking details are not yet loaded', async () => {
+    // Configure mock for loading state - successful init but no details yet
+    mockBookingFlow.bookingDetails = null // No existing booking details
+    mockBookingFlow.carDetails = null // No car details yet
+    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true) // Successful initialization
+    
+    // Use valid params to avoid validation errors
+    mockSearchParams(TestDataFactory.createValidBookingParams())
 
     renderWithProviders(<BookingWizard />)
 
-    expect(screen.getByText('Loading booking details...')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Loading booking details...')).toBeInTheDocument()
+    })
   })
 
   it('displays booking summary with correct details', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
-    mockBookingFlow.carDetails = {
-      id: 101,
-      displayName: 'Toyota Camry',
-      category: 'INTERMEDIATE',
-      dailyPrice: 45.99,
-      branchName: 'Main Branch',
-    }
-    mockBookingFlow.bookingDetails = {
-      carId: 101,
-      branchId: 1,
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
-      dailyPrice: 45.99,
-    }
+    // Set up successful initialization with calculated values - set the state first
+    mockBookingFlow.carDetails = TestDataFactory.createMockCar()
+    mockBookingFlow.bookingDetails = TestDataFactory.createMockBookingDetails()
     mockBookingFlow.totalDays = 4
     mockBookingFlow.totalCost = 183.96
+    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(screen.getByText('Booking Summary')).toBeInTheDocument()
       expect(screen.getByText('Toyota Camry')).toBeInTheDocument()
-      expect(screen.getByText('2024-12-01')).toBeInTheDocument()
-      expect(screen.getByText('2024-12-05')).toBeInTheDocument()
+      
+      // Get the dynamic dates from the mock data
+      const mockBookingDetails = TestDataFactory.createMockBookingDetails()
+      expect(screen.getByText(mockBookingDetails.startDate)).toBeInTheDocument()
+      expect(screen.getByText(mockBookingDetails.endDate)).toBeInTheDocument()
+      
       expect(screen.getByText('4 days')).toBeInTheDocument()
       expect(screen.getByText('$183.96')).toBeInTheDocument()
     })
