@@ -162,12 +162,13 @@ describe('AddCarDialog', () => {
       target: { value: '50.00' }
     });
 
-    // Select branch (find the select trigger button)
-    const branchSelect = screen.getByRole('combobox');
+    // Select branch (find the select trigger button by placeholder text)
+    const branchSelect = screen.getByText('Select branch');
     fireEvent.click(branchSelect);
     
     await waitFor(() => {
-      const branchOption = screen.getByText('Downtown Branch - New York');
+      const branchOptions = screen.getAllByText('Downtown Branch - New York');
+      const branchOption = branchOptions.find(el => el.tagName === 'OPTION') || branchOptions[0];
       fireEvent.click(branchOption);
     });
 
@@ -226,12 +227,12 @@ describe('AddCarDialog', () => {
     });
 
     // Select branch
-    const branchSelects = screen.getAllByRole('combobox');
-    const branchSelect = branchSelects[branchSelects.length - 1]; // Last select should be branch
+    const branchSelect = screen.getByText('Select branch');
     fireEvent.click(branchSelect);
     
     await waitFor(() => {
-      const branchOption = screen.getByText('Downtown Branch - New York');
+      const branchOptions = screen.getAllByText('Downtown Branch - New York');
+      const branchOption = branchOptions.find(el => el.tagName === 'OPTION') || branchOptions[0];
       fireEvent.click(branchOption);
     });
 

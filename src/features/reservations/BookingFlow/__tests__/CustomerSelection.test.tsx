@@ -29,21 +29,30 @@ vi.mock('@/features/customers/CustomerFormDialog', () => ({
 }));
 
 // Mock customer data
-const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => ({
-  id: 1,
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john.doe@example.com',
-  phone: '+1234567890',
-  driverLicenseNo: 'DL123456789',
-  dateOfBirth: '1990-01-01',
-  address: '123 Main St',
-  city: 'New York',
-  country: 'US',
-  licenseExpiryDate: '2025-12-31',
-  fullName: 'John Doe',
-  ...overrides,
-});
+const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => {
+  const base = {
+    id: 1,
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1234567890',
+    driverLicenseNo: 'DL123456789',
+    dateOfBirth: '1990-01-01',
+    address: '123 Main St',
+    city: 'New York',
+    country: 'US',
+    licenseExpiryDate: '2025-12-31',
+    fullName: 'John Doe',
+    ...overrides,
+  };
+  
+  // Update fullName if firstName or lastName are overridden
+  if (overrides.firstName || overrides.lastName) {
+    base.fullName = `${base.firstName} ${base.lastName}`;
+  }
+  
+  return base;
+};
 
 const createMockCustomersResponse = (customers: CustomerResponseDto[]): PageCustomerResponseDto => ({
   content: customers,
@@ -97,7 +106,7 @@ describe('CustomerSelection', () => {
       expect(screen.getByText('New Customer')).toBeInTheDocument();
     });
 
-    it('should have disabled Continue button initially', async () => {
+    it('should have enabled Continue button initially', async () => {
       mockListCustomers.mockResolvedValue(createMockCustomersResponse([]));
 
       render(
@@ -108,7 +117,7 @@ describe('CustomerSelection', () => {
 
       await waitFor(() => {
         const continueButton = screen.getByText('Continue to Review');
-        expect(continueButton).toBeDisabled();
+        expect(continueButton).toBeEnabled();
       });
     });
 
@@ -539,8 +548,8 @@ describe('CustomerSelection', () => {
         </TestProviders>
       );
 
-      // Should show loading skeletons
-      expect(screen.getAllByTestId('skeleton')).toHaveLength(5);
+      // Should show loading skeletons (5 rows × 4 skeletons per row = 20 total)
+      expect(screen.getAllByTestId('skeleton')).toHaveLength(20);
 
       // Resolve the promise
       act(() => {

@@ -349,7 +349,6 @@ export default function CustomerSelection({ onNext, onBack }: CustomerSelectionP
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!customer}
         >
           Continue to Review
         </Button>
