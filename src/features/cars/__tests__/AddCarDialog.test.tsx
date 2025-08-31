@@ -1,16 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { vi } from 'vitest';
+import { vi, describe, it, beforeEach, expect } from 'vitest';
 import AddCarDialog from '../AddCarDialog';
 import * as queries from '@/lib/api/queries';
-import { it } from 'zod/v4/locales';
-import { it } from 'zod/v4/locales';
-import { it } from 'zod/v4/locales';
-import { it } from 'zod/v4/locales';
-import { it } from 'zod/v4/locales';
-import { it } from 'zod/v4/locales';
-import { beforeEach } from 'node:test';
-import { describe } from 'node:test';
 
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
