@@ -97,7 +97,7 @@ export default function CarsPage() {
                 Clear All Filters
               </Button>
             )}
-            <Button 
+            <Button
               onClick={() => setShowAddDialog(true)}
               className="bg-brand-emerald hover:bg-brand-emerald/90 text-white"
             >
@@ -170,7 +170,7 @@ export default function CarsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c.replaceAll("_", " ")}</SelectItem>
+                      <SelectItem key={c} value={c}>{c.replace(/_/g, " ")}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -380,9 +380,9 @@ export default function CarsPage() {
         )}
 
         {/* Add Car Dialog */}
-        <AddCarDialog 
-          open={showAddDialog} 
-          onOpenChange={setShowAddDialog} 
+        <AddCarDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
         />
       </div>
     </div>

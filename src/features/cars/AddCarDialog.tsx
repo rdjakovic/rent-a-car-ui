@@ -157,7 +157,7 @@ export default function AddCarDialog({ open, onOpenChange }: AddCarDialogProps) 
                 <SelectContent>
                   {CATEGORIES.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category.replaceAll("_", " ")}
+                      {category.replace(/_/g, " ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,7 +255,7 @@ export default function AddCarDialog({ open, onOpenChange }: AddCarDialogProps) 
                 <SelectContent>
                   {STATUSES.map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status.replaceAll("_", " ")}
+                      {status.replace(/_/g, " ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
