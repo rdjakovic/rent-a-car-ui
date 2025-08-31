@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Car, Users, Fuel } from "lucide-react";
+import { Search, Car, Users, Fuel, Plus } from "lucide-react";
+import AddCarDialog from "./AddCarDialog";
 
 const CATEGORIES = ["ECONOMY", "COMPACT", "INTERMEDIATE", "STANDARD", "FULL_SIZE", "PREMIUM", "LUXURY", "SUV", "VAN"] as const;
 const TRANSMISSIONS = ["MANUAL", "AUTOMATIC", "CVT"] as const;
@@ -30,6 +31,7 @@ export default function CarsPage() {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [page, setPage] = useState(0);
   const [size] = useState(12); // Show 12 cars per page for a nice grid
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Build filter params
   const filterParams: CarFilterParams = useMemo(() => {
@@ -89,11 +91,20 @@ export default function CarsPage() {
             <h1 className="text-3xl font-bold text-charcoal">Car Catalog</h1>
             <p className="text-muted-foreground">Browse our complete fleet of vehicles</p>
           </div>
-          {hasActiveFilters && (
-            <Button variant="outline" onClick={clearFilters}>
-              Clear All Filters
+          <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters}>
+                Clear All Filters
+              </Button>
+            )}
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              className="bg-brand-emerald hover:bg-brand-emerald/90 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Car
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -367,6 +378,12 @@ export default function CarsPage() {
             )}
           </>
         )}
+
+        {/* Add Car Dialog */}
+        <AddCarDialog 
+          open={showAddDialog} 
+          onOpenChange={setShowAddDialog} 
+        />
       </div>
     </div>
   );

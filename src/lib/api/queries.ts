@@ -67,6 +67,18 @@ export async function getCarById(id: number) {
   return res.data as CarResponseDto;
 }
 
+export type CarRequestDto = components["schemas"]["CarRequestDto"];
+
+export async function createCar(car: CarRequestDto) {
+  try {
+    const res = await api.POST("/api/cars", { body: car });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as CarResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
 // Customer queries
 export type PageCustomerResponseDto = components["schemas"]["PageCustomerResponseDto"];
 export type CustomerResponseDto = components["schemas"]["CustomerResponseDto"];
