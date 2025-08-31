@@ -39,19 +39,41 @@ export const handlers = [
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '0');
     const size = parseInt(url.searchParams.get('size') || '10');
-    const search = url.searchParams.get('search');
+    const vin = url.searchParams.get('vin');
+    const make = url.searchParams.get('make');
+    const model = url.searchParams.get('model');
+    const year = url.searchParams.get('year');
     const category = url.searchParams.get('category');
     const transmission = url.searchParams.get('transmission');
     const fuelType = url.searchParams.get('fuelType');
 
     let filteredCars = [...cars];
 
-    if (search) {
-      const searchLower = search.toLowerCase();
+    if (vin) {
+      const vinLower = vin.toLowerCase();
       filteredCars = filteredCars.filter(car =>
-        car.make?.toLowerCase().includes(searchLower) ||
-        car.model?.toLowerCase().includes(searchLower) ||
-        car.displayName?.toLowerCase().includes(searchLower)
+        car.vin?.toLowerCase().includes(vinLower)
+      );
+    }
+
+    if (make) {
+      const makeLower = make.toLowerCase();
+      filteredCars = filteredCars.filter(car =>
+        car.make?.toLowerCase().includes(makeLower)
+      );
+    }
+
+    if (model) {
+      const modelLower = model.toLowerCase();
+      filteredCars = filteredCars.filter(car =>
+        car.model?.toLowerCase().includes(modelLower)
+      );
+    }
+
+    if (year) {
+      const yearNum = parseInt(year);
+      filteredCars = filteredCars.filter(car =>
+        car.year === yearNum
       );
     }
 

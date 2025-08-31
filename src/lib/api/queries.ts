@@ -46,7 +46,10 @@ export type CarFilterParams = {
   fuelType?: CarListResponseDto["fuelType"];
   minSeats?: number;
   maxPrice?: number;
-  search?: string;
+  vin?: string;
+  make?: string;
+  model?: string;
+  year?: number;
   sort?: string[];
 };
 

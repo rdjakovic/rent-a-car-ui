@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel } from "lucide-react";
@@ -16,7 +15,10 @@ const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 
 export default function CarsPage() {
   // Filter state
-  const [search, setSearch] = useState("");
+  const [vin, setVin] = useState("");
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [transmission, setTransmission] = useState<string>("");
   const [fuelType, setFuelType] = useState<string>("");
@@ -28,19 +30,22 @@ export default function CarsPage() {
   // Build filter params
   const filterParams: CarFilterParams = useMemo(() => {
     const params: CarFilterParams = { page, size };
-    if (search.trim()) params.search = search.trim();
+    if (vin.trim()) params.vin = vin.trim();
+    if (make.trim()) params.make = make.trim();
+    if (model.trim()) params.model = model.trim();
+    if (year) params.year = Number(year);
     if (category) params.category = category as any;
     if (transmission) params.transmission = transmission as any;
     if (fuelType) params.fuelType = fuelType as any;
     if (minSeats) params.minSeats = Number(minSeats);
     if (maxPrice) params.maxPrice = Number(maxPrice);
     return params;
-  }, [search, category, transmission, fuelType, minSeats, maxPrice, page, size]);
+  }, [vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [search, category, transmission, fuelType, minSeats, maxPrice]);
+  }, [vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice]);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
@@ -57,7 +62,10 @@ export default function CarsPage() {
   const hasNext = totalPages ? current < totalPages - 1 : false;
 
   const clearFilters = () => {
-    setSearch("");
+    setVin("");
+    setMake("");
+    setModel("");
+    setYear("");
     setCategory("");
     setTransmission("");
     setFuelType("");
@@ -66,7 +74,7 @@ export default function CarsPage() {
     setPage(0);
   };
 
-  const hasActiveFilters = search || category || transmission || fuelType || minSeats || maxPrice;
+  const hasActiveFilters = vin || make || model || year || category || transmission || fuelType || minSeats || maxPrice;
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -93,14 +101,47 @@ export default function CarsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="md:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-medium mb-1">Search</label>
-                <SearchInput
-                  placeholder="Car name, make, model..."
-                  value={search}
-                  onChange={setSearch}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {/* VIN */}
+              <div>
+                <label className="block text-sm font-medium mb-1">VIN</label>
+                <Input
+                  placeholder="Vehicle identification number"
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value)}
+                />
+              </div>
+
+              {/* Make */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Make</label>
+                <Input
+                  placeholder="e.g. Toyota, Honda, BMW"
+                  value={make}
+                  onChange={(e) => setMake(e.target.value)}
+                />
+              </div>
+
+              {/* Model */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Model</label>
+                <Input
+                  placeholder="e.g. Camry, Civic, X3"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                />
+              </div>
+
+              {/* Year */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Year</label>
+                <Input
+                  type="number"
+                  min={1900}
+                  max={new Date().getFullYear() + 1}
+                  placeholder="e.g. 2023"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
                 />
               </div>
 
