@@ -265,13 +265,12 @@ describe('ReservationsPage', () => {
       expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
     });
 
-    // Verify the search input exists with the correct placeholder
-    const searchInput = screen.getByPlaceholderText('Customer name, email, phone, reservation ID, car, or branch...');
+    // Verify the search input exists with the current placeholder
+    const searchInput = screen.getByPlaceholderText('Customer name, email, phone, car, or branch...');
     expect(searchInput).toBeInTheDocument();
-    
-    // Verify that the search functionality is integrated (the component renders without errors)
-    // The actual search behavior is tested through integration tests with the backend
-    expect(screen.getByText('Search')).toBeInTheDocument();
+
+    // Verify the section header renders
+    expect(screen.getByText('Search & Filter')).toBeInTheDocument();
   });
 
   it('handles status filter', async () => {

@@ -76,7 +76,7 @@ describe('AvailabilityPage - Booking Integration', () => {
       },
     })
     vi.clearAllMocks()
-    
+
     // Mock API responses
     mockListBranches.mockResolvedValue(mockBranches)
     mockFindAvailableCars.mockResolvedValue(mockAvailableCars)
@@ -94,12 +94,12 @@ describe('AvailabilityPage - Booking Integration', () => {
 
   it('displays Book buttons for available cars', async () => {
     renderWithProviders(<AvailabilityPage />)
-    
+
     // Fill in required search criteria - find the first combobox (branch select)
     const comboboxes = screen.getAllByRole('combobox')
     const branchSelect = comboboxes[0] // First combobox is the branch select
     fireEvent.click(branchSelect)
-    
+
     await waitFor(() => {
       const branchOption = screen.getByText('Main Branch (New York)')
       fireEvent.click(branchOption)
@@ -107,7 +107,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     const startDateInput = screen.getByLabelText(/start date/i)
     const endDateInput = screen.getByLabelText(/end date/i)
-    
+
     fireEvent.change(startDateInput, { target: { value: '2024-12-01' } })
     fireEvent.change(endDateInput, { target: { value: '2024-12-05' } })
 
@@ -128,12 +128,12 @@ describe('AvailabilityPage - Booking Integration', () => {
 
   it('navigates to booking flow with correct parameters when Book button is clicked', async () => {
     renderWithProviders(<AvailabilityPage />)
-    
+
     // Fill in search criteria - find the first combobox (branch select)
     const comboboxes = screen.getAllByRole('combobox')
     const branchSelect = comboboxes[0] // First combobox is the branch select
     fireEvent.click(branchSelect)
-    
+
     await waitFor(() => {
       const branchOption = screen.getByText('Main Branch (New York)')
       fireEvent.click(branchOption)
@@ -141,7 +141,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     const startDateInput = screen.getByLabelText(/start date/i)
     const endDateInput = screen.getByLabelText(/end date/i)
-    
+
     fireEvent.change(startDateInput, { target: { value: '2024-12-01' } })
     fireEvent.change(endDateInput, { target: { value: '2024-12-05' } })
 
@@ -176,12 +176,12 @@ describe('AvailabilityPage - Booking Integration', () => {
 
   it('passes correct car details for different cars', async () => {
     renderWithProviders(<AvailabilityPage />)
-    
+
     // Fill in search criteria - find the first combobox (branch select)
     const comboboxes = screen.getAllByRole('combobox')
     const branchSelect = comboboxes[0] // First combobox is the branch select
     fireEvent.click(branchSelect)
-    
+
     await waitFor(() => {
       const branchOption = screen.getByText('Main Branch (New York)')
       fireEvent.click(branchOption)
@@ -189,7 +189,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     const startDateInput = screen.getByLabelText(/start date/i)
     const endDateInput = screen.getByLabelText(/end date/i)
-    
+
     fireEvent.change(startDateInput, { target: { value: '2024-12-01' } })
     fireEvent.change(endDateInput, { target: { value: '2024-12-05' } })
 
@@ -238,12 +238,12 @@ describe('AvailabilityPage - Booking Integration', () => {
     mockFindAvailableCars.mockResolvedValue(mockCarsWithSpecialChars)
 
     renderWithProviders(<AvailabilityPage />)
-    
+
     // Fill in search criteria - find the first combobox (branch select)
     const comboboxes = screen.getAllByRole('combobox')
     const branchSelect = comboboxes[0] // First combobox is the branch select
     fireEvent.click(branchSelect)
-    
+
     await waitFor(() => {
       const branchOption = screen.getByText('Main Branch (New York)')
       fireEvent.click(branchOption)
@@ -251,7 +251,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     const startDateInput = screen.getByLabelText(/start date/i)
     const endDateInput = screen.getByLabelText(/end date/i)
-    
+
     fireEvent.change(startDateInput, { target: { value: '2024-12-01' } })
     fireEvent.change(endDateInput, { target: { value: '2024-12-05' } })
 
@@ -267,8 +267,9 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     // Verify URL encoding
     const navigationCall = mockNavigate.mock.calls[0][0]
-    expect(navigationCall).toContain('carDisplayName=BMW%20X5%20M-Sport%20%26%20Luxury')
-    expect(navigationCall).toContain('branchName=Downtown%20%26%20Airport')
+    // URLSearchParams encodes spaces as '+' by default (and '&' as %26)
+    expect(navigationCall).toContain('carDisplayName=BMW+X5+M-Sport+%26+Luxury')
+    expect(navigationCall).toContain('branchName=Downtown+%26+Airport')
   })
 
   it('handles missing optional car details gracefully', async () => {
@@ -295,12 +296,12 @@ describe('AvailabilityPage - Booking Integration', () => {
     mockFindAvailableCars.mockResolvedValue(mockMinimalCar)
 
     renderWithProviders(<AvailabilityPage />)
-    
+
     // Fill in search criteria - find the first combobox (branch select)
     const comboboxes = screen.getAllByRole('combobox')
     const branchSelect = comboboxes[0] // First combobox is the branch select
     fireEvent.click(branchSelect)
-    
+
     await waitFor(() => {
       const branchOption = screen.getByText('Main Branch (New York)')
       fireEvent.click(branchOption)
@@ -308,7 +309,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
     const startDateInput = screen.getByLabelText(/start date/i)
     const endDateInput = screen.getByLabelText(/end date/i)
-    
+
     fireEvent.change(startDateInput, { target: { value: '2024-12-01' } })
     fireEvent.change(endDateInput, { target: { value: '2024-12-05' } })
 

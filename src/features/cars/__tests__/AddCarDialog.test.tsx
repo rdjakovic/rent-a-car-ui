@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, beforeEach, expect } from 'vitest';
 import AddCarDialog from '../AddCarDialog';
@@ -162,26 +162,26 @@ describe('AddCarDialog', () => {
       target: { value: '50.00' }
     });
 
-    // Category
-    const categorySelect = screen.getByText('Select category');
-    fireEvent.click(categorySelect);
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('ECONOMY'));
-    });
+    // Category (use role-based query within the field block)
+    const categoryField = screen.getByText(/Category \*/i).closest('div') as HTMLElement;
+    const categoryTrigger = within(categoryField).getByRole('combobox');
+    fireEvent.click(categoryTrigger);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'ECONOMY' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: 'ECONOMY' }));
 
     // Transmission
-    const transmissionSelect = screen.getByText('Select transmission');
-    fireEvent.click(transmissionSelect);
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('AUTOMATIC'));
-    });
+    const transmissionField = screen.getByText(/Transmission \*/i).closest('div') as HTMLElement;
+    const transmissionTrigger = within(transmissionField).getByRole('combobox');
+    fireEvent.click(transmissionTrigger);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'AUTOMATIC' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: 'AUTOMATIC' }));
 
     // Fuel Type
-    const fuelSelect = screen.getByText('Select fuel type');
-    fireEvent.click(fuelSelect);
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('GASOLINE'));
-    });
+    const fuelField = screen.getByText(/Fuel Type \*/i).closest('div') as HTMLElement;
+    const fuelTrigger = within(fuelField).getByRole('combobox');
+    fireEvent.click(fuelTrigger);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'GASOLINE' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: 'GASOLINE' }));
 
     // Seats
     fireEvent.change(screen.getByLabelText(/Seats.*\*/), {
@@ -189,11 +189,11 @@ describe('AddCarDialog', () => {
     });
 
     // Branch
-    const branchSelect = screen.getByText('Select branch');
-    fireEvent.click(branchSelect);
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('Downtown Branch - New York'));
-    });
+    const branchField = screen.getByText(/Branch \*/i).closest('div') as HTMLElement;
+    const branchTrigger = within(branchField).getByRole('combobox');
+    fireEvent.click(branchTrigger);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Downtown Branch - New York' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: 'Downtown Branch - New York' }));
 
     // Submit form
     const submitButton = screen.getByText('Add Car');
@@ -263,8 +263,9 @@ describe('AddCarDialog', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      // Error text is rendered inside a small text container; match by regex
-      expect(screen.getByText(/Failed to create car/i)).toBeInTheDocument();
+      // Error text is rendered inside a small text container; match by role and partial text
+      const alerts = screen.getAllByText((content) => content.includes('Failed to create car'))
+      expect(alerts.length).toBeGreaterThan(0)
     });
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false);

@@ -129,7 +129,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Missing required booking parameters/)).toBeInTheDocument()
     })
 
@@ -145,7 +145,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Invalid car ID. Please start from the availability search/)).toBeInTheDocument()
     })
   })
@@ -159,7 +159,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Invalid branch ID. Please start from the availability search/)).toBeInTheDocument()
     })
   })
@@ -173,7 +173,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Invalid daily price. Please start from the availability search/)).toBeInTheDocument()
     })
   })
@@ -187,7 +187,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Invalid date format. Please start from the availability search/)).toBeInTheDocument()
     })
   })
@@ -201,7 +201,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
       expect(screen.getByText(/Start date cannot be in the past. Please start from the availability search/)).toBeInTheDocument()
     })
   })
@@ -236,12 +236,14 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('provides retry functionality for failed initialization', async () => {
+    // Force an initial error state so the error view renders immediately
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid booking parameters. Please start from the availability search')
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
+      expect(screen.getByTestId('booking-error')).toBeInTheDocument()
     })
 
     const retryButton = screen.getByRole('button', { name: /retry/i })
