@@ -6,13 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCustomersStore } from "@/stores/useCustomersStore";
 
 import CustomerFormDialog from "./CustomerFormDialog";
 
 export default function CustomersPage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [size] = useState(10);
+  // Global store state for customers search and paging
+  const { search, page, set } = useCustomersStore();
+  const size = 10;
 
   const params: CustomerSearchParams = useMemo(() => ({ search: search || undefined, page, size }), [search, page, size]);
 
@@ -56,7 +57,7 @@ export default function CustomersPage() {
                 <SearchInput
                   placeholder="Search by name, email, phone, city..."
                   value={search}
-                  onChange={(value) => { setSearch(value); setPage(0); }}
+                  onChange={(value) => set({ search: value, page: 0 })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Search across first name, last name, email, city, and license number
@@ -119,8 +120,8 @@ export default function CustomersPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">Page {current + 1} of {Math.max(totalPages, 1)}</div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={!hasPrev || query.isFetching}>Previous</Button>
-                    <Button variant="outline" onClick={() => setPage((p) => p + 1)} disabled={!hasNext || query.isFetching}>Next</Button>
+                    <Button variant="outline" onClick={() => set({ page: Math.max(0, page - 1) })} disabled={!hasPrev || query.isFetching}>Previous</Button>
+                    <Button variant="outline" onClick={() => set({ page: page + 1 })} disabled={!hasNext || query.isFetching}>Next</Button>
                   </div>
                 </div>
               </div>

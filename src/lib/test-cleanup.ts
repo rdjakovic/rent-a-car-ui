@@ -1,6 +1,8 @@
 import { vi } from 'vitest';
 import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
 import { useSearchStore } from '@/stores/useSearchStore';
+import { useCarsStore } from '@/stores/useCarsStore';
+import { useCustomersStore } from '@/stores/useCustomersStore';
 
 /**
  * Comprehensive test cleanup utilities for ensuring test isolation
@@ -16,6 +18,10 @@ export class StoreCleanup {
     useBookingFlowStore.getState().reset();
     // Reset search store
     useSearchStore.getState().reset();
+    // Reset cars list store
+    useCarsStore.getState().reset();
+    // Reset customers store
+    useCustomersStore.getState().reset();
   }
 
   /**

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
 import { listBranches, findAvailableCars } from '@/lib/api/queries'
+import { resetStores } from '@/lib/test-cleanup'
 
 // Mock the API functions
 vi.mock('@/lib/api/queries', () => ({
@@ -76,6 +77,7 @@ describe('AvailabilityPage - Booking Integration', () => {
       },
     })
     vi.clearAllMocks()
+    resetStores()
 
     // Mock API responses
     mockListBranches.mockResolvedValue(mockBranches)

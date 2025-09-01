@@ -245,7 +245,7 @@ export const mockReservations: ReservationResponseDto[] = [
 
 // Utility functions for generating mock data
 export function generateId(): number {
-  return Math.floor(Math.random() * 10000) + 1000;
+  return Math.floor(Math.random() * 9000) + 1000; // Range: 1000-9999
 }
 
 export function generatePaginatedResponse<T>(
@@ -258,7 +258,7 @@ export function generatePaginatedResponse<T>(
   const startIndex = page * size;
   const endIndex = Math.min(startIndex + size, items.length);
   const content = items.slice(startIndex, endIndex);
-  
+
   return {
     content,
     number: page,

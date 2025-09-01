@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { listCars, type CarFilterParams } from "@/lib/api/queries";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel, Plus } from "lucide-react";
 import AddCarDialog from "./AddCarDialog";
+import { useCarsStore } from "@/stores/useCarsStore";
 
 const CATEGORIES = ["ECONOMY", "COMPACT", "INTERMEDIATE", "STANDARD", "FULL_SIZE", "PREMIUM", "LUXURY", "SUV", "VAN"] as const;
 const TRANSMISSIONS = ["MANUAL", "AUTOMATIC", "CVT"] as const;
@@ -19,18 +20,10 @@ const FUEL_TYPES = ["GASOLINE", "DIESEL", "HYBRID", "ELECTRIC"] as const;
 export default function CarsPage() {
   const navigate = useNavigate();
 
-  // Filter state
-  const [vin, setVin] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState<string>("");
-  const [category, setCategory] = useState<string>("");
-  const [transmission, setTransmission] = useState<string>("");
-  const [fuelType, setFuelType] = useState<string>("");
-  const [minSeats, setMinSeats] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [page, setPage] = useState(0);
-  const [size] = useState(12); // Show 12 cars per page for a nice grid
+  // Global store state for cars filters and paging
+  const { filters, page, set } = useCarsStore();
+  const { vin = "", make = "", model = "", year = "", category = "", transmission = "", fuelType = "", minSeats, maxPrice } = filters;
+  const size = 12; // Show 12 cars per page for a nice grid
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Build filter params
@@ -43,15 +36,15 @@ export default function CarsPage() {
     if (category) params.category = category as any;
     if (transmission) params.transmission = transmission as any;
     if (fuelType) params.fuelType = fuelType as any;
-    if (minSeats) params.minSeats = Number(minSeats);
-    if (maxPrice) params.maxPrice = Number(maxPrice);
+    if (minSeats !== undefined) params.minSeats = Number(minSeats);
+    if (maxPrice !== undefined) params.maxPrice = Number(maxPrice);
     return params;
   }, [vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
   useEffect(() => {
-    setPage(0);
-  }, [vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice]);
+    set({ page: 0 });
+  }, [vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice, set]);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
@@ -68,19 +61,10 @@ export default function CarsPage() {
   const hasNext = totalPages ? current < totalPages - 1 : false;
 
   const clearFilters = () => {
-    setVin("");
-    setMake("");
-    setModel("");
-    setYear("");
-    setCategory("");
-    setTransmission("");
-    setFuelType("");
-    setMinSeats("");
-    setMaxPrice("");
-    setPage(0);
+    set({ filters: {}, page: 0 });
   };
 
-  const hasActiveFilters = vin || make || model || year || category || transmission || fuelType || minSeats || maxPrice;
+  const hasActiveFilters = Boolean(vin || make || model || year || category || transmission || fuelType || minSeats !== undefined || maxPrice !== undefined);
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -124,7 +108,7 @@ export default function CarsPage() {
                   key={`vin-${vin}`}
                   placeholder="Vehicle identification number"
                   value={vin}
-                  onChange={setVin}
+                  onChange={(v) => set({ filters: { ...filters, vin: v } })}
                 />
               </div>
 
@@ -135,7 +119,7 @@ export default function CarsPage() {
                   key={`make-${make}`}
                   placeholder="e.g. Toyota, Honda, BMW"
                   value={make}
-                  onChange={setMake}
+                  onChange={(v) => set({ filters: { ...filters, make: v } })}
                 />
               </div>
 
@@ -146,7 +130,7 @@ export default function CarsPage() {
                   key={`model-${model}`}
                   placeholder="e.g. Camry, Civic, X3"
                   value={model}
-                  onChange={setModel}
+                  onChange={(v) => set({ filters: { ...filters, model: v } })}
                 />
               </div>
 
@@ -157,14 +141,14 @@ export default function CarsPage() {
                   key={`year-${year}`}
                   placeholder="e.g. 2023"
                   value={year}
-                  onChange={setYear}
+                  onChange={(v) => set({ filters: { ...filters, year: v } })}
                 />
               </div>
 
               {/* Category */}
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={category} onValueChange={(v) => set({ filters: { ...filters, category: v } })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
@@ -179,7 +163,7 @@ export default function CarsPage() {
               {/* Transmission */}
               <div>
                 <label className="block text-sm font-medium mb-1">Transmission</label>
-                <Select value={transmission} onValueChange={setTransmission}>
+                <Select value={transmission} onValueChange={(v) => set({ filters: { ...filters, transmission: v } })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
@@ -194,7 +178,7 @@ export default function CarsPage() {
               {/* Fuel Type */}
               <div>
                 <label className="block text-sm font-medium mb-1">Fuel Type</label>
-                <Select value={fuelType} onValueChange={setFuelType}>
+                <Select value={fuelType} onValueChange={(v) => set({ filters: { ...filters, fuelType: v } })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
@@ -213,8 +197,11 @@ export default function CarsPage() {
                   type="number"
                   min={1}
                   placeholder="Any"
-                  value={minSeats}
-                  onChange={(e) => setMinSeats(e.target.value)}
+                  value={minSeats ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    set({ filters: { ...filters, minSeats: val ? Number(val) : undefined } });
+                  }}
                 />
               </div>
 
@@ -226,8 +213,11 @@ export default function CarsPage() {
                   min={0}
                   step="0.01"
                   placeholder="Any"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
+                  value={maxPrice ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    set({ filters: { ...filters, maxPrice: val ? Number(val) : undefined } });
+                  }}
                 />
               </div>
             </div>
@@ -359,7 +349,7 @@ export default function CarsPage() {
               <div className="flex items-center justify-center gap-2 mt-8">
                 <Button
                   variant="outline"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  onClick={() => set({ page: Math.max(0, page - 1) })}
                   disabled={!hasPrev || carsQuery.isFetching}
                 >
                   Previous
@@ -369,7 +359,7 @@ export default function CarsPage() {
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => setPage((p) => p + 1)}
+                  onClick={() => set({ page: page + 1 })}
                   disabled={!hasNext || carsQuery.isFetching}
                 >
                   Next

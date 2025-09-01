@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, beforeEach, expect } from 'vitest';
 import AddCarDialog from '../AddCarDialog';
 import * as queries from '@/lib/api/queries';
+import { resetStores } from '@/lib/test-cleanup';
 
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
@@ -31,6 +32,7 @@ const createWrapper = () => {
 describe('AddCarDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetStores();
 
     // Mock branches response
     mockListBranches.mockResolvedValue({
