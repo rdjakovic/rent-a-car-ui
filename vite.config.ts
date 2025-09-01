@@ -26,6 +26,7 @@ export default defineConfig({
         "src/lib/test-utils.tsx",
         "src/lib/test-scenarios.ts",
         "src/lib/test-factories.ts",
+        "src/lib/query/config.ts",
 
         // Test files
         "**/*.test.ts",
