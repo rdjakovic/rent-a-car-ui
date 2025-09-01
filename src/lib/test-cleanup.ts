@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
+import { useSearchStore } from '@/stores/useSearchStore';
 
 /**
  * Comprehensive test cleanup utilities for ensuring test isolation
@@ -13,9 +14,8 @@ export class StoreCleanup {
   static resetAllStores() {
     // Reset booking flow store
     useBookingFlowStore.getState().reset();
-    
-    // Add other store resets here as needed
-    // Example: useSearchStore.getState().reset();
+    // Reset search store
+    useSearchStore.getState().reset();
   }
 
   /**
@@ -30,8 +30,8 @@ export class StoreCleanup {
    */
   static verifyStoreCleanState() {
     const bookingState = useBookingFlowStore.getState();
-    
-    const isClean = 
+
+    const isClean =
       bookingState.carDetails === null &&
       bookingState.bookingDetails === null &&
       bookingState.customer === null &&

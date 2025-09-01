@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { listBranches, findAvailableCars, type AvailabilityParams } from "@/lib/api/queries";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchStore } from "@/stores/useSearchStore";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
@@ -18,18 +19,12 @@ const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 export default function AvailabilityPage() {
   const navigate = useNavigate();
 
-  // Form state
-  const [branchId, setBranchId] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [transmission, setTransmission] = useState<string>("");
-  const [fuelType, setFuelType] = useState<string>("");
-  const [minSeats, setMinSeats] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [page, setPage] = useState(0);
-  const [size] = useState(10);
-  const [submitted, setSubmitted] = useState(false);
+  // Global search state (persisted across navigation)
+  const { branchId, startDate, endDate, filters, page, submitted, set, reset } = useSearchStore();
+  const { category, transmission, fuelType, minSeats, maxPrice } = filters;
+
+  // Page size (fixed)
+  const size = 10;
 
   // Branch options
   const branchesQuery = useQuery({
@@ -55,16 +50,17 @@ export default function AvailabilityPage() {
         category: (category || undefined) as any,
         transmission: (transmission || undefined) as any,
         fuelType: (fuelType || undefined) as any,
-        minSeats: minSeats ? Number(minSeats) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        minSeats: minSeats !== undefined ? Number(minSeats) : undefined,
+        maxPrice: maxPrice !== undefined ? Number(maxPrice) : undefined,
         page,
         size,
       }
     : undefined;
 
   useEffect(() => {
-    setPage(0); // reset to first page when filters change
-  }, [branchId, startDate, endDate, category, transmission, fuelType, minSeats, maxPrice]);
+    // reset to first page when filters change
+    set({ page: 0 });
+  }, [branchId, startDate, endDate, category, transmission, fuelType, minSeats, maxPrice, set]);
 
   const availQuery = useQuery({
     queryKey: [
@@ -82,7 +78,7 @@ export default function AvailabilityPage() {
     ],
     queryFn: () => findAvailableCars(availParams as AvailabilityParams),
     enabled: !!availParams,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     staleTime: 10_000,
   });
 
@@ -139,7 +135,7 @@ export default function AvailabilityPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Branch</label>
-              <Select value={branchId} onValueChange={setBranchId}>
+              <Select value={branchId ? String(branchId) : ""} onValueChange={(v) => set({ branchId: Number(v) })}>
                 <SelectTrigger>
                   <SelectValue placeholder={branchesQuery.isPending ? "Loading..." : "Select branch"} />
                 </SelectTrigger>
@@ -154,16 +150,16 @@ export default function AvailabilityPage() {
             </div>
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium mb-1">Start date</label>
-              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Input id="startDate" type="date" value={startDate} onChange={(e) => set({ startDate: e.target.value })} />
             </div>
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium mb-1">End date</label>
-              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <Input id="endDate" type="date" value={endDate} onChange={(e) => set({ endDate: e.target.value })} />
             </div>
             <div className="md:col-span-3 lg:col-span-1" />
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category ?? ""} onValueChange={(v) => set({ filters: { ...filters, category: v } })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
@@ -176,7 +172,7 @@ export default function AvailabilityPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Transmission</label>
-              <Select value={transmission} onValueChange={setTransmission}>
+              <Select value={transmission ?? ""} onValueChange={(v) => set({ filters: { ...filters, transmission: v } })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
@@ -189,7 +185,7 @@ export default function AvailabilityPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Fuel type</label>
-              <Select value={fuelType} onValueChange={setFuelType}>
+              <Select value={fuelType ?? ""} onValueChange={(v) => set({ filters: { ...filters, fuelType: v } })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
@@ -202,11 +198,17 @@ export default function AvailabilityPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Min seats</label>
-              <Input type="number" min={1} value={minSeats} onChange={(e) => setMinSeats(e.target.value)} />
+              <Input type="number" min={1} value={minSeats ?? ""} onChange={(e) => {
+                    const val = e.target.value;
+                    set({ filters: { ...filters, minSeats: val ? Number(val) : undefined } });
+                  }} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Max daily price</label>
-              <Input type="number" min={0} step="0.01" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+              <Input type="number" min={0} step="0.01" value={maxPrice ?? ""} onChange={(e) => {
+                    const val = e.target.value;
+                    set({ filters: { ...filters, maxPrice: val ? Number(val) : undefined } });
+                  }} />
             </div>
           </div>
 
@@ -220,10 +222,10 @@ export default function AvailabilityPage() {
           )}
 
           <div className="mt-4 flex gap-3">
-            <Button onClick={() => setSubmitted(true)} disabled={!branchId || !startDate || !endDate || !!dateError}>
+            <Button onClick={() => set({ submitted: true })} disabled={!branchId || !startDate || !endDate || !!dateError}>
               Search
             </Button>
-            <Button variant="outline" onClick={() => { setSubmitted(false); setPage(0); }}>
+            <Button variant="outline" onClick={() => { set({ submitted: false, page: 0 }); }}>
               Reset
             </Button>
           </div>
@@ -302,10 +304,10 @@ export default function AvailabilityPage() {
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">Page {current + 1} of {Math.max(totalPages, 1)}</div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={!hasPrev || availQuery.isFetching}>
+                  <Button variant="outline" onClick={() => set({ page: Math.max(0, page - 1) })} disabled={!hasPrev || availQuery.isFetching}>
                     Previous
                   </Button>
-                  <Button variant="outline" onClick={() => setPage((p) => p + 1)} disabled={!hasNext || availQuery.isFetching}>
+                  <Button variant="outline" onClick={() => set({ page: page + 1 })} disabled={!hasNext || availQuery.isFetching}>
                     Next
                   </Button>
                 </div>
