@@ -249,24 +249,20 @@ describe('AddCarDialog', () => {
       target: { value: '50.00' }
     });
 
-    // Select branch
-    const branchSelect = screen.getByText('Select branch');
-    fireEvent.click(branchSelect);
-
-    await waitFor(() => {
-      const branchOptions = screen.getAllByText('Downtown Branch - New York');
-      const branchOption = branchOptions.find(el => el.tagName === 'OPTION') || branchOptions[0];
-      fireEvent.click(branchOption);
-    });
+    // Select branch (use the same Radix Select pattern as the valid submit test)
+    const branchField = screen.getByText(/Branch \*/i).closest('div') as HTMLElement;
+    const branchTrigger = within(branchField).getByRole('combobox');
+    fireEvent.click(branchTrigger);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Downtown Branch - New York' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: 'Downtown Branch - New York' }));
 
     const submitButton = screen.getByText('Add Car');
     fireEvent.click(submitButton);
 
-    await waitFor(() => {
-      // Error text is rendered inside a small text container; match by role and partial text
-      const alerts = screen.getAllByText((content) => content.includes('Failed to create car'))
-      expect(alerts.length).toBeGreaterThan(0)
-    });
+    // Ensure the mutation was attempted, then wait for the error UI
+    await waitFor(() => expect(mockCreateCar).toHaveBeenCalled())
+    const errorEl = await screen.findByText(/Failed to create car/i)
+    expect(errorEl).toBeInTheDocument()
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });

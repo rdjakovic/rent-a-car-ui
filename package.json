@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest -- --run",
     "test:ui": "vitest --ui",
     "api:gen": "openapi-typescript http://localhost:8080/api-docs -o src/lib/api/schema.d.ts",
     "msw:init": "node scripts/init-msw.js"

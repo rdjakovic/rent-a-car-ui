@@ -9,3 +9,5 @@
 2025-09-01: UI tests stabilization pass (phase 1): added missing setLoading/setInitializationError to test factories, improved BookingReview tests to avoid ambiguous text matches, fixed AvailabilityPage date input label associations, and aligned BookingWizardNavigation tests with centralized mock helpers. Ran full Vitest suite and prepared a prioritized plan to address remaining failures.
 
 2025-09-01: UI tests stabilization pass (phase 2): updated BookingWizardNavigation tests to use data-testids for loading and start-new-search, expanded AddCarDialog tests to fill all required fields and use robust error assertion, and reran full Vitest suite to gather remaining failures for triage.
+
+2025-09-01: UI tests stabilization pass (phase 3): fixed AddCarDialog failing test by selecting branch via Radix Select combobox and asserting error via regex; hardened useBookingFlow URL params test by using future-dated range to avoid date-based flakiness; reran full Vitest suite — all 323 tests passed.

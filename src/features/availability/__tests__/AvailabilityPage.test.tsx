@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
 import { listBranches, findAvailableCars } from '@/lib/api/queries'
 
@@ -25,14 +26,14 @@ describe('AvailabilityPage', () => {
       },
     })
     vi.clearAllMocks()
-    
+
     // Mock API responses
     mockListBranches.mockResolvedValue({
       content: [{ id: 1, name: 'Main Branch', city: 'New York' }],
       totalPages: 1,
       number: 0,
     })
-    
+
     mockFindAvailableCars.mockResolvedValue({
       content: [],
       totalPages: 0,
@@ -42,15 +43,17 @@ describe('AvailabilityPage', () => {
 
   const renderWithQueryClient = (component: React.ReactElement) => {
     return render(
-      <QueryClientProvider client={queryClient}>
-        {component}
-      </QueryClientProvider>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          {component}
+        </QueryClientProvider>
+      </MemoryRouter>
     )
   }
 
   it('renders hero section with correct branding', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     expect(screen.getByText(/NextStep/)).toBeInTheDocument()
     expect(screen.getByText(/RentACar/)).toBeInTheDocument()
     expect(screen.getByText(/Your journey starts here/)).toBeInTheDocument()
@@ -59,7 +62,7 @@ describe('AvailabilityPage', () => {
 
   it('renders availability search form', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     expect(screen.getByText('Availability Search')).toBeInTheDocument()
     expect(screen.getByText('Branch')).toBeInTheDocument()
     expect(screen.getByText('Start date')).toBeInTheDocument()
@@ -73,42 +76,42 @@ describe('AvailabilityPage', () => {
 
   it('shows search and reset buttons', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument()
   })
 
   it('shows results placeholder when not submitted', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     expect(screen.getByText('Enter criteria and click Search.')).toBeInTheDocument()
   })
 
   it('disables search button when required fields are empty', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     const searchButton = screen.getByRole('button', { name: /search/i })
     expect(searchButton).toBeDisabled()
   })
 
   it('shows results section', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     expect(screen.getByText('Results')).toBeInTheDocument()
   })
 
   it('has form inputs for all search criteria', () => {
     renderWithQueryClient(<AvailabilityPage />)
-    
+
     // Check for date inputs
     const dateInputs = screen.getAllByDisplayValue('')
     const dateInputsWithType = dateInputs.filter(input => input.getAttribute('type') === 'date')
     expect(dateInputsWithType).toHaveLength(2)
-    
+
     // Check for number inputs
     const numberInputs = dateInputs.filter(input => input.getAttribute('type') === 'number')
     expect(numberInputs.length).toBeGreaterThanOrEqual(1)
-    
+
     // Check for select dropdowns (comboboxes)
     const selectInputs = screen.getAllByRole('combobox')
     expect(selectInputs.length).toBeGreaterThanOrEqual(1)
