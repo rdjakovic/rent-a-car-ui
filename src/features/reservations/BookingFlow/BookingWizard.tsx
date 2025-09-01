@@ -13,67 +13,26 @@ export default function BookingWizard() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const bookingFlow = useBookingFlow();
-  const [initializationError, setInitializationError] = useState<string | null>(null);
+
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const initializeBooking = async () => {
-      // Only initialize if we don't already have booking details and we're not already loading
-      if (!bookingFlow.bookingDetails && !bookingFlow.isLoading) {
+      // Only initialize if we don't already have booking details
+      if (!bookingFlow.bookingDetails) {
         // Start loading immediately to show loading state
         bookingFlow.setLoading(true);
 
         try {
-          // Try to initialize from URL parameters (validation happens inside)
+          // Try to initialize from URL parameters (validation and error handling happens inside)
           const initialized = await bookingFlow.initializeFromUrlParams(searchParams);
 
-          if (!initialized) {
-            // Check what kind of error we should show based on the URL params
-            const requiredParams = ['carId', 'branchId', 'startDate', 'endDate', 'dailyPrice'];
-            const missingParams = requiredParams.filter(param => !searchParams.get(param));
-
-            if (missingParams.length > 0) {
-              setInitializationError('Missing required booking parameters');
-            } else {
-              // Check for specific validation errors
-              const carId = searchParams.get('carId');
-              const branchId = searchParams.get('branchId');
-              const dailyPrice = searchParams.get('dailyPrice');
-              const startDate = searchParams.get('startDate');
-              const endDate = searchParams.get('endDate');
-
-              if (carId && (isNaN(parseInt(carId)) || parseInt(carId) <= 0)) {
-                setInitializationError('Invalid car ID. Please start from the availability search.');
-              } else if (branchId && (isNaN(parseInt(branchId)) || parseInt(branchId) <= 0)) {
-                setInitializationError('Invalid branch ID. Please start from the availability search.');
-              } else if (dailyPrice && (isNaN(parseFloat(dailyPrice)) || parseFloat(dailyPrice) <= 0)) {
-                setInitializationError('Invalid daily price. Please start from the availability search.');
-              } else if (startDate && endDate) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                  setInitializationError('Invalid date format. Please start from the availability search.');
-                } else if (start < today) {
-                  setInitializationError('Start date cannot be in the past. Please start from the availability search.');
-                } else if (end <= start) {
-                  setInitializationError('End date must be after start date');
-                } else {
-                  setInitializationError('Invalid booking parameters. Please start from the availability search.');
-                }
-              } else {
-                setInitializationError('Invalid booking parameters. Please start from the availability search.');
-              }
-            }
-          } else {
-            setInitializationError(null);
+          if (initialized) {
             setRetryCount(0);
           }
         } catch (error) {
           console.error('Failed to initialize booking from URL parameters:', error);
-          setInitializationError('Failed to load booking details. Please try again.');
+          bookingFlow.setInitializationError('Failed to load booking details. Please try again.');
         } finally {
           bookingFlow.setLoading(false);
         }
@@ -90,17 +49,17 @@ export default function BookingWizard() {
 
   const handleRetryInitialization = async () => {
     setRetryCount(prev => prev + 1);
-    setInitializationError(null);
+    bookingFlow.setInitializationError(null);
     bookingFlow.setLoading(true);
 
     try {
       const initialized = await bookingFlow.initializeFromUrlParams(searchParams);
-      if (!initialized) {
-        setInitializationError('Invalid booking parameters. Please start from the availability search.');
+      if (!initialized && !bookingFlow.initializationError) {
+        bookingFlow.setInitializationError('Invalid booking parameters. Please start from the availability search.');
       }
     } catch (error) {
       console.error('Retry failed:', error);
-      setInitializationError('Failed to load booking details. Please try again.');
+      bookingFlow.setInitializationError('Failed to load booking details. Please try again.');
     } finally {
       bookingFlow.setLoading(false);
     }
@@ -112,14 +71,14 @@ export default function BookingWizard() {
   };
 
   // Handle initialization errors
-  if (initializationError) {
+  if (bookingFlow.initializationError) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <Alert variant="destructive" className="mb-6" data-testid="booking-error">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription data-testid="booking-error-message">
-              {initializationError}
+              {bookingFlow.initializationError}
             </AlertDescription>
           </Alert>
 
@@ -147,7 +106,7 @@ export default function BookingWizard() {
   }
 
   // Loading state - show loading when explicitly loading or when we don't have data yet and no error
-  if (bookingFlow.isLoading || (!bookingFlow.carDetails && !bookingFlow.bookingDetails && !initializationError)) {
+  if (bookingFlow.isLoading) {
     return (
       <div className="container mx-auto px-4 py-8" data-testid="booking-loading">
         <div className="max-w-2xl mx-auto text-center">
@@ -196,6 +155,7 @@ export default function BookingWizard() {
             <CustomerSelection
               onBack={handleCancel}
               onNext={bookingFlow.nextStep}
+              backButtonText="Cancel"
             />
           )}
 

@@ -5,3 +5,4 @@
 2025-08-27: Updated customer search to use new backend endpoint /api/customers/searchany for enhanced search capabilities across first name, last name, email, phone, city, and driver license number. Updated UI with improved search placeholder and help text.
 
 
+2025-01-09: Fixed BookingWizard component state management issues: Enhanced BookingFlowStore with initializationError state and validateUrlParameters method, improved async URL parameter initialization in useBookingFlow hook, fixed useEffect dependencies to prevent infinite loops, and updated CustomerSelection to support customizable back button text. All 17 BookingWizard tests now pass with proper error handling and loading states.

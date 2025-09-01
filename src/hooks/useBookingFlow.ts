@@ -41,65 +41,36 @@ export function useBookingFlow() {
 
   const initializeFromUrlParams = async (searchParams: URLSearchParams) => {
     try {
-      const carId = searchParams.get('carId');
-      const branchId = searchParams.get('branchId');
-      const startDate = searchParams.get('startDate');
-      const endDate = searchParams.get('endDate');
-      const dailyPrice = searchParams.get('dailyPrice');
+      // Clear any previous initialization errors
+      store.setInitializationError(null);
+      
+      // Simulate async initialization delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Use the store's validation method for consistent parameter validation
+      const validation = store.validateUrlParameters(searchParams);
+      
+      if (!validation.isValid) {
+        console.error('URL parameter validation failed:', validation.error);
+        store.setInitializationError(validation.error || 'Invalid booking parameters. Please start from the availability search.');
+        return false;
+      }
+
+      // Extract parameters (we know they're valid at this point)
+      const carId = searchParams.get('carId')!;
+      const branchId = searchParams.get('branchId')!;
+      const startDate = searchParams.get('startDate')!;
+      const endDate = searchParams.get('endDate')!;
+      const dailyPrice = searchParams.get('dailyPrice')!;
       
       // Additional car details from URL params
       const carDisplayName = searchParams.get('carDisplayName');
       const carCategory = searchParams.get('carCategory');
       const branchName = searchParams.get('branchName');
 
-      // Validate all required parameters are present
-      if (!carId || !branchId || !startDate || !endDate || !dailyPrice) {
-        console.error('Missing required URL parameters for booking initialization');
-        return false;
-      }
-
       const parsedCarId = parseInt(carId);
       const parsedBranchId = parseInt(branchId);
       const parsedDailyPrice = parseFloat(dailyPrice);
-
-      // Validate parsed values
-      if (isNaN(parsedCarId) || parsedCarId <= 0) {
-        console.error('Invalid carId parameter:', carId);
-        return false;
-      }
-
-      if (isNaN(parsedBranchId) || parsedBranchId <= 0) {
-        console.error('Invalid branchId parameter:', branchId);
-        return false;
-      }
-
-      if (isNaN(parsedDailyPrice) || parsedDailyPrice <= 0) {
-        console.error('Invalid dailyPrice parameter:', dailyPrice);
-        return false;
-      }
-
-      // Validate date format
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        console.error('Invalid date format:', { startDate, endDate });
-        return false;
-      }
-
-      // Validate date logic
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (start < today) {
-        console.error('Start date is in the past:', startDate);
-        return false;
-      }
-
-      if (end <= start) {
-        console.error('End date must be after start date:', { startDate, endDate });
-        return false;
-      }
 
       const bookingDetails: BookingDetails = {
         carId: parsedCarId,
@@ -118,13 +89,16 @@ export function useBookingFlow() {
         branchName: branchName || 'Unknown Branch',
       };
 
-      // Simulate async initialization (could be API calls in the future)
+      // Additional delay for successful initialization
       await new Promise(resolve => setTimeout(resolve, 100));
 
+      // Initialize the booking with validated parameters
       store.initializeBooking({ carDetails, bookingDetails });
+      store.setInitializationError(null);
       return true;
     } catch (error) {
-      console.error('Error parsing URL parameters:', error);
+      console.error('Error during booking initialization:', error);
+      store.setInitializationError('Failed to load booking details. Please try again.');
       return false;
     }
   };
@@ -141,17 +115,20 @@ export function useBookingFlow() {
     isLoading: store.isLoading,
     isSubmitting: store.isSubmitting,
     submissionError: store.submissionError,
+    initializationError: store.initializationError,
 
     // Actions
     initializeBooking: store.initializeBooking,
     setCustomer: store.setCustomer,
     calculateCost: store.calculateCost,
+    validateUrlParameters: store.validateUrlParameters,
     nextStep: store.nextStep,
     previousStep: store.previousStep,
     setReservation: store.setReservation,
     setLoading: store.setLoading,
     setSubmitting: store.setSubmitting,
     setSubmissionError: store.setSubmissionError,
+    setInitializationError: store.setInitializationError,
     reset: store.reset,
 
     // Computed values and helpers

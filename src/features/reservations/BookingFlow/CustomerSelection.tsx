@@ -20,9 +20,10 @@ import {
 interface CustomerSelectionProps {
   onNext: () => void;
   onBack?: () => void;
+  backButtonText?: string;
 }
 
-export default function CustomerSelection({ onNext, onBack }: CustomerSelectionProps) {
+export default function CustomerSelection({ onNext, onBack, backButtonText = "Back" }: CustomerSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [page, setPage] = useState(0);
@@ -345,7 +346,7 @@ export default function CustomerSelection({ onNext, onBack }: CustomerSelectionP
           onClick={onBack}
           disabled={!onBack}
         >
-          Back
+          {backButtonText}
         </Button>
         <Button
           onClick={handleNext}

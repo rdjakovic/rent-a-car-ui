@@ -35,6 +35,7 @@ export interface BookingFlowState {
   isLoading: boolean;
   isSubmitting: boolean;
   submissionError: string | null;
+  initializationError: string | null;
   
   // Actions
   initializeBooking: (params: {
@@ -45,12 +46,14 @@ export interface BookingFlowState {
   calculateCost: () => void;
   calculateDuration: (startDate: string, endDate: string) => number;
   calculateTotalCost: (dailyPrice: number, duration: number) => number;
+  validateUrlParameters: (searchParams: URLSearchParams) => { isValid: boolean; error?: string };
   nextStep: () => void;
   previousStep: () => void;
   setReservation: (reservation: ReservationResponseDto) => void;
   setLoading: (isLoading: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setSubmissionError: (error: string | null) => void;
+  setInitializationError: (error: string | null) => void;
   reset: () => void;
 }
 
@@ -82,6 +85,7 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   isLoading: false,
   isSubmitting: false,
   submissionError: null,
+  initializationError: null,
 
   initializeBooking: (params) => {
     const { carDetails, bookingDetails } = params;
@@ -97,6 +101,8 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
       currentStep: 'customer',
       customer: null,
       reservation: null,
+      initializationError: null, // Clear any initialization errors on successful init
+      isLoading: false, // Ensure loading state is cleared
     });
   },
 
@@ -150,6 +156,82 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
     return Math.round((dailyPrice * duration) * 100) / 100;
   },
 
+  validateUrlParameters: (searchParams: URLSearchParams) => {
+    const carId = searchParams.get('carId');
+    const branchId = searchParams.get('branchId');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const dailyPrice = searchParams.get('dailyPrice');
+
+    // Check for missing required parameters
+    const requiredParams = ['carId', 'branchId', 'startDate', 'endDate', 'dailyPrice'];
+    const missingParams = requiredParams.filter(param => !searchParams.get(param));
+
+    if (missingParams.length > 0) {
+      return { 
+        isValid: false, 
+        error: 'Invalid booking parameters. Please start from the availability search.' 
+      };
+    }
+
+    // Validate numeric parameters
+    const parsedCarId = parseInt(carId!);
+    const parsedBranchId = parseInt(branchId!);
+    const parsedDailyPrice = parseFloat(dailyPrice!);
+
+    if (isNaN(parsedCarId) || parsedCarId <= 0) {
+      return { 
+        isValid: false, 
+        error: 'Invalid car ID. Please start from the availability search.' 
+      };
+    }
+
+    if (isNaN(parsedBranchId) || parsedBranchId <= 0) {
+      return { 
+        isValid: false, 
+        error: 'Invalid branch ID. Please start from the availability search.' 
+      };
+    }
+
+    if (isNaN(parsedDailyPrice) || parsedDailyPrice <= 0) {
+      return { 
+        isValid: false, 
+        error: 'Invalid daily price. Please start from the availability search.' 
+      };
+    }
+
+    // Validate date parameters
+    const start = new Date(startDate!);
+    const end = new Date(endDate!);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return { 
+        isValid: false, 
+        error: 'Invalid date format. Please start from the availability search.' 
+      };
+    }
+
+    // Validate date logic
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return { 
+        isValid: false, 
+        error: 'Start date cannot be in the past. Please start from the availability search.' 
+      };
+    }
+
+    if (end <= start) {
+      return { 
+        isValid: false, 
+        error: 'End date must be after start date' 
+      };
+    }
+
+    return { isValid: true };
+  },
+
   nextStep: () => {
     const { currentStep } = get();
     if (currentStep === 'customer') {
@@ -189,6 +271,10 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
     set({ submissionError: error, isSubmitting: false });
   },
 
+  setInitializationError: (error) => {
+    set({ initializationError: error });
+  },
+
   reset: () => {
     set({
       currentStep: 'customer',
@@ -201,6 +287,7 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
       isLoading: false,
       isSubmitting: false,
       submissionError: null,
+      initializationError: null,
     });
   },
 }));

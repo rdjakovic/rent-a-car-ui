@@ -82,7 +82,7 @@ describe('BookingWizard', () => {
     });
 
     it('should initialize booking when all required URL parameters are provided', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50&carDisplayName=Toyota%20Camry&carCategory=MIDSIZE&branchName=Downtown';
+      const urlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry&carCategory=MIDSIZE&branchName=Downtown';
       
       render(
         <TestProviders initialEntries={[`/book${urlParams}`]}>
@@ -99,14 +99,14 @@ describe('BookingWizard', () => {
       
       // Check if booking summary is displayed with correct data
       expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-      expect(screen.getByText('2025-06-01')).toBeInTheDocument();
-      expect(screen.getByText('2025-06-05')).toBeInTheDocument();
+      expect(screen.getByText('2025-12-01')).toBeInTheDocument();
+      expect(screen.getByText('2025-12-05')).toBeInTheDocument();
       expect(screen.getByText('4 days')).toBeInTheDocument();
       expect(screen.getByText('$200.00')).toBeInTheDocument();
     });
 
     it('should handle URL-encoded parameters correctly', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=75.50&carDisplayName=Honda%20Civic%20Hybrid&carCategory=COMPACT&branchName=Airport%20Terminal%201';
+      const urlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=75.50&carDisplayName=Honda%20Civic%20Hybrid&carCategory=COMPACT&branchName=Airport%20Terminal%201';
       
       render(
         <TestProviders initialEntries={[`/book${urlParams}`]}>
@@ -160,7 +160,7 @@ describe('BookingWizard', () => {
   });
 
   describe('step navigation UI', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should display correct step indicators', async () => {
       render(
@@ -206,7 +206,7 @@ describe('BookingWizard', () => {
   });
 
   describe('booking summary display', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50&carDisplayName=Toyota%20Camry&branchName=Downtown%20Branch';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry&branchName=Downtown%20Branch';
 
     it('should display booking summary with correct information', async () => {
       render(
@@ -218,8 +218,8 @@ describe('BookingWizard', () => {
       await waitFor(() => {
         expect(screen.getByText('Booking Summary')).toBeInTheDocument();
         expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-        expect(screen.getByText('2025-06-01')).toBeInTheDocument();
-        expect(screen.getByText('2025-06-05')).toBeInTheDocument();
+        expect(screen.getByText('2025-12-01')).toBeInTheDocument();
+        expect(screen.getByText('2025-12-05')).toBeInTheDocument();
         expect(screen.getByText('4 days')).toBeInTheDocument();
         expect(screen.getByText('$200.00')).toBeInTheDocument();
       });
@@ -250,8 +250,8 @@ describe('BookingWizard', () => {
           bookingDetails: {
             carId: 1,
             branchId: 2,
-            startDate: '2025-06-01',
-            endDate: '2025-06-03',
+            startDate: '2025-12-01',
+            endDate: '2025-12-03',
             dailyPrice: 100,
           },
         });
@@ -266,7 +266,7 @@ describe('BookingWizard', () => {
   });
 
   describe('navigation handlers', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should handle cancel navigation and reset store', async () => {
       render(
@@ -353,7 +353,7 @@ describe('BookingWizard', () => {
       });
 
       render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50']}>
+        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50']}>
           <BookingWizard />
         </TestProviders>
       );
@@ -376,7 +376,7 @@ describe('BookingWizard', () => {
       });
 
       render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50']}>
+        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50']}>
           <BookingWizard />
         </TestProviders>
       );
@@ -388,7 +388,7 @@ describe('BookingWizard', () => {
   });
 
   describe('booking submission integration', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-06-01&endDate=2025-06-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should handle successful booking submission', async () => {
       render(
