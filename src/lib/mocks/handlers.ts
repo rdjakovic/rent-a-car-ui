@@ -132,6 +132,40 @@ export const handlers = [
     return HttpResponse.json(car);
   }),
 
+  // Car creation endpoint
+  http.post('/api/cars', async ({ request }) => {
+    await delay();
+
+    const carData = await request.json() as any;
+
+    // Basic validation
+    if (!carData.vin || !carData.make || !carData.model || !carData.year) {
+      return HttpResponse.json(
+        {
+          message: 'Validation failed',
+          violations: [
+            { field: 'vin', message: 'VIN is required' },
+            { field: 'make', message: 'Make is required' },
+            { field: 'model', message: 'Model is required' },
+            { field: 'year', message: 'Year is required' },
+          ]
+        },
+        { status: 400 }
+      );
+    }
+
+    const newCar = {
+      id: generateId(),
+      ...carData,
+      status: 'AVAILABLE',
+      displayName: `${carData.year} ${carData.make} ${carData.model}`,
+      branchName: branches.find(b => b.id === carData.branchId)?.name || 'Unknown Branch',
+    };
+
+    cars.push(newCar);
+    return HttpResponse.json(newCar, { status: 201 });
+  }),
+
   // Customer endpoints
   http.get('/api/customers', async ({ request }) => {
     await delay();
@@ -200,36 +234,47 @@ export const handlers = [
     return HttpResponse.json(customer);
   }),
 
-  http.post('/api/customers', async ({ request }) => {
+  http.post('http://localhost:8080/api/customers', async ({ request }) => {
     await delay();
 
-    const customerData = await request.json() as CustomerRequestDto;
+    console.log('Global customer POST handler intercepted request');
+    try {
+      const customerData = await request.json() as CustomerRequestDto;
+      console.log('Customer data received:', customerData);
 
-    // Basic validation
-    if (!customerData.firstName || !customerData.lastName || !customerData.email) {
+      // Basic validation
+      if (!customerData.firstName || !customerData.lastName || !customerData.email) {
+        return HttpResponse.json(
+          {
+            message: 'Validation failed',
+            violations: [
+              { field: 'firstName', message: 'First name is required' },
+              { field: 'lastName', message: 'Last name is required' },
+              { field: 'email', message: 'Email is required' },
+            ]
+          },
+          { status: 400 }
+        );
+      }
+
+      const newCustomer = {
+        id: generateId(),
+        ...customerData,
+        fullName: `${customerData.firstName} ${customerData.lastName}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      customers.push(newCustomer);
+      console.log('New customer created:', newCustomer);
+      return HttpResponse.json(newCustomer, { status: 201 });
+    } catch (error) {
+      console.error('Error in customer creation handler:', error);
       return HttpResponse.json(
-        {
-          message: 'Validation failed',
-          violations: [
-            { field: 'firstName', message: 'First name is required' },
-            { field: 'lastName', message: 'Last name is required' },
-            { field: 'email', message: 'Email is required' },
-          ]
-        },
-        { status: 400 }
+        { message: 'Internal server error' },
+        { status: 500 }
       );
     }
-
-    const newCustomer = {
-      id: generateId(),
-      ...customerData,
-      fullName: `${customerData.firstName} ${customerData.lastName}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    customers.push(newCustomer);
-    return HttpResponse.json(newCustomer, { status: 201 });
   }),
 
   http.put('/api/customers/:id', async ({ params, request }) => {

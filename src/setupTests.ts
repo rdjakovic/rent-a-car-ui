@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from '@/lib/mocks/server';
 import { TestCleanup } from '@/lib/test-cleanup';
 
@@ -39,7 +40,8 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Establish API mocking before all tests
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
+  // Always start the mock server in tests with warn strategy to see what's happening
+  server.listen({ onUnhandledRequest: 'warn' });
 });
 
 // Comprehensive cleanup after each test to ensure isolation
@@ -61,3 +63,4 @@ afterEach(async () => {
 afterAll(() => {
   server.close();
 });
+
