@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listBranches } from "@/lib/api/queries";
+import { listBranches, type PageBranchResponseDto } from "@/lib/api/queries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export default function BranchesPage() {
   });
 
   const isLoading = query.isLoading || query.isFetching && !query.data;
-  const data = query.data;
+  const data = query.data as PageBranchResponseDto;
   const rows = data?.content ?? [];
   const current = data?.number ?? page;
   const totalPages = data?.totalPages ?? 0;
