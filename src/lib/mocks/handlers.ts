@@ -234,7 +234,7 @@ export const handlers = [
     return HttpResponse.json(customer);
   }),
 
-  http.post('http://localhost:8080/api/customers', async ({ request }) => {
+  http.post('/api/customers', async ({ request }) => {
     await delay();
 
     console.log('Global customer POST handler intercepted request');
@@ -376,6 +376,10 @@ export const handlers = [
       totalPrice,
       currency: 'USD',
       notes: reservationData.notes,
+      customerId: reservationData.customerId,
+      carId: reservationData.carId,
+      pickupBranchId: reservationData.pickupBranchId,
+      dropoffBranchId: reservationData.dropoffBranchId,
       customer,
       car,
       pickupBranch,
