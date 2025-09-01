@@ -11,3 +11,5 @@
 2025-09-01: UI tests stabilization pass (phase 2): updated BookingWizardNavigation tests to use data-testids for loading and start-new-search, expanded AddCarDialog tests to fill all required fields and use robust error assertion, and reran full Vitest suite to gather remaining failures for triage.
 
 2025-09-01: UI tests stabilization pass (phase 3): fixed AddCarDialog failing test by selecting branch via Radix Select combobox and asserting error via regex; hardened useBookingFlow URL params test by using future-dated range to avoid date-based flakiness; reran full Vitest suite — all 323 tests passed.
+
+2025-09-01: Established baseline test coverage with Vitest (v8 provider): Statements 62.19%, Branches 79.92%, Functions 54.84%, Lines 62.19%. Added coverage config to vite.config.ts and a package.json script to generate HTML coverage reports.
