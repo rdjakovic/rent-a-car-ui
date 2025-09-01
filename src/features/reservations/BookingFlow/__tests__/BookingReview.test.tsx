@@ -128,7 +128,7 @@ describe('BookingReview', () => {
       expect(screen.getByText('Vehicle Information')).toBeInTheDocument();
       expect(screen.getByText('Toyota Camry 2024')).toBeInTheDocument();
       expect(screen.getByText('MIDSIZE')).toBeInTheDocument();
-      expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
+      expect(screen.getAllByText('Downtown Branch').length).toBeGreaterThan(0);
 
       // Check rental period
       expect(screen.getByText('Rental Period')).toBeInTheDocument();
@@ -170,11 +170,11 @@ describe('BookingReview', () => {
       );
 
       // Check daily rate display
-      expect(screen.getByText('$45.99')).toBeInTheDocument();
-      
+      expect(screen.getAllByText('$45.99').length).toBeGreaterThan(0);
+
       // Check number of days
       expect(screen.getByText('4')).toBeInTheDocument();
-      
+
       // Check total cost
       expect(screen.getByText('$183.96')).toBeInTheDocument();
     });
@@ -195,7 +195,7 @@ describe('BookingReview', () => {
       );
 
       expect(screen.getByText('1 day')).toBeInTheDocument();
-      expect(screen.getByText('$45.99')).toBeInTheDocument();
+      expect(screen.getAllByText('$45.99').length).toBeGreaterThan(0);
     });
   });
 
@@ -220,7 +220,7 @@ describe('BookingReview', () => {
       // Mock past date
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1);
-      
+
       const queryClient = new QueryClient({
         defaultOptions: {
           queries: { retry: false },

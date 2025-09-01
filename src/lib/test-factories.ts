@@ -70,7 +70,7 @@ export class TestDateFactory {
     const startDate = this.getFutureDateByDays(startDaysFromNow);
     const endDate = this.getFutureDateByDays(endDaysFromNow);
     const duration = endDaysFromNow - startDaysFromNow;
-    
+
     return { startDate, endDate, duration };
   }
 }
@@ -79,7 +79,7 @@ export class TestDateFactory {
 export class BookingParamsFactory {
   static createValid(overrides: Partial<TestBookingParams> = {}): TestBookingParams {
     const { startDate, endDate } = TestDateFactory.getDateRange(1, 5);
-    
+
     return {
       carId: 1,
       branchId: 2,
@@ -114,7 +114,7 @@ export class BookingParamsFactory {
   static createWithPastDate(overrides: Partial<TestBookingParams> = {}): TestBookingParams {
     const pastDate = TestDateFactory.getPastDateByDays(1);
     const futureDate = TestDateFactory.getFutureDateByDays(3);
-    
+
     return this.createValid({
       startDate: pastDate,
       endDate: futureDate,
@@ -124,7 +124,7 @@ export class BookingParamsFactory {
 
   static createWithInvalidDateOrder(overrides: Partial<TestBookingParams> = {}): TestBookingParams {
     const { startDate, endDate } = TestDateFactory.getDateRange(5, 1); // End before start
-    
+
     return this.createValid({
       startDate,
       endDate,
@@ -134,13 +134,13 @@ export class BookingParamsFactory {
 
   static createUrlSearchParams(params: Partial<TestBookingParams>): URLSearchParams {
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         searchParams.set(key, String(value));
       }
     });
-    
+
     return searchParams;
   }
 
@@ -220,7 +220,7 @@ export class ReservationFactory {
   static createDefault(overrides: Partial<TestReservation> = {}): TestReservation {
     const { startDate, endDate, duration } = TestDateFactory.getDateRange(1, 5);
     const dailyPrice = 50.00;
-    
+
     return {
       id: 1,
       carId: 1,
@@ -260,8 +260,10 @@ export class BookingFlowMockFactory {
       totalDays: 0,
       totalCost: 0,
       reservation: null,
+      isLoading: false,
       isSubmitting: false,
       submissionError: null,
+      initializationError: null,
     };
   }
 
@@ -272,7 +274,7 @@ export class BookingFlowMockFactory {
     const car = CarDetailsFactory.createDefault(carDetails);
     const booking = BookingParamsFactory.createValid(bookingParams);
     const { startDate, endDate, duration } = TestDateFactory.getDateRange(1, 5);
-    
+
     return {
       ...this.createInitialState(),
       carDetails: car,
@@ -333,8 +335,10 @@ export class MockFunctionsFactory {
       nextStep: vi.fn(),
       previousStep: vi.fn(),
       setReservation: vi.fn(),
+      setLoading: vi.fn(),
       setSubmitting: vi.fn(),
       setSubmissionError: vi.fn(),
+      setInitializationError: vi.fn(),
       reset: vi.fn(),
       canProceedToReview: vi.fn(() => false),
       canSubmitBooking: vi.fn(() => false),
@@ -375,7 +379,7 @@ export class TestScenarioFactory {
     const bookingParams = BookingParamsFactory.createValid();
     const carDetails = CarDetailsFactory.createDefault();
     const customer = CustomerFactory.createDefault();
-    
+
     return {
       name: 'Valid Booking Scenario',
       bookingParams,
@@ -389,7 +393,7 @@ export class TestScenarioFactory {
 
   static missingParametersScenario() {
     const bookingParams = BookingParamsFactory.createMissingCarId();
-    
+
     return {
       name: 'Missing Parameters Scenario',
       bookingParams,
@@ -400,7 +404,7 @@ export class TestScenarioFactory {
 
   static pastDateScenario() {
     const bookingParams = BookingParamsFactory.createWithPastDate();
-    
+
     return {
       name: 'Past Date Scenario',
       bookingParams,
@@ -411,7 +415,7 @@ export class TestScenarioFactory {
 
   static invalidDateOrderScenario() {
     const bookingParams = BookingParamsFactory.createWithInvalidDateOrder();
-    
+
     return {
       name: 'Invalid Date Order Scenario',
       bookingParams,
@@ -430,7 +434,7 @@ export class TestScenarioFactory {
 
   static submissionScenario() {
     const scenario = this.validBookingScenario();
-    
+
     return {
       ...scenario,
       name: 'Booking Submission Scenario',

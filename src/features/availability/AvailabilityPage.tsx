@@ -17,7 +17,7 @@ const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 
 export default function AvailabilityPage() {
   const navigate = useNavigate();
-  
+
   // Form state
   const [branchId, setBranchId] = useState<string>("");
   const [startDate, setStartDate] = useState("");
@@ -105,7 +105,7 @@ export default function AvailabilityPage() {
       carCategory: car.category || 'ECONOMY',
       branchName: car.branchName || 'Unknown Branch',
     });
-    
+
     navigate(`/book?${bookingParams.toString()}`);
   };
 
@@ -153,12 +153,12 @@ export default function AvailabilityPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Start date</label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <label htmlFor="startDate" className="block text-sm font-medium mb-1">Start date</label>
+              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">End date</label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <label htmlFor="endDate" className="block text-sm font-medium mb-1">End date</label>
+              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div className="md:col-span-3 lg:col-span-1" />
             <div>
@@ -280,7 +280,7 @@ export default function AvailabilityPage() {
                         <Badge>{c.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
+                        <Button
                           className="bg-brand-emerald text-white hover:brightness-95"
                           onClick={() => handleBookCar(c)}
                         >

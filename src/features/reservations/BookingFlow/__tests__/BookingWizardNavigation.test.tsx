@@ -3,8 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import BookingWizard from '../BookingWizard'
-import { 
-  resetRouterMocks, 
+import {
+  resetRouterMocks,
   resetBookingFlowMocks,
   configureMockForSuccessfulBooking,
   configureMockForFailedBooking,
@@ -79,12 +79,12 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
         },
       },
     })
-    
+
     // Reset all mocks
     vi.clearAllMocks()
     resetRouterMocks()
     resetBookingFlowMocks(mockBookingFlow)
-    
+
     // Set up default valid search params
     mockSearchParams(TestDataFactory.createValidBookingParams())
   })
@@ -120,8 +120,8 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for missing required URL parameters', async () => {
-    // Configure mock for failed booking
-    configureMockForFailedBooking(mockBookingFlow)
+    // Configure mock for failed booking with specific message
+    configureMockForFailedBooking(mockBookingFlow, 'Missing required booking parameters')
 
     // Mock search params with missing required parameters
     mockSearchParams(TestDataFactory.createInvalidBookingParams('missing'))
@@ -137,7 +137,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for invalid car ID parameter', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid car ID. Please start from the availability search')
 
     // Mock search params with invalid car ID
     mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-car'))
@@ -151,7 +151,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for invalid branch ID parameter', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid branch ID. Please start from the availability search')
 
     // Mock search params with invalid branch ID
     mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-branch'))
@@ -165,7 +165,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for invalid daily price parameter', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid daily price. Please start from the availability search')
 
     // Mock search params with invalid daily price
     mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-price'))
@@ -179,7 +179,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for invalid date format', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid date format. Please start from the availability search')
 
     // Mock search params with invalid date format
     mockSearchParams(TestDataFactory.createInvalidBookingParams('invalid-date'))
@@ -193,7 +193,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for past start date', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Start date cannot be in the past. Please start from the availability search')
 
     // Mock search params with past date
     mockSearchParams(TestDataFactory.createInvalidBookingParams('past-date'))
@@ -207,8 +207,8 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('shows error for end date before start date', async () => {
-    // Configure mock for failed booking
-    configureMockForFailedBooking(mockBookingFlow)
+    // Configure mock for failed booking with specific message
+    configureMockForFailedBooking(mockBookingFlow, 'End date must be after start date. Please start from the availability search')
 
     // Mock search params with end date before start date
     mockSearchParams(TestDataFactory.createInvalidBookingParams('date-order'))
@@ -249,12 +249,12 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   })
 
   it('navigates to availability page when Start New Search is clicked', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+    configureMockForFailedBooking(mockBookingFlow, 'Invalid booking parameters. Please start from the availability search')
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      const startNewSearchButton = screen.getByRole('button', { name: /start new search/i })
+      const startNewSearchButton = screen.getByTestId('start-new-search-button')
       startNewSearchButton.click()
     })
 
@@ -264,17 +264,15 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
 
   it('shows loading state when booking details are not yet loaded', async () => {
     // Configure mock for loading state - successful init but no details yet
-    mockBookingFlow.bookingDetails = null // No existing booking details
-    mockBookingFlow.carDetails = null // No car details yet
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true) // Successful initialization
-    
+    configureMockForLoadingState(mockBookingFlow)
+
     // Use valid params to avoid validation errors
     mockSearchParams(TestDataFactory.createValidBookingParams())
 
     renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Loading booking details...')).toBeInTheDocument()
+      expect(screen.getByTestId('loading-message')).toBeInTheDocument()
     })
   })
 
@@ -291,12 +289,12 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     await waitFor(() => {
       expect(screen.getByText('Booking Summary')).toBeInTheDocument()
       expect(screen.getByText('Toyota Camry')).toBeInTheDocument()
-      
+
       // Get the dynamic dates from the mock data
       const mockBookingDetails = TestDataFactory.createMockBookingDetails()
       expect(screen.getByText(mockBookingDetails.startDate)).toBeInTheDocument()
       expect(screen.getByText(mockBookingDetails.endDate)).toBeInTheDocument()
-      
+
       expect(screen.getByText('4 days')).toBeInTheDocument()
       expect(screen.getByText('$183.96')).toBeInTheDocument()
     })

@@ -1,4 +1,6 @@
 import { vi } from 'vitest'
+import type { CarListResponseDto } from '@/lib/api/queries'
+import type { BookingDetails } from '@/stores/useBookingFlowStore'
 
 /**
  * Centralized mock setup utilities for consistent test configuration
@@ -65,7 +67,7 @@ export function resetBookingFlowMocks(mockBookingFlow: ReturnType<typeof createM
     submissionError: null,
     initializationError: null,
   })
-  
+
   // Reset all mock functions
   mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
   mockBookingFlow.initializeBooking.mockClear()
@@ -99,9 +101,11 @@ export function configureMockForSuccessfulBooking(mockBookingFlow: ReturnType<ty
 /**
  * Configures booking flow mock for failed initialization
  */
-export function configureMockForFailedBooking(mockBookingFlow: ReturnType<typeof createMockBookingFlow>) {
+export function configureMockForFailedBooking(mockBookingFlow: ReturnType<typeof createMockBookingFlow>, errorMessage: string = 'Invalid booking parameters. Please start from the availability search.') {
   mockBookingFlow.carDetails = null
   mockBookingFlow.bookingDetails = null
+  mockBookingFlow.initializationError = errorMessage
+  mockBookingFlow.isLoading = false
   mockBookingFlow.initializeFromUrlParams.mockResolvedValue(false)
   mockBookingFlow.canProceedToReview.mockReturnValue(false)
   mockBookingFlow.isStepComplete.mockReturnValue(false)
@@ -125,16 +129,16 @@ export function configureMockForLoadingState(mockBookingFlow: ReturnType<typeof 
 export const createMockBookingFlow = () => ({
   // State properties
   currentStep: 'customer' as const,
-  carDetails: null,
-  bookingDetails: null,
-  customer: null,
+  carDetails: null as CarListResponseDto | null,
+  bookingDetails: null as BookingDetails | null,
+  customer: null as any,
   totalDays: 0,
   totalCost: 0,
-  reservation: null,
+  reservation: null as any,
   isLoading: false,
   isSubmitting: false,
-  submissionError: null,
-  initializationError: null,
+  submissionError: null as string | null,
+  initializationError: null as string | null,
 
   // Action methods
   initializeBooking: vi.fn(),
@@ -155,7 +159,7 @@ export const createMockBookingFlow = () => ({
   // Computed values and helpers
   canProceedToReview: vi.fn(() => false),
   canSubmitBooking: vi.fn(() => false),
-  isStepComplete: vi.fn(() => false),
+  isStepComplete: vi.fn<(step: 'customer'|'review'|'confirmation') => boolean>(() => false),
   getStepNumber: vi.fn(() => 1),
   initializeFromUrlParams: vi.fn(),
 })
@@ -165,11 +169,11 @@ export const createMockBookingFlow = () => ({
  */
 export function setupBookingFlowMocks() {
   const mockBookingFlow = createMockBookingFlow()
-  
+
   vi.mock('@/hooks/useBookingFlow', () => ({
     useBookingFlow: () => mockBookingFlow,
   }))
-  
+
   return mockBookingFlow
 }
 
@@ -182,7 +186,7 @@ export class TestDataFactory {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const nextWeek = new Date()
     nextWeek.setDate(nextWeek.getDate() + 7)
-    
+
     return new URLSearchParams({
       carId: '101',
       branchId: '1',
@@ -199,33 +203,33 @@ export class TestDataFactory {
     switch (type) {
       case 'missing':
         return new URLSearchParams('carId=101&branchId=1') // Missing required params
-      
+
       case 'invalid-car':
         const tomorrow1 = new Date()
         tomorrow1.setDate(tomorrow1.getDate() + 1)
         const nextWeek1 = new Date()
         nextWeek1.setDate(nextWeek1.getDate() + 7)
         return new URLSearchParams(`carId=invalid&branchId=1&startDate=${tomorrow1.toISOString().split('T')[0]}&endDate=${nextWeek1.toISOString().split('T')[0]}&dailyPrice=45.99`)
-      
+
       case 'invalid-branch':
         const tomorrow2 = new Date()
         tomorrow2.setDate(tomorrow2.getDate() + 1)
         const nextWeek2 = new Date()
         nextWeek2.setDate(nextWeek2.getDate() + 7)
         return new URLSearchParams(`carId=101&branchId=0&startDate=${tomorrow2.toISOString().split('T')[0]}&endDate=${nextWeek2.toISOString().split('T')[0]}&dailyPrice=45.99`)
-      
+
       case 'invalid-price':
         const tomorrow3 = new Date()
         tomorrow3.setDate(tomorrow3.getDate() + 1)
         const nextWeek3 = new Date()
         nextWeek3.setDate(nextWeek3.getDate() + 7)
         return new URLSearchParams(`carId=101&branchId=1&startDate=${tomorrow3.toISOString().split('T')[0]}&endDate=${nextWeek3.toISOString().split('T')[0]}&dailyPrice=-10`)
-      
+
       case 'invalid-date':
         const nextWeek4 = new Date()
         nextWeek4.setDate(nextWeek4.getDate() + 7)
         return new URLSearchParams(`carId=101&branchId=1&startDate=invalid-date&endDate=${nextWeek4.toISOString().split('T')[0]}&dailyPrice=45.99`)
-      
+
       case 'past-date':
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
@@ -233,7 +237,7 @@ export class TestDataFactory {
         const nextWeek5 = new Date()
         nextWeek5.setDate(nextWeek5.getDate() + 7)
         return new URLSearchParams(`carId=101&branchId=1&startDate=${pastDate}&endDate=${nextWeek5.toISOString().split('T')[0]}&dailyPrice=45.99`)
-      
+
       case 'date-order':
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -242,13 +246,13 @@ export class TestDataFactory {
         const startDate = dayAfterTomorrow.toISOString().split('T')[0] // Later date
         const endDate = tomorrow.toISOString().split('T')[0] // Earlier date
         return new URLSearchParams(`carId=101&branchId=1&startDate=${startDate}&endDate=${endDate}&dailyPrice=45.99`)
-      
+
       default:
         return new URLSearchParams()
     }
   }
 
-  static createMockCar() {
+  static createMockCar(): CarListResponseDto {
     return {
       id: 101,
       displayName: 'Toyota Camry',
@@ -263,7 +267,7 @@ export class TestDataFactory {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const nextWeek = new Date()
     nextWeek.setDate(nextWeek.getDate() + 7)
-    
+
     return {
       carId: 101,
       branchId: 1,

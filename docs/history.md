@@ -6,3 +6,6 @@
 
 
 2025-01-09: Fixed BookingWizard component state management issues: Enhanced BookingFlowStore with initializationError state and validateUrlParameters method, improved async URL parameter initialization in useBookingFlow hook, fixed useEffect dependencies to prevent infinite loops, and updated CustomerSelection to support customizable back button text. All 17 BookingWizard tests now pass with proper error handling and loading states.
+2025-09-01: UI tests stabilization pass (phase 1): added missing setLoading/setInitializationError to test factories, improved BookingReview tests to avoid ambiguous text matches, fixed AvailabilityPage date input label associations, and aligned BookingWizardNavigation tests with centralized mock helpers. Ran full Vitest suite and prepared a prioritized plan to address remaining failures.
+
+2025-09-01: UI tests stabilization pass (phase 2): updated BookingWizardNavigation tests to use data-testids for loading and start-new-search, expanded AddCarDialog tests to fill all required fields and use robust error assertion, and reran full Vitest suite to gather remaining failures for triage.

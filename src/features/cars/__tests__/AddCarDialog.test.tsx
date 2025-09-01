@@ -20,7 +20,7 @@ const createWrapper = () => {
       mutations: { retry: false },
     },
   });
-  
+
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
@@ -31,7 +31,7 @@ const createWrapper = () => {
 describe('AddCarDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock branches response
     mockListBranches.mockResolvedValue({
       content: [
@@ -51,7 +51,7 @@ describe('AddCarDialog', () => {
 
   it('renders dialog when open', async () => {
     const onOpenChange = vi.fn();
-    
+
     render(
       <AddCarDialog open={true} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -63,7 +63,7 @@ describe('AddCarDialog', () => {
 
   it('does not render dialog when closed', () => {
     const onOpenChange = vi.fn();
-    
+
     render(
       <AddCarDialog open={false} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -74,7 +74,7 @@ describe('AddCarDialog', () => {
 
   it('displays form fields with correct labels', async () => {
     const onOpenChange = vi.fn();
-    
+
     render(
       <AddCarDialog open={true} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -107,7 +107,7 @@ describe('AddCarDialog', () => {
 
   it('calls onOpenChange when cancel button is clicked', async () => {
     const onOpenChange = vi.fn();
-    
+
     render(
       <AddCarDialog open={true} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -134,7 +134,7 @@ describe('AddCarDialog', () => {
       dailyPrice: 50.00,
       status: 'AVAILABLE',
     });
-    
+
     render(
       <AddCarDialog open={true} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -162,14 +162,37 @@ describe('AddCarDialog', () => {
       target: { value: '50.00' }
     });
 
-    // Select branch (find the select trigger button by placeholder text)
+    // Category
+    const categorySelect = screen.getByText('Select category');
+    fireEvent.click(categorySelect);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('ECONOMY'));
+    });
+
+    // Transmission
+    const transmissionSelect = screen.getByText('Select transmission');
+    fireEvent.click(transmissionSelect);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('AUTOMATIC'));
+    });
+
+    // Fuel Type
+    const fuelSelect = screen.getByText('Select fuel type');
+    fireEvent.click(fuelSelect);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('GASOLINE'));
+    });
+
+    // Seats
+    fireEvent.change(screen.getByLabelText(/Seats.*\*/), {
+      target: { value: '5' }
+    });
+
+    // Branch
     const branchSelect = screen.getByText('Select branch');
     fireEvent.click(branchSelect);
-    
     await waitFor(() => {
-      const branchOptions = screen.getAllByText('Downtown Branch - New York');
-      const branchOption = branchOptions.find(el => el.tagName === 'OPTION') || branchOptions[0];
-      fireEvent.click(branchOption);
+      fireEvent.click(screen.getByText('Downtown Branch - New York'));
     });
 
     // Submit form
@@ -198,7 +221,7 @@ describe('AddCarDialog', () => {
   it('displays error message when submission fails', async () => {
     const onOpenChange = vi.fn();
     mockCreateCar.mockRejectedValue(new Error('Failed to create car'));
-    
+
     render(
       <AddCarDialog open={true} onOpenChange={onOpenChange} />,
       { wrapper: createWrapper() }
@@ -229,7 +252,7 @@ describe('AddCarDialog', () => {
     // Select branch
     const branchSelect = screen.getByText('Select branch');
     fireEvent.click(branchSelect);
-    
+
     await waitFor(() => {
       const branchOptions = screen.getAllByText('Downtown Branch - New York');
       const branchOption = branchOptions.find(el => el.tagName === 'OPTION') || branchOptions[0];
@@ -240,7 +263,8 @@ describe('AddCarDialog', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to create car/)).toBeInTheDocument();
+      // Error text is rendered inside a small text container; match by regex
+      expect(screen.getByText(/Failed to create car/i)).toBeInTheDocument();
     });
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
