@@ -1,9 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent } from '@testing-library/react';
 import BookingWizard from '../BookingWizard';
 import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
+import {
+  renderWithProviders,
+  waitForText,
+  waitForTestId,
+  waitForLoadingToComplete,
+  waitForStateChange,
+  actAsync,
+  TEST_TIMEOUTS,
+  cleanupMocks,
+} from '@/lib/test-utils';
+import {
+  BookingParamsFactory,
+  CustomerFactory,
+  TestScenarioFactory,
+  MockFunctionsFactory,
+  BookingFlowMockFactory,
+} from '@/lib/test-factories';
 
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
@@ -27,217 +42,312 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-function TestProviders({ 
-  children, 
-  initialEntries = ['/book'] 
-}: { 
-  children: React.ReactNode;
-  initialEntries?: string[];
-}) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
-        {children}
-      </MemoryRouter>
-    </QueryClientProvider>
-  );
-}
-
 describe('BookingWizard', () => {
   beforeEach(() => {
     // Reset store state and mocks before each test
     useBookingFlowStore.getState().reset();
-    mockNavigate.mockClear();
+    cleanupMocks(mockNavigate);
   });
 
   describe('URL parameter initialization', () => {
     it('should show error when no URL parameters are provided', async () => {
-      render(
-        <TestProviders initialEntries={['/book']}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const scenario = TestScenarioFactory.missingParametersScenario();
+      
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: ['/book'],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument();
-        expect(screen.getByText('Invalid booking parameters. Please start from the availability search.')).toBeInTheDocument();
+      // Wait for loading to complete first
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Then check for error messages with enhanced waiting
+      await waitForText('Unable to Load Booking', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+      
+      await waitForText('Invalid booking parameters. Please start from the availability search.', {
+        timeout: TEST_TIMEOUTS.FAST,
       });
     });
 
     it('should show error when incomplete URL parameters are provided', async () => {
-      render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2']}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const incompleteParams = BookingParamsFactory.createMissingDates();
+      const urlString = BookingParamsFactory.createUrlString(incompleteParams);
+      
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${urlString}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument();
-        expect(screen.getByText('Invalid booking parameters. Please start from the availability search.')).toBeInTheDocument();
+      // Wait for loading to complete and error to appear
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Unable to Load Booking', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+      
+      await waitForText('Invalid booking parameters. Please start from the availability search.', {
+        timeout: TEST_TIMEOUTS.FAST,
       });
     });
 
     it('should initialize booking when all required URL parameters are provided', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry&carCategory=MIDSIZE&branchName=Downtown';
+      const scenario = TestScenarioFactory.validBookingScenario();
       
-      render(
-        <TestProviders initialEntries={[`/book${urlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Book Your Rental')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
       });
 
-      // Should not show error when parameters are valid
+      // Wait for loading to complete and main content to appear
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Book Your Rental', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Verify no error messages are present
+      const { screen } = await import('@testing-library/react');
       expect(screen.queryByText('Unable to Load Booking')).not.toBeInTheDocument();
       
-      // Check if booking summary is displayed with correct data
-      expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-      expect(screen.getByText('2025-12-01')).toBeInTheDocument();
-      expect(screen.getByText('2025-12-05')).toBeInTheDocument();
-      expect(screen.getByText('4 days')).toBeInTheDocument();
-      expect(screen.getByText('$200.00')).toBeInTheDocument();
+      // Check if booking summary is displayed with correct data using enhanced waiting
+      await waitForText(scenario.carDetails.displayName, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(scenario.bookingParams.startDate, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(scenario.bookingParams.endDate, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(`${scenario.expectedDuration} days`, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(`$${scenario.expectedCost.toFixed(2)}`, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
     });
 
     it('should handle URL-encoded parameters correctly', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=75.50&carDisplayName=Honda%20Civic%20Hybrid&carCategory=COMPACT&branchName=Airport%20Terminal%201';
+      const bookingParams = BookingParamsFactory.createValid({
+        dailyPrice: 75.50,
+        carDisplayName: 'Honda Civic Hybrid',
+        carCategory: 'COMPACT',
+        branchName: 'Airport Terminal 1',
+      });
+      const urlString = BookingParamsFactory.createUrlString(bookingParams);
       
-      render(
-        <TestProviders initialEntries={[`/book${urlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${urlString}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Honda Civic Hybrid')).toBeInTheDocument();
-        expect(screen.getByText('$302.00')).toBeInTheDocument(); // 4 days * 75.50
+      // Wait for loading and initialization
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Verify URL-encoded parameters are decoded correctly
+      await waitForText('Honda Civic Hybrid', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+      
+      // Calculate expected cost (4 days * 75.50 = 302.00)
+      const expectedCost = 4 * 75.50;
+      await waitForText(`$${expectedCost.toFixed(2)}`, {
+        timeout: TEST_TIMEOUTS.FAST,
       });
     });
 
     it('should provide retry functionality for failed initialization', async () => {
-      render(
-        <TestProviders initialEntries={['/book']}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: ['/book'],
       });
 
-      const retryButton = screen.getByText(/Retry \(3 attempts left\)/);
-      expect(retryButton).toBeInTheDocument();
+      // Wait for error state to appear
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
 
-      fireEvent.click(retryButton);
+      await waitForText('Unable to Load Booking', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText(/Retry \(2 attempts left\)/)).toBeInTheDocument();
+      // Find and click retry button with enhanced waiting
+      const retryButton = await waitForText(/Retry \(3 attempts left\)/, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+
+      await actAsync(async () => {
+        fireEvent.click(retryButton);
+      });
+
+      // Wait for retry counter to update
+      await waitForText(/Retry \(2 attempts left\)/, {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
     });
 
     it('should provide navigation to availability search', async () => {
-      render(
-        <TestProviders initialEntries={['/book']}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Start New Search')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: ['/book'],
       });
 
-      const newSearchButton = screen.getByText('Start New Search');
-      fireEvent.click(newSearchButton);
+      // Wait for error state and navigation button
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      const newSearchButton = await waitForText('Start New Search', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await actAsync(async () => {
+        fireEvent.click(newSearchButton);
+      });
+
+      // Verify navigation was called
+      await waitForStateChange(
+        () => mockNavigate.mock.calls.length,
+        (callCount) => callCount > 0,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
 
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
   });
 
   describe('step navigation UI', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const scenario = TestScenarioFactory.validBookingScenario();
 
     it('should display correct step indicators', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('1. Customer Selection')).toBeInTheDocument();
-        expect(screen.getByText('2. Review & Confirm')).toBeInTheDocument();
-        expect(screen.getByText('3. Confirmation')).toBeInTheDocument();
+      // Wait for loading and initialization
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Check for step indicators with enhanced waiting
+      await waitForText('1. Customer Selection', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+      
+      await waitForText('2. Review & Confirm', {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText('3. Confirmation', {
+        timeout: TEST_TIMEOUTS.FAST,
       });
 
       // Customer step should be active (blue background)
+      const { screen } = await import('@testing-library/react');
       const customerStep = screen.getByText('1. Customer Selection');
       expect(customerStep).toHaveClass('bg-blue-100', 'text-blue-800');
     });
 
     it('should show customer selection step content initially', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Select Customer')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Search by name, email, phone, or license number...')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
       });
+
+      // Wait for loading and customer selection content
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Select Customer', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Check for search input with enhanced waiting
+      const { screen } = await import('@testing-library/react');
+      await waitForStateChange(
+        () => screen.queryByPlaceholderText('Search by name, email, phone, or license number...'),
+        (element) => element !== null,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
     });
 
     it('should show loading state initially', async () => {
-      render(
-        <TestProviders initialEntries={['/book?carId=1']}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const loadingScenario = TestScenarioFactory.loadingScenario();
+      
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: ['/book?carId=1'],
+      });
 
-      // Should show loading state before error
-      expect(screen.getByText('Loading booking details...')).toBeInTheDocument();
+      // Should show loading state before error with enhanced waiting
+      await waitForText(loadingScenario.expectedLoadingText, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
     });
   });
 
   describe('booking summary display', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry&branchName=Downtown%20Branch';
+    const scenario = TestScenarioFactory.validBookingScenario();
 
     it('should display booking summary with correct information', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Booking Summary')).toBeInTheDocument();
-        expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-        expect(screen.getByText('2025-12-01')).toBeInTheDocument();
-        expect(screen.getByText('2025-12-05')).toBeInTheDocument();
-        expect(screen.getByText('4 days')).toBeInTheDocument();
-        expect(screen.getByText('$200.00')).toBeInTheDocument();
+      // Wait for loading and booking summary to appear
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Booking Summary', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Verify all booking details with enhanced waiting
+      await waitForText(scenario.carDetails.displayName, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(scenario.bookingParams.startDate, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(scenario.bookingParams.endDate, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(`${scenario.expectedDuration} days`, {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText(`$${scenario.expectedCost.toFixed(2)}`, {
+        timeout: TEST_TIMEOUTS.FAST,
       });
     });
 
     it('should update summary when store state changes', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('$200.00')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
       });
 
-      // Simulate store state change (this would normally happen through user interaction)
-      await act(async () => {
+      // Wait for initial state to load
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText(`$${scenario.expectedCost.toFixed(2)}`, {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Simulate store state change with enhanced async handling
+      await actAsync(async () => {
         const store = useBookingFlowStore.getState();
         store.initializeBooking({
           carDetails: {
@@ -257,81 +367,109 @@ describe('BookingWizard', () => {
         });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('Updated Car')).toBeInTheDocument();
-        expect(screen.getByText('2 days')).toBeInTheDocument();
-        expect(screen.getByText('$200.00')).toBeInTheDocument(); // 2 days * 100
+      // Wait for UI to update with new state
+      await waitForText('Updated Car', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+      
+      await waitForText('2 days', {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+      
+      await waitForText('$200.00', { // 2 days * 100
+        timeout: TEST_TIMEOUTS.FAST,
       });
     });
   });
 
   describe('navigation handlers', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const scenario = TestScenarioFactory.validBookingScenario();
 
     it('should handle cancel navigation and reset store', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Cancel')).toBeInTheDocument();
+      // Wait for component to load and cancel button to appear
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      const cancelButton = await waitForText('Cancel', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
 
       // Verify store has data before cancel
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().carDetails,
+        (carDetails) => carDetails !== null,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
+
       const storeBefore = useBookingFlowStore.getState();
       expect(storeBefore.carDetails).not.toBeNull();
 
-      const cancelButton = screen.getByText('Cancel');
-      
-      await act(async () => {
+      // Click cancel with enhanced async handling
+      await actAsync(async () => {
         fireEvent.click(cancelButton);
       });
 
-      // Verify store is reset after cancel
-      const storeAfter = useBookingFlowStore.getState();
-      expect(storeAfter.carDetails).toBeNull();
-      expect(storeAfter.bookingDetails).toBeNull();
-      expect(storeAfter.customer).toBeNull();
+      // Wait for store to be reset
+      await waitForStateChange(
+        () => useBookingFlowStore.getState(),
+        (state) => state.carDetails === null && state.bookingDetails === null && state.customer === null,
+        { timeout: TEST_TIMEOUTS.NORMAL }
+      );
 
-      // The cancel handler should call navigate to home
+      // Verify navigation was called
+      await waitForStateChange(
+        () => mockNavigate.mock.calls.length,
+        (callCount) => callCount > 0,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
+
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
 
     it('should handle step navigation through booking flow', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Book Your Rental')).toBeInTheDocument();
+      const customer = CustomerFactory.createDefault();
+      
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
       });
 
-      // Start at customer step
-      expect(useBookingFlowStore.getState().currentStep).toBe('customer');
+      // Wait for initial load
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Book Your Rental', {
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      // Verify starting at customer step
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().currentStep,
+        (step) => step === 'customer',
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
 
       // Simulate customer selection and navigation to review
-      await act(async () => {
+      await actAsync(async () => {
         const store = useBookingFlowStore.getState();
-        store.setCustomer({
-          id: 1,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          phone: '+1234567890',
-          driverLicenseNo: 'DL123456',
-          city: 'New York',
-          country: 'US',
-        });
+        store.setCustomer(customer);
         store.nextStep();
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('Review Your Booking')).toBeInTheDocument();
-        expect(useBookingFlowStore.getState().currentStep).toBe('review');
+      // Wait for step transition and review content
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().currentStep,
+        (step) => step === 'review',
+        { timeout: TEST_TIMEOUTS.NORMAL }
+      );
+
+      await waitForText('Review Your Booking', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
     });
   });
@@ -344,7 +482,7 @@ describe('BookingWizard', () => {
       // Mock the initializeFromUrlParams to throw an error
       const originalInitialize = useBookingFlowStore.getState().initializeBooking;
       
-      await act(async () => {
+      await actAsync(async () => {
         useBookingFlowStore.setState({
           initializeBooking: vi.fn(() => {
             throw new Error('Test initialization error');
@@ -352,95 +490,122 @@ describe('BookingWizard', () => {
         });
       });
 
-      render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50']}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const validParams = BookingParamsFactory.createValid();
+      const urlString = BookingParamsFactory.createUrlString(validParams);
 
-      await waitFor(() => {
-        expect(screen.getByText('Failed to load booking details. Please try again.')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${urlString}`],
+      });
+
+      // Wait for error to appear with enhanced error handling
+      await waitForText('Failed to load booking details. Please try again.', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
 
       // Restore original function
-      await act(async () => {
+      await actAsync(async () => {
         useBookingFlowStore.setState({ initializeBooking: originalInitialize });
       });
+      
       consoleSpy.mockRestore();
     });
 
     it('should show skeleton loading state', async () => {
       // Reset store to trigger loading state
-      await act(async () => {
+      await actAsync(async () => {
         useBookingFlowStore.getState().reset();
       });
 
-      render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50']}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const validParams = BookingParamsFactory.createValid();
+      const urlString = BookingParamsFactory.createUrlString(validParams);
 
-      expect(screen.getByText('Loading booking details...')).toBeInTheDocument();
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${urlString}`],
+      });
+
+      // Check for loading text with enhanced waiting
+      await waitForText('Loading booking details...', {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
+
       // Check for skeleton loading elements
-      expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
+      await waitForStateChange(
+        () => document.querySelector('.animate-pulse'),
+        (element) => element !== null,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
     });
   });
 
   describe('booking submission integration', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2025-12-01&endDate=2025-12-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const scenario = TestScenarioFactory.validBookingScenario();
 
     it('should handle successful booking submission', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      const customer = CustomerFactory.createDefault();
+      
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Book Your Rental')).toBeInTheDocument();
+      // Wait for initial load
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Book Your Rental', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
 
       // Navigate to review step with customer selected
-      await act(async () => {
+      await actAsync(async () => {
         const store = useBookingFlowStore.getState();
-        store.setCustomer({
-          id: 1,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          phone: '+1234567890',
-          driverLicenseNo: 'DL123456',
-          city: 'New York',
-          country: 'US',
-        });
+        store.setCustomer(customer);
         store.nextStep();
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('Review Your Booking')).toBeInTheDocument();
+      // Wait for review step to load
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().currentStep,
+        (step) => step === 'review',
+        { timeout: TEST_TIMEOUTS.NORMAL }
+      );
+
+      await waitForText('Review Your Booking', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
 
       // Verify booking submission button is present
-      expect(screen.getByText('Confirm Booking')).toBeInTheDocument();
+      await waitForText('Confirm Booking', {
+        timeout: TEST_TIMEOUTS.FAST,
+      });
     });
 
     it('should show loading states during submission', async () => {
-      render(
-        <TestProviders initialEntries={[`/book${validUrlParams}`]}>
-          <BookingWizard />
-        </TestProviders>
-      );
+      renderWithProviders(<BookingWizard />, {
+        initialEntries: [`/book${scenario.urlParams}`],
+      });
 
-      await waitFor(() => {
-        expect(screen.getByText('Book Your Rental')).toBeInTheDocument();
+      // Wait for initial load
+      await waitForLoadingToComplete({
+        timeout: TEST_TIMEOUTS.NORMAL,
+      });
+
+      await waitForText('Book Your Rental', {
+        timeout: TEST_TIMEOUTS.NORMAL,
       });
 
       // Test that submission loading states are handled by the store
-      await act(async () => {
+      await actAsync(async () => {
         const store = useBookingFlowStore.getState();
         store.setSubmitting(true);
       });
+
+      // Wait for store state to update
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().isSubmitting,
+        (isSubmitting) => isSubmitting === true,
+        { timeout: TEST_TIMEOUTS.FAST }
+      );
 
       const store = useBookingFlowStore.getState();
       expect(store.isSubmitting).toBe(true);

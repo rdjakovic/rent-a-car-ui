@@ -11,16 +11,23 @@ const mockStore = {
   totalDays: 0,
   totalCost: 0,
   reservation: null,
+  isLoading: false,
   isSubmitting: false,
   submissionError: null,
+  initializationError: null,
   initializeBooking: vi.fn(),
   setCustomer: vi.fn(),
   calculateCost: vi.fn(),
+  calculateDuration: vi.fn(),
+  calculateTotalCost: vi.fn(),
+  validateUrlParameters: vi.fn(),
   nextStep: vi.fn(),
   previousStep: vi.fn(),
   setReservation: vi.fn(),
+  setLoading: vi.fn(),
   setSubmitting: vi.fn(),
   setSubmissionError: vi.fn(),
+  setInitializationError: vi.fn(),
   reset: vi.fn(),
 }
 
@@ -28,18 +35,31 @@ vi.mock('@/stores/useBookingFlowStore', () => ({
   useBookingFlowStore: () => mockStore,
 }))
 
+// Set up default mock implementations
+beforeEach(() => {
+  vi.clearAllMocks()
+  // Reset console.error mock
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  
+  // Set up default mock return values
+  mockStore.validateUrlParameters.mockReturnValue({ isValid: true })
+})
+
 describe('useBookingFlow - URL Parameter Parsing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Reset console.error mock
     vi.spyOn(console, 'error').mockImplementation(() => {})
+    
+    // Set up default mock return values
+    mockStore.validateUrlParameters.mockReturnValue({ isValid: true })
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('successfully initializes from valid URL parameters', () => {
+  it('successfully initializes from valid URL parameters', async () => {
     const { result } = renderHook(() => useBookingFlow())
     
     const searchParams = new URLSearchParams({
@@ -53,7 +73,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       branchName: 'Main Branch',
     })
 
-    const success = result.current.initializeFromUrlParams(searchParams)
+    const success = await result.current.initializeFromUrlParams(searchParams)
 
     expect(success).toBe(true)
     expect(mockStore.initializeBooking).toHaveBeenCalledWith({
@@ -74,8 +94,14 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     })
   })
 
-  it('fails when required parameters are missing', () => {
+  it('fails when required parameters are missing', async () => {
     const { result } = renderHook(() => useBookingFlow())
+    
+    // Mock validateUrlParameters to return invalid for this test
+    mockStore.validateUrlParameters.mockReturnValueOnce({ 
+      isValid: false, 
+      error: 'Missing required URL parameters for booking initialization' 
+    })
     
     const searchParams = new URLSearchParams({
       carId: '101',
@@ -83,15 +109,21 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       // Missing startDate, endDate, dailyPrice
     })
 
-    const success = result.current.initializeFromUrlParams(searchParams)
+    const success = await result.current.initializeFromUrlParams(searchParams)
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Missing required URL parameters for booking initialization')
+    expect(console.error).toHaveBeenCalledWith('URL parameter validation failed:', 'Missing required URL parameters for booking initialization')
   })
 
-  it('fails when carId is invalid', () => {
+  it('fails when carId is invalid', async () => {
     const { result } = renderHook(() => useBookingFlow())
+    
+    // Mock validateUrlParameters to return invalid for this test
+    mockStore.validateUrlParameters.mockReturnValueOnce({ 
+      isValid: false, 
+      error: 'Invalid carId parameter: invalid' 
+    })
     
     const searchParams = new URLSearchParams({
       carId: 'invalid',
@@ -101,15 +133,21 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       dailyPrice: '45.99',
     })
 
-    const success = result.current.initializeFromUrlParams(searchParams)
+    const success = await result.current.initializeFromUrlParams(searchParams)
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid carId parameter:', 'invalid')
+    expect(console.error).toHaveBeenCalledWith('URL parameter validation failed:', 'Invalid carId parameter: invalid')
   })
 
-  it('fails when carId is zero or negative', () => {
+  it('fails when carId is zero or negative', async () => {
     const { result } = renderHook(() => useBookingFlow())
+    
+    // Mock validateUrlParameters to return invalid for this test
+    mockStore.validateUrlParameters.mockReturnValueOnce({ 
+      isValid: false, 
+      error: 'Invalid carId parameter: 0' 
+    })
     
     const searchParams = new URLSearchParams({
       carId: '0',
@@ -119,11 +157,11 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       dailyPrice: '45.99',
     })
 
-    const success = result.current.initializeFromUrlParams(searchParams)
+    const success = await result.current.initializeFromUrlParams(searchParams)
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid carId parameter:', '0')
+    expect(console.error).toHaveBeenCalledWith('URL parameter validation failed:', 'Invalid carId parameter: 0')
   })
 
   it('fails when branchId is invalid', () => {

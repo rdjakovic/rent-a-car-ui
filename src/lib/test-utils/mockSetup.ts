@@ -60,8 +60,10 @@ export function resetBookingFlowMocks(mockBookingFlow: ReturnType<typeof createM
     totalCost: 0,
     customer: null,
     reservation: null,
+    isLoading: false,
     isSubmitting: false,
     submissionError: null,
+    initializationError: null,
   })
   
   // Reset all mock functions
@@ -72,8 +74,10 @@ export function resetBookingFlowMocks(mockBookingFlow: ReturnType<typeof createM
   mockBookingFlow.nextStep.mockClear()
   mockBookingFlow.previousStep.mockClear()
   mockBookingFlow.setReservation.mockClear()
+  mockBookingFlow.setLoading.mockClear()
   mockBookingFlow.setSubmitting.mockClear()
   mockBookingFlow.setSubmissionError.mockClear()
+  mockBookingFlow.setInitializationError.mockClear()
   mockBookingFlow.reset.mockClear()
   mockBookingFlow.canProceedToReview.mockReturnValue(false)
   mockBookingFlow.canSubmitBooking.mockReturnValue(false)
@@ -87,7 +91,7 @@ export function resetBookingFlowMocks(mockBookingFlow: ReturnType<typeof createM
 export function configureMockForSuccessfulBooking(mockBookingFlow: ReturnType<typeof createMockBookingFlow>) {
   mockBookingFlow.carDetails = TestDataFactory.createMockCar()
   mockBookingFlow.bookingDetails = TestDataFactory.createMockBookingDetails()
-  mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
+  mockBookingFlow.initializeFromUrlParams.mockResolvedValue(true)
   mockBookingFlow.canProceedToReview.mockReturnValue(true)
   mockBookingFlow.isStepComplete.mockImplementation((step) => step === 'customer')
 }
@@ -98,7 +102,7 @@ export function configureMockForSuccessfulBooking(mockBookingFlow: ReturnType<ty
 export function configureMockForFailedBooking(mockBookingFlow: ReturnType<typeof createMockBookingFlow>) {
   mockBookingFlow.carDetails = null
   mockBookingFlow.bookingDetails = null
-  mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
+  mockBookingFlow.initializeFromUrlParams.mockResolvedValue(false)
   mockBookingFlow.canProceedToReview.mockReturnValue(false)
   mockBookingFlow.isStepComplete.mockReturnValue(false)
 }
@@ -109,7 +113,8 @@ export function configureMockForFailedBooking(mockBookingFlow: ReturnType<typeof
 export function configureMockForLoadingState(mockBookingFlow: ReturnType<typeof createMockBookingFlow>) {
   mockBookingFlow.carDetails = null
   mockBookingFlow.bookingDetails = null
-  mockBookingFlow.initializeFromUrlParams.mockReturnValue(true) // Successful init but no details yet
+  mockBookingFlow.isLoading = true
+  mockBookingFlow.initializeFromUrlParams.mockResolvedValue(true) // Successful init but no details yet
   mockBookingFlow.canProceedToReview.mockReturnValue(false)
   mockBookingFlow.isStepComplete.mockReturnValue(false)
 }
@@ -118,6 +123,7 @@ export function configureMockForLoadingState(mockBookingFlow: ReturnType<typeof 
  * Mock booking flow store for tests
  */
 export const createMockBookingFlow = () => ({
+  // State properties
   currentStep: 'customer' as const,
   carDetails: null,
   bookingDetails: null,
@@ -125,17 +131,28 @@ export const createMockBookingFlow = () => ({
   totalDays: 0,
   totalCost: 0,
   reservation: null,
+  isLoading: false,
   isSubmitting: false,
   submissionError: null,
+  initializationError: null,
+
+  // Action methods
   initializeBooking: vi.fn(),
   setCustomer: vi.fn(),
   calculateCost: vi.fn(),
+  calculateDuration: vi.fn(),
+  calculateTotalCost: vi.fn(),
+  validateUrlParameters: vi.fn(),
   nextStep: vi.fn(),
   previousStep: vi.fn(),
   setReservation: vi.fn(),
+  setLoading: vi.fn(),
   setSubmitting: vi.fn(),
   setSubmissionError: vi.fn(),
+  setInitializationError: vi.fn(),
   reset: vi.fn(),
+
+  // Computed values and helpers
   canProceedToReview: vi.fn(() => false),
   canSubmitBooking: vi.fn(() => false),
   isStepComplete: vi.fn(() => false),
