@@ -52,7 +52,7 @@ describe('BookingWizard', () => {
   describe('URL parameter initialization', () => {
     it('should show error when no URL parameters are provided', async () => {
       const scenario = TestScenarioFactory.missingParametersScenario();
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: ['/book'],
       });
@@ -66,7 +66,7 @@ describe('BookingWizard', () => {
       await waitForText('Unable to Load Booking', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
-      
+
       await waitForText('Invalid booking parameters. Please start from the availability search.', {
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -75,7 +75,7 @@ describe('BookingWizard', () => {
     it('should show error when incomplete URL parameters are provided', async () => {
       const incompleteParams = BookingParamsFactory.createMissingDates();
       const urlString = BookingParamsFactory.createUrlString(incompleteParams);
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: [`/book${urlString}`],
       });
@@ -88,7 +88,7 @@ describe('BookingWizard', () => {
       await waitForText('Unable to Load Booking', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
-      
+
       await waitForText('Invalid booking parameters. Please start from the availability search.', {
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -96,7 +96,7 @@ describe('BookingWizard', () => {
 
     it('should initialize booking when all required URL parameters are provided', async () => {
       const scenario = TestScenarioFactory.validBookingScenario();
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: [`/book${scenario.urlParams}`],
       });
@@ -113,24 +113,24 @@ describe('BookingWizard', () => {
       // Verify no error messages are present
       const { screen } = await import('@testing-library/react');
       expect(screen.queryByText('Unable to Load Booking')).not.toBeInTheDocument();
-      
+
       // Check if booking summary is displayed with correct data using enhanced waiting
       await waitForText(scenario.carDetails.displayName, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(scenario.bookingParams.startDate, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(scenario.bookingParams.endDate, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(`${scenario.expectedDuration} days`, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(`$${scenario.expectedCost.toFixed(2)}`, {
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -144,7 +144,7 @@ describe('BookingWizard', () => {
         branchName: 'Airport Terminal 1',
       });
       const urlString = BookingParamsFactory.createUrlString(bookingParams);
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: [`/book${urlString}`],
       });
@@ -158,7 +158,7 @@ describe('BookingWizard', () => {
       await waitForText('Honda Civic Hybrid', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
-      
+
       // Calculate expected cost (4 days * 75.50 = 302.00)
       const expectedCost = 4 * 75.50;
       await waitForText(`$${expectedCost.toFixed(2)}`, {
@@ -241,11 +241,11 @@ describe('BookingWizard', () => {
       await waitForText('1. Customer Selection', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
-      
+
       await waitForText('2. Review & Confirm', {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText('3. Confirmation', {
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -281,7 +281,7 @@ describe('BookingWizard', () => {
 
     it('should show loading state initially', async () => {
       const loadingScenario = TestScenarioFactory.loadingScenario();
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: ['/book?carId=1'],
       });
@@ -314,19 +314,19 @@ describe('BookingWizard', () => {
       await waitForText(scenario.carDetails.displayName, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(scenario.bookingParams.startDate, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(scenario.bookingParams.endDate, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(`${scenario.expectedDuration} days`, {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText(`$${scenario.expectedCost.toFixed(2)}`, {
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -371,11 +371,11 @@ describe('BookingWizard', () => {
       await waitForText('Updated Car', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
-      
+
       await waitForText('2 days', {
         timeout: TEST_TIMEOUTS.FAST,
       });
-      
+
       await waitForText('$200.00', { // 2 days * 100
         timeout: TEST_TIMEOUTS.FAST,
       });
@@ -433,7 +433,7 @@ describe('BookingWizard', () => {
 
     it('should handle step navigation through booking flow', async () => {
       const customer = CustomerFactory.createDefault();
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: [`/book${scenario.urlParams}`],
       });
@@ -481,7 +481,7 @@ describe('BookingWizard', () => {
 
       // Mock the initializeFromUrlParams to throw an error
       const originalInitialize = useBookingFlowStore.getState().initializeBooking;
-      
+
       await actAsync(async () => {
         useBookingFlowStore.setState({
           initializeBooking: vi.fn(() => {
@@ -506,7 +506,7 @@ describe('BookingWizard', () => {
       await actAsync(async () => {
         useBookingFlowStore.setState({ initializeBooking: originalInitialize });
       });
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -542,7 +542,7 @@ describe('BookingWizard', () => {
 
     it('should handle successful booking submission', async () => {
       const customer = CustomerFactory.createDefault();
-      
+
       renderWithProviders(<BookingWizard />, {
         initialEntries: [`/book${scenario.urlParams}`],
       });
@@ -555,6 +555,13 @@ describe('BookingWizard', () => {
       await waitForText('Book Your Rental', {
         timeout: TEST_TIMEOUTS.NORMAL,
       });
+
+      // Ensure initialization completed before stepping forward (avoid race with async init)
+      await waitForStateChange(
+        () => useBookingFlowStore.getState().bookingDetails,
+        (details) => details !== null,
+        { timeout: TEST_TIMEOUTS.SLOW }
+      );
 
       // Navigate to review step with customer selected
       await actAsync(async () => {

@@ -216,7 +216,7 @@ describe('AddCarDialog', () => {
     });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-  });
+  }, 12000);
 
   it('displays error message when submission fails', async () => {
     const onOpenChange = vi.fn();

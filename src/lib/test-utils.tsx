@@ -7,9 +7,9 @@ import { vi } from 'vitest';
 // Enhanced timeout configurations for different types of operations
 export const TEST_TIMEOUTS = {
   FAST: 1000,        // For immediate state changes
-  NORMAL: 3000,      // For typical async operations
-  SLOW: 5000,        // For complex operations or API calls
-  VERY_SLOW: 10000,  // For integration tests or heavy operations
+  NORMAL: 5000,      // Increased for coverage runs
+  SLOW: 8000,        // Increased for complex operations
+  VERY_SLOW: 15000,  // Increased for integration/coverage runs
 } as const;
 
 // Custom render function with providers
@@ -216,7 +216,7 @@ export async function waitForStateChange<T>(
     () => {
       lastState = getState();
       const result = predicate(lastState);
-      
+
       if (!result) {
         retries++;
         if (retries >= maxRetries) {
@@ -226,7 +226,7 @@ export async function waitForStateChange<T>(
         }
         throw new Error('State not ready');
       }
-      
+
       return result;
     },
     { timeout, interval }
@@ -256,7 +256,7 @@ export function createAsyncErrorMock(
   delay: number = 100
 ): ReturnType<typeof vi.fn> {
   return vi.fn().mockImplementation(
-    () => new Promise((_, reject) => 
+    () => new Promise((_, reject) =>
       setTimeout(() => reject(typeof error === 'string' ? new Error(error) : error), delay)
     )
   );
@@ -274,7 +274,7 @@ export function cleanupMocks(...mocks: ReturnType<typeof vi.fn>[]) {
 // Enhanced act utility for complex async operations
 export async function actAsync(callback: () => Promise<void> | void) {
   const { act } = await import('@testing-library/react');
-  
+
   if (callback.constructor.name === 'AsyncFunction') {
     await act(async () => {
       await callback();
@@ -291,11 +291,11 @@ export function debugCurrentState(container?: HTMLElement) {
   const target = container || document.body;
   console.log('Current DOM state:');
   console.log(target.innerHTML);
-  
+
   const testIds = Array.from(target.querySelectorAll('[data-testid]'))
     .map(el => el.getAttribute('data-testid'));
   console.log('Available test IDs:', testIds);
-  
+
   const textContent = target.textContent || '';
   console.log('Text content:', textContent.slice(0, 500) + (textContent.length > 500 ? '...' : ''));
 }
