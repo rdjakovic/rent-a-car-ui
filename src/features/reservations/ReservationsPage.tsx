@@ -1,14 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  listReservations, 
+import {
+  listReservations,
   getReservationById,
-  confirmReservation, 
-  cancelReservation, 
+  confirmReservation,
+  cancelReservation,
   completeReservation,
-  type ReservationSearchParams, 
-  type ReservationResponseDto 
+  type ReservationSearchParams,
+  type ReservationResponseDto
 } from "@/lib/api/queries";
+import { useReservationsStore } from "@/stores/useReservationsStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,29 +27,24 @@ import { ReservationDetails } from "./components/ReservationDetails";
 const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] as const;
 
 export default function ReservationsPage() {
-  // Filter state
-  const [search, setSearch] = useState("");
-  const [reservationIdSearch, setReservationIdSearch] = useState("");
-  const [status, setStatus] = useState<string>("ALL");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [page, setPage] = useState(0);
-  const [size] = useState(10);
-  
+  // Global store state for reservations filters and paging
+  const { search, reservationIdSearch, status, startDate, endDate, page, set } = useReservationsStore();
+  const size = 10;
+
   // Dialog state
   const [selectedReservation, setSelectedReservation] = useState<ReservationResponseDto | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
 
   // Build filter params
   const filterParams: ReservationSearchParams = useMemo(() => {
     const params: ReservationSearchParams = { page, size };
-    
+
     if (search.trim()) {
       params.search = search.trim();
     }
-    
+
     if (status && status !== "ALL") params.status = status as ReservationResponseDto["status"];
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
@@ -57,8 +53,8 @@ export default function ReservationsPage() {
 
   // Reset page when filters change
   useEffect(() => {
-    setPage(0);
-  }, [search, status, startDate, endDate, reservationIdSearch]);
+    set({ page: 0 });
+  }, [search, status, startDate, endDate, reservationIdSearch, set]);
 
   // Query for searching by reservation ID
   const reservationByIdQuery = useQuery({
@@ -79,10 +75,10 @@ export default function ReservationsPage() {
 
   // Determine which query to use and handle loading states
   const isSearchingById = !!reservationIdSearch && !isNaN(parseInt(reservationIdSearch));
-  const isLoading = isSearchingById 
-    ? reservationByIdQuery.isLoading 
+  const isLoading = isSearchingById
+    ? reservationByIdQuery.isLoading
     : (reservationsQuery.isLoading || (reservationsQuery.isFetching && !reservationsQuery.data));
-  
+
   // Handle reservations data based on search type
   const reservations = useMemo(() => {
     if (isSearchingById) {
@@ -155,12 +151,14 @@ export default function ReservationsPage() {
   });
 
   const clearFilters = () => {
-    setSearch("");
-    setReservationIdSearch("");
-    setStatus("ALL");
-    setStartDate("");
-    setEndDate("");
-    setPage(0);
+    set({
+      search: "",
+      reservationIdSearch: "",
+      status: "ALL",
+      startDate: "",
+      endDate: "",
+      page: 0,
+    });
   };
 
   const hasActiveFilters = search || reservationIdSearch || (status && status !== "ALL") || startDate || endDate;
@@ -258,10 +256,10 @@ export default function ReservationsPage() {
                   placeholder="Customer name, email, phone, car, or branch..."
                   value={search}
                   onChange={(value) => {
-                    setSearch(value);
+                    set({ search: value });
                     // Clear reservation ID search when using general search
                     if (value.trim() && reservationIdSearch) {
-                      setReservationIdSearch("");
+                      set({ reservationIdSearch: "" });
                     }
                   }}
                   disabled={!!reservationIdSearch}
@@ -282,22 +280,22 @@ export default function ReservationsPage() {
                   value={reservationIdSearch}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setReservationIdSearch(value);
+                    set({ reservationIdSearch: value });
                     // Clear general search when using ID search
                     if (value.trim() && search) {
-                      setSearch("");
+                      set({ search: "" });
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
-                      setReservationIdSearch("");
+                      set({ reservationIdSearch: "" });
                     }
                   }}
                 />
                 {reservationIdSearch && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {reservationByIdQuery.isError 
-                      ? "Reservation not found" 
+                    {reservationByIdQuery.isError
+                      ? "Reservation not found"
                       : "Searching for specific reservation"}
                   </p>
                 )}
@@ -306,7 +304,7 @@ export default function ReservationsPage() {
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium mb-1">Status</label>
-                <Select value={status} onValueChange={setStatus} disabled={!!reservationIdSearch}>
+                <Select value={status} onValueChange={(v) => set({ status: v })} disabled={!!reservationIdSearch}>
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
@@ -328,7 +326,7 @@ export default function ReservationsPage() {
                   id="start-date"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => set({ startDate: e.target.value })}
                   disabled={!!reservationIdSearch}
                 />
               </div>
@@ -340,7 +338,7 @@ export default function ReservationsPage() {
                   id="end-date"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => set({ endDate: e.target.value })}
                   disabled={!!reservationIdSearch}
                 />
               </div>
@@ -357,7 +355,7 @@ export default function ReservationsPage() {
                 {isLoading ? (
                   "Loading reservations..."
                 ) : isSearchingById ? (
-                  reservationByIdQuery.isError 
+                  reservationByIdQuery.isError
                     ? "Reservation not found"
                     : `Found ${reservations.length} reservation`
                 ) : (
@@ -383,8 +381,8 @@ export default function ReservationsPage() {
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">
-                  {isSearchingById && reservationByIdQuery.isError 
-                    ? "Reservation not found" 
+                  {isSearchingById && reservationByIdQuery.isError
+                    ? "Reservation not found"
                     : "No reservations found"}
                 </h3>
                 <p className="text-muted-foreground mb-4">
@@ -430,7 +428,7 @@ export default function ReservationsPage() {
                             <User className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
-                                {reservation.customer?.fullName || 
+                                {reservation.customer?.fullName ||
                                  `${reservation.customer?.firstName} ${reservation.customer?.lastName}`}
                               </div>
                               <div className="text-sm text-muted-foreground">
@@ -444,7 +442,7 @@ export default function ReservationsPage() {
                             <Car className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
-                                {reservation.car?.displayName || 
+                                {reservation.car?.displayName ||
                                  `${reservation.car?.make} ${reservation.car?.model}`}
                               </div>
                               <div className="text-sm text-muted-foreground">
@@ -480,8 +478,8 @@ export default function ReservationsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleViewReservation(reservation)}
                             >
@@ -489,8 +487,8 @@ export default function ReservationsPage() {
                               View
                             </Button>
                             {reservation.status === "PENDING" && (
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleConfirmReservation(reservation.id!)}
                                 disabled={confirmMutation.isPending}
@@ -500,8 +498,8 @@ export default function ReservationsPage() {
                               </Button>
                             )}
                             {reservation.status === "CONFIRMED" && (
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleCompleteReservation(reservation.id!)}
                                 disabled={completeMutation.isPending}
@@ -511,8 +509,8 @@ export default function ReservationsPage() {
                               </Button>
                             )}
                             {(reservation.status === "PENDING" || reservation.status === "CONFIRMED") && (
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleCancelReservation(reservation.id!)}
                                 disabled={cancelMutation.isPending}
@@ -533,7 +531,7 @@ export default function ReservationsPage() {
                   <div className="flex items-center justify-center gap-2 mt-8">
                     <Button
                       variant="outline"
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      onClick={() => set({ page: Math.max(0, page - 1) })}
                       disabled={!hasPrev || reservationsQuery.isFetching}
                     >
                       Previous
@@ -543,7 +541,7 @@ export default function ReservationsPage() {
                     </span>
                     <Button
                       variant="outline"
-                      onClick={() => setPage((p) => p + 1)}
+                      onClick={() => set({ page: page + 1 })}
                       disabled={!hasNext || reservationsQuery.isFetching}
                     >
                       Next
@@ -562,8 +560,8 @@ export default function ReservationsPage() {
               <DialogTitle>Reservation Details</DialogTitle>
             </DialogHeader>
             {selectedReservation && (
-              <ReservationDetails 
-                reservation={selectedReservation} 
+              <ReservationDetails
+                reservation={selectedReservation}
                 onUpdate={handleReservationUpdate}
               />
             )}

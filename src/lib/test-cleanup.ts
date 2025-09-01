@@ -3,6 +3,7 @@ import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
 import { useSearchStore } from '@/stores/useSearchStore';
 import { useCarsStore } from '@/stores/useCarsStore';
 import { useCustomersStore } from '@/stores/useCustomersStore';
+import { useReservationsStore } from '@/stores/useReservationsStore';
 
 /**
  * Comprehensive test cleanup utilities for ensuring test isolation
@@ -22,6 +23,8 @@ export class StoreCleanup {
     useCarsStore.getState().reset();
     // Reset customers store
     useCustomersStore.getState().reset();
+    // Reset reservations store
+    useReservationsStore.getState().reset();
   }
 
   /**
