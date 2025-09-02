@@ -14,13 +14,14 @@ export default function BranchesPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [citySearchTerm, setCitySearchTerm] = useState("");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<BranchResponseDto | null>(null);
 
   const query = useQuery({
-    queryKey: ["branches", page, size, searchTerm],
-    queryFn: () => searchBranches({ page, size, name: searchTerm }),
+    queryKey: ["branches", page, size, searchTerm, citySearchTerm],
+    queryFn: () => searchBranches({ page, size, name: searchTerm, city: citySearchTerm }),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
@@ -30,9 +31,22 @@ export default function BranchesPage() {
     setPage(0); // Reset to first page when search changes
   };
 
+  const handleCitySearchChange = (value: string) => {
+    setCitySearchTerm(value);
+    setPage(0); // Reset to first page when search changes
+  };
+
   const isLoading = query.isLoading || query.isFetching && !query.data;
   const data = query.data as PageBranchResponseDto;
   const rows = data?.content ?? [];
+
+  // Filter rows by city when both search terms are provided
+  const filteredRows = (searchTerm.trim() && citySearchTerm.trim())
+    ? rows.filter(branch =>
+        branch.city && branch.city.toLowerCase().includes(citySearchTerm.toLowerCase())
+      )
+    : rows;
+
   const current = data?.number ?? page;
   const totalPages = data?.totalPages ?? 0;
   const hasPrev = current > 0;
@@ -52,11 +66,17 @@ export default function BranchesPage() {
       <CardHeader>
         <div className="flex flex-col gap-4">
           <CardTitle>Results</CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <SearchInput
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder="Search branches by name..."
+              className="max-w-sm"
+            />
+            <SearchInput
+              value={citySearchTerm}
+              onChange={handleCitySearchChange}
+              placeholder="Search branches by city..."
               className="max-w-sm"
             />
           </div>
@@ -87,7 +107,7 @@ export default function BranchesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((b) => (
+                {filteredRows.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell>{b.name}</TableCell>
                     <TableCell>{b.address}</TableCell>
@@ -108,7 +128,7 @@ export default function BranchesPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {rows.length === 0 && (
+                {filteredRows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
                       No branches found.

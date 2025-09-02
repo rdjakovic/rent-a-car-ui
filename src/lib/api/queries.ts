@@ -12,16 +12,52 @@ export type BranchSearchParams = {
   page?: number;
   size?: number;
   name?: string;
+  city?: string;
   sort?: string[];
 };
 
 export async function searchBranches(params: BranchSearchParams = {}) {
   try {
-    if (params.name && params.name.trim()) {
-      const searchParams = { ...params, name: params.name.trim() };
+    const hasNameSearch = params.name && params.name.trim();
+    const hasCitySearch = params.city && params.city.trim();
+
+    if (hasNameSearch && hasCitySearch) {
+      // If both are provided, we need to combine results or prioritize one
+      // For now, let's prioritize name search and filter by city on the frontend
+      const searchParams = { ...params, name: params.name!.trim() };
       const res = await api.GET("/api/branches/search", { params: { query: searchParams } });
       if ((res as any).error) throw (res as any).error;
       return res.data as PageBranchResponseDto;
+    } else if (hasNameSearch) {
+      const searchParams = { ...params, name: params.name!.trim() };
+      const res = await api.GET("/api/branches/search", { params: { query: searchParams } });
+      if ((res as any).error) throw (res as any).error;
+      return res.data as PageBranchResponseDto;
+    } else if (hasCitySearch) {
+      const cityParams = { city: params.city!.trim() };
+      const res = await api.GET("/api/branches/by-city", { params: { query: cityParams } });
+      if ((res as any).error) throw (res as any).error;
+      // Convert array response to PageBranchResponseDto format
+      return {
+        content: res.data as BranchResponseDto[],
+        totalElements: (res.data as BranchResponseDto[]).length,
+        totalPages: 1,
+        size: (res.data as BranchResponseDto[]).length,
+        number: 0,
+        numberOfElements: (res.data as BranchResponseDto[]).length,
+        sort: [],
+        pageable: {
+          offset: 0,
+          sort: [],
+          pageNumber: 0,
+          pageSize: (res.data as BranchResponseDto[]).length,
+          paged: false,
+          unpaged: true
+        },
+        first: true,
+        last: true,
+        empty: (res.data as BranchResponseDto[]).length === 0
+      } as PageBranchResponseDto;
     } else {
       return listBranches(params);
     }
