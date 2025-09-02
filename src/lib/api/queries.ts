@@ -8,6 +8,28 @@ export type BranchRequestDto = components["schemas"]["BranchRequestDto"];
 export type PageCarListResponseDto = components["schemas"]["PageCarListResponseDto"];
 export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
+export type BranchSearchParams = {
+  page?: number;
+  size?: number;
+  name?: string;
+  sort?: string[];
+};
+
+export async function searchBranches(params: BranchSearchParams = {}) {
+  try {
+    if (params.name && params.name.trim()) {
+      const searchParams = { ...params, name: params.name.trim() };
+      const res = await api.GET("/api/branches/search", { params: { query: searchParams } });
+      if ((res as any).error) throw (res as any).error;
+      return res.data as PageBranchResponseDto;
+    } else {
+      return listBranches(params);
+    }
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
 export async function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
   try {
     const res = await api.GET("/api/branches", { params: { query: params } });

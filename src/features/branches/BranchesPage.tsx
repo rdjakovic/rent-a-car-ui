@@ -1,34 +1,34 @@
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { listBranches, type PageBranchResponseDto, type BranchResponseDto } from "@/lib/api/queries";
+import { searchBranches, type PageBranchResponseDto, type BranchResponseDto } from "@/lib/api/queries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SearchInput } from "@/components/ui/search-input";
 
 import BranchFormDialog from "./BranchFormDialog";
 
 export default function BranchesPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<BranchResponseDto | null>(null);
 
   const query = useQuery({
-    queryKey: ["branches", page, size],
-    queryFn: () => listBranches({ page, size }),
+    queryKey: ["branches", page, size, searchTerm],
+    queryFn: () => searchBranches({ page, size, name: searchTerm }),
     staleTime: 30_000,
-    // Option 1: Use the helper (equivalent to your code)
     placeholderData: keepPreviousData,
-
-    // Option 2: Your current approach (also correct)
-    // placeholderData: (previousData) => previousData,
-
-    // Option 3: More explicit with both parameters
-    // placeholderData: (previousData, previousQuery) => previousData,
   });
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(0); // Reset to first page when search changes
+  };
 
   const isLoading = query.isLoading || query.isFetching && !query.data;
   const data = query.data as PageBranchResponseDto;
@@ -50,7 +50,17 @@ export default function BranchesPage() {
 
       <Card>
       <CardHeader>
-        <CardTitle>Results</CardTitle>
+        <div className="flex flex-col gap-4">
+          <CardTitle>Results</CardTitle>
+          <div className="flex items-center gap-4">
+            <SearchInput
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search branches by name..."
+              className="max-w-sm"
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
