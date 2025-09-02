@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { listBranches, type PageBranchResponseDto } from "@/lib/api/queries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,14 @@ export default function BranchesPage() {
     queryKey: ["branches", page, size],
     queryFn: () => listBranches({ page, size }),
     staleTime: 30_000,
-    keepPreviousData: true,
+    // Option 1: Use the helper (equivalent to your code)
+    placeholderData: keepPreviousData,
+
+    // Option 2: Your current approach (also correct)
+    // placeholderData: (previousData) => previousData,
+
+    // Option 3: More explicit with both parameters
+    // placeholderData: (previousData, previousQuery) => previousData,
   });
 
   const isLoading = query.isLoading || query.isFetching && !query.data;

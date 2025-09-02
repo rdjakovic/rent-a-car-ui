@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listReservations,
@@ -27,6 +28,8 @@ import { ReservationDetails } from "./components/ReservationDetails";
 const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] as const;
 
 export default function ReservationsPage() {
+  const navigate = useNavigate();
+
   // Global store state for reservations filters and paging
   const { search, reservationIdSearch, status, startDate, endDate, page, set } = useReservationsStore();
   const size = 10;
@@ -232,7 +235,7 @@ export default function ReservationsPage() {
                 Clear Filters
               </Button>
             )}
-            <Button>
+            <Button onClick={() => navigate("/")}>
               New Reservation
             </Button>
           </div>
