@@ -11,7 +11,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get reservation by ID
+         * @description Retrieves a specific reservation by its unique identifier
+         */
         get: operations["getById"];
+        /**
+         * Update an existing reservation
+         * @description Updates a reservation. Only PENDING reservations can be modified.
+         */
         put: operations["update"];
         post?: never;
         delete?: never;
@@ -136,10 +144,41 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List reservations with optional filters, pagination and sorting */
+        /**
+         * List reservations with optional filters, pagination and sorting
+         * @description Retrieve reservations with comprehensive filtering and search capabilities.
+         *
+         *     **Search Functionality:**
+         *     The search parameter enables unified searching across multiple fields in a single API call:
+         *     - Customer information: first name, last name, full name, email address, phone number
+         *     - Reservation details: reservation ID (exact match prioritized)
+         *     - Car information: display name, model
+         *     - Branch information: branch name
+         *
+         *     **Search Behavior:**
+         *     - Case-insensitive partial matching across all searchable fields
+         *     - Minimum 2 characters required for search terms
+         *     - Maximum 100 characters allowed
+         *     - Exact reservation ID matches are prioritized in results
+         *     - Results ordered by relevance (exact ID matches first, then by creation date)
+         *
+         *     **Performance:**
+         *     - Single optimized database query with JOINs
+         *     - Database indexes ensure sub-500ms response times
+         *     - Supports concurrent search operations
+         *
+         *     **Backward Compatibility:**
+         *     - All existing filter parameters remain functional
+         *     - When search parameter is provided, it takes precedence over customer-based filtering
+         *     - Pagination and sorting work seamlessly with search results
+         *
+         */
         get: operations["listWithFilters"];
         put?: never;
-        /** Create a reservation */
+        /**
+         * Create a new reservation
+         * @description Creates a new car reservation with automatic price calculation and availability validation
+         */
         post: operations["create"];
         delete?: never;
         options?: never;
@@ -156,6 +195,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Confirm a reservation
+         * @description Confirms a PENDING reservation, changing its status to CONFIRMED
+         */
         post: operations["confirm"];
         delete?: never;
         options?: never;
@@ -189,6 +232,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Cancel a reservation
+         * @description Cancels a reservation, changing its status to CANCELLED
+         */
         post: operations["cancel"];
         delete?: never;
         options?: never;
@@ -286,7 +333,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List cars with pagination and sorting */
+        /**
+         * List cars with pagination, sorting, and filtering
+         * @description Returns a paginated, sorted, and filtered list of cars. Filter by any combination of fields (vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice). Sorting and pagination are supported via standard Spring Data parameters.
+         */
         get: operations["list_1"];
         put?: never;
         /** Create a car */
@@ -384,6 +434,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/customers/searchany": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search customers by a single value in email, firstName, lastName, or city (OR logic)
+         * @description Returns a paginated list of customers where the search value matches any of the following fields: email, firstName, lastName, or city. The search is case-insensitive and uses OR logic.
+         */
+        get: operations["searchAny"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customers/search": {
         parameters: {
             query?: never;
@@ -461,6 +531,26 @@ export interface paths {
         };
         /** Search branches by name with pagination and sorting */
         get: operations["searchByName"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/branches/by-name-and-city": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find branches by name and city
+         * @description Returns a list of branches filtered by both name and city, with optional pagination.
+         */
+        get: operations["byNameAndCity"];
         put?: never;
         post?: never;
         delete?: never;
@@ -605,6 +695,19 @@ export interface components {
             durationDays?: number;
             dailyRate?: number;
         };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: Record<string, never>;
+            };
+        };
         CustomerRequestDto: {
             firstName: string;
             lastName: string;
@@ -725,19 +828,6 @@ export interface components {
             email: string;
             password: string;
         };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: Record<string, never>;
-            };
-        };
         Branch: {
             /** Format: int64 */
             id?: number;
@@ -793,8 +883,8 @@ export interface components {
             deleted?: boolean;
             reservations?: components["schemas"]["Reservation"][];
             maintenanceRecords?: components["schemas"]["Maintenance"][];
-            available?: boolean;
             displayName?: string;
+            available?: boolean;
         };
         Customer: {
             /** Format: int64 */
@@ -944,7 +1034,7 @@ export interface components {
             /** Format: date */
             scheduledDate: string;
         };
-        PageReservationResponseDto: {
+        Page: {
             /** Format: int64 */
             totalElements?: number;
             /** Format: int32 */
@@ -953,24 +1043,24 @@ export interface components {
             last?: boolean;
             /** Format: int32 */
             size?: number;
-            content?: components["schemas"]["ReservationResponseDto"][];
+            content?: Record<string, never>[];
             /** Format: int32 */
             number?: number;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
             /** Format: int64 */
             offset?: number;
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
-            sort?: components["schemas"]["SortObject"];
             unpaged?: boolean;
         };
         SortObject: {
@@ -992,8 +1082,8 @@ export interface components {
             number?: number;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCustomerResponseDto: {
@@ -1010,8 +1100,8 @@ export interface components {
             number?: number;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCarListResponseDto: {
@@ -1028,8 +1118,8 @@ export interface components {
             number?: number;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBranchResponseDto: {
@@ -1046,8 +1136,8 @@ export interface components {
             number?: number;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
     };
@@ -1064,19 +1154,32 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Reservation ID
+                 * @example 123
+                 */
                 id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Reservation found */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ReservationResponseDto"];
+                };
+            };
+            /** @description Reservation not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1086,6 +1189,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Reservation ID
+                 * @example 123
+                 */
                 id: number;
             };
             cookie?: never;
@@ -1096,13 +1203,40 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description Reservation updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ReservationResponseDto"];
+                };
+            };
+            /** @description Invalid request data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Reservation not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Reservation cannot be updated (not PENDING) or car not available */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1436,12 +1570,49 @@ export interface operations {
     listWithFilters: {
         parameters: {
             query?: {
+                /**
+                 * @description Filter by specific customer ID
+                 * @example 123
+                 */
                 customerId?: number;
+                /**
+                 * @description Filter by specific car ID
+                 * @example 456
+                 */
                 carId?: number;
+                /**
+                 * @description Filter by reservation status
+                 * @example CONFIRMED
+                 */
                 status?: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+                /**
+                 * @description Filter by pickup/dropoff branch ID
+                 * @example 789
+                 */
                 branchId?: number;
+                /**
+                 * @description Filter reservations starting from this date (inclusive)
+                 * @example 2024-01-01
+                 */
                 startDate?: string;
+                /**
+                 * @description Filter reservations ending before this date (inclusive)
+                 * @example 2024-12-31
+                 */
                 endDate?: string;
+                /** @description Search term to find reservations across multiple fields. Searches:
+                 *     - Customer: first name, last name, email, phone number
+                 *     - Reservation: ID (exact matches prioritized)
+                 *     - Car: display name, model
+                 *     - Branch: name
+                 *
+                 *     Requirements:
+                 *     - Minimum 2 characters
+                 *     - Maximum 100 characters
+                 *     - Case-insensitive partial matching
+                 *     - Alphanumeric characters, spaces, hyphens, dots, @ symbols allowed
+                 *      */
+                search?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -1455,13 +1626,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Successfully retrieved reservations */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageReservationResponseDto"];
+                    "application/json": components["schemas"]["Page"];
+                };
+            };
+            /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1479,7 +1659,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description Reservation created successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1488,7 +1668,7 @@ export interface operations {
                     "*/*": components["schemas"]["ReservationResponseDto"];
                 };
             };
-            /** @description Validation/Bad Request */
+            /** @description Invalid request data or validation errors */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1497,7 +1677,7 @@ export interface operations {
                     "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description Conflict */
+            /** @description Car not available for selected dates */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1513,19 +1693,41 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Reservation ID
+                 * @example 123
+                 */
                 id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Reservation confirmed successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ReservationResponseDto"];
+                };
+            };
+            /** @description Reservation not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Reservation cannot be confirmed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1566,19 +1768,41 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Reservation ID
+                 * @example 123
+                 */
                 id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Reservation cancelled successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ReservationResponseDto"];
+                };
+            };
+            /** @description Reservation not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Reservation cannot be cancelled */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1745,6 +1969,17 @@ export interface operations {
     list_1: {
         parameters: {
             query?: {
+                vin?: string;
+                make?: string;
+                model?: string;
+                year?: number;
+                category?: "ECONOMY" | "COMPACT" | "INTERMEDIATE" | "STANDARD" | "FULL_SIZE" | "PREMIUM" | "LUXURY" | "SUV" | "VAN";
+                transmission?: "MANUAL" | "AUTOMATIC" | "CVT";
+                fuelType?: "GASOLINE" | "DIESEL" | "HYBRID" | "ELECTRIC";
+                minSeats?: number;
+                maxPrice?: number;
+                availableFrom?: string;
+                availableTo?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -1764,7 +1999,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageCarListResponseDto"];
+                    "*/*": components["schemas"]["CarListResponseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -1987,6 +2231,47 @@ export interface operations {
             };
         };
     };
+    searchAny: {
+        parameters: {
+            query: {
+                /**
+                 * @description Search value to match against email, firstName, lastName, or city
+                 * @example smith
+                 */
+                search: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful search */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerResponseDto"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query?: {
@@ -2142,6 +2427,44 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageBranchResponseDto"];
+                };
+            };
+        };
+    };
+    byNameAndCity: {
+        parameters: {
+            query: {
+                name: string;
+                city: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful operation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BranchResponseDto"];
+                };
+            };
+            /** @description Invalid parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
