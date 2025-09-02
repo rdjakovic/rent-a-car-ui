@@ -4,6 +4,7 @@ import { normalizeError } from "./errors";
 
 export type PageBranchResponseDto = components["schemas"]["PageBranchResponseDto"];
 export type BranchResponseDto = components["schemas"]["BranchResponseDto"];
+export type BranchRequestDto = components["schemas"]["BranchRequestDto"];
 export type PageCarListResponseDto = components["schemas"]["PageCarListResponseDto"];
 export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
@@ -12,6 +13,29 @@ export async function listBranches(params?: { page?: number; size?: number; sort
     const res = await api.GET("/api/branches", { params: { query: params } });
     if ((res as any).error) throw (res as any).error;
     return res.data as PageBranchResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export async function createBranch(branch: BranchRequestDto) {
+  try {
+    const res = await api.POST("/api/branches", { body: branch });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as BranchResponseDto;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export async function updateBranch(id: number, branch: BranchRequestDto) {
+  try {
+    const res = await api.PUT("/api/branches/{id}", {
+      params: { path: { id } },
+      body: branch
+    });
+    if ((res as any).error) throw (res as any).error;
+    return res.data as BranchResponseDto;
   } catch (error) {
     throw normalizeError(error);
   }

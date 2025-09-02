@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { listBranches, type PageBranchResponseDto } from "@/lib/api/queries";
+import { listBranches, type PageBranchResponseDto, type BranchResponseDto } from "@/lib/api/queries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import BranchFormDialog from "./BranchFormDialog";
+
 export default function BranchesPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<BranchResponseDto | null>(null);
 
   const query = useQuery({
     queryKey: ["branches", page, size],
@@ -35,9 +40,17 @@ export default function BranchesPage() {
 
   return (
     <div className="container mx-auto py-6 px-4">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-charcoal">Branches</h1>
+          <p className="text-muted-foreground">Manage your branch locations</p>
+        </div>
+        <Button onClick={() => { setEditing(null); setOpen(true); }}>New Branch</Button>
+      </div>
+
       <Card>
       <CardHeader>
-        <CardTitle>Branches</CardTitle>
+        <CardTitle>Results</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -60,6 +73,7 @@ export default function BranchesPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Hours</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -79,11 +93,14 @@ export default function BranchesPage() {
                         <Badge variant="secondary">Inactive</Badge>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => { setEditing(b); setOpen(true); }}>Edit</Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
                       No branches found.
                     </TableCell>
                   </TableRow>
@@ -108,6 +125,8 @@ export default function BranchesPage() {
         )}
       </CardContent>
     </Card>
+
+    <BranchFormDialog open={open} onOpenChange={setOpen} branch={editing} />
     </div>
   );
 }
