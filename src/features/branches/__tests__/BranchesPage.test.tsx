@@ -233,4 +233,31 @@ describe('BranchesPage', () => {
     // Check pagination still shows
     expect(screen.getByText(/Page \d+ of \d+/i)).toBeInTheDocument();
   });
+
+  it('displays responsive layout correctly', async () => {
+    renderWithClient(<BranchesPage />);
+
+    // Wait for data to load
+    await waitFor(() => {
+      expect(screen.queryAllByTestId('skeleton')).toHaveLength(0);
+    });
+
+    // Check that both desktop and mobile views are rendered
+    // Desktop table should have the hidden md:block class
+    const desktopTable = document.querySelector('.hidden.md\\:block');
+    expect(desktopTable).toBeInTheDocument();
+
+    // Mobile cards should have the md:hidden class
+    const mobileCards = document.querySelector('.md\\:hidden');
+    expect(mobileCards).toBeInTheDocument();
+
+    // Check that branch data is displayed in both views
+    // Desktop table headers
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Address')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+
+    // Mobile card content (should show branch names)
+    expect(screen.getAllByText('Downtown Branch')).toHaveLength(2); // Once in table, once in cards
+  });
 });

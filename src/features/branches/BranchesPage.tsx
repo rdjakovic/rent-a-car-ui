@@ -92,51 +92,158 @@ export default function BranchesPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>City</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Hours</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell>{b.name}</TableCell>
-                    <TableCell>{b.address}</TableCell>
-                    <TableCell>{b.city}</TableCell>
-                    <TableCell>{b.country}</TableCell>
-                    <TableCell>{b.phone}</TableCell>
-                    <TableCell>{b.email}</TableCell>
-                    <TableCell>{b.openingHours}</TableCell>
-                    <TableCell>
-                      {b.active ? (
-                        <Badge variant="default">Active</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactive</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => { setEditing(b); setOpen(true); }}>Edit</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredRows.length === 0 && (
+            {/* Large Desktop Table View - Full columns */}
+            <div className="hidden xl:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
-                      No branches found.
-                    </TableCell>
+                    <TableHead className="w-[140px]">Name</TableHead>
+                    <TableHead className="w-[160px]">Address</TableHead>
+                    <TableHead className="w-[100px]">City</TableHead>
+                    <TableHead className="w-[80px]">Country</TableHead>
+                    <TableHead className="w-[120px]">Phone</TableHead>
+                    <TableHead className="w-[180px]">Email</TableHead>
+                    <TableHead className="w-[140px]">Hours</TableHead>
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((b) => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-medium">{b.name}</TableCell>
+                      <TableCell>{b.address}</TableCell>
+                      <TableCell>{b.city}</TableCell>
+                      <TableCell>{b.country}</TableCell>
+                      <TableCell>{b.phone}</TableCell>
+                      <TableCell className="break-all">{b.email}</TableCell>
+                      <TableCell className="text-sm">{b.openingHours}</TableCell>
+                      <TableCell>
+                        {b.active ? (
+                          <Badge variant="default">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => { setEditing(b); setOpen(true); }}>Edit</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredRows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                        No branches found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Medium Desktop Table View - Condensed columns */}
+            <div className="hidden lg:block xl:hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[120px]">Name</TableHead>
+                    <TableHead className="w-[140px]">Address</TableHead>
+                    <TableHead className="w-[80px]">City</TableHead>
+                    <TableHead className="w-[100px]">Phone</TableHead>
+                    <TableHead className="w-[160px]">Email</TableHead>
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((b) => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-medium">{b.name}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{b.address}</div>
+                          <div className="text-muted-foreground">{b.city}, {b.country}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{b.city}</TableCell>
+                      <TableCell className="text-sm">{b.phone}</TableCell>
+                      <TableCell className="break-all text-sm">{b.email}</TableCell>
+                      <TableCell>
+                        {b.active ? (
+                          <Badge variant="default">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => { setEditing(b); setOpen(true); }}>Edit</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredRows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                        No branches found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Tablet Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredRows.map((b) => (
+                <Card key={b.id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{b.name}</h3>
+                        <p className="text-sm text-muted-foreground">{b.address}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {b.active ? (
+                          <Badge variant="default">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => { setEditing(b); setOpen(true); }}>
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">City:</span>
+                        <span>{b.city}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Country:</span>
+                        <span>{b.country}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Phone:</span>
+                        <span>{b.phone}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="break-all">{b.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Hours:</span>
+                        <span className="text-right">{b.openingHours}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              {filteredRows.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  No branches found.
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
