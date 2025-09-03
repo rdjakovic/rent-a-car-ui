@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listCustomers, type CustomerSearchParams, type CustomerResponseDto } from "@/lib/api/queries";
+import { listCustomers, type CustomerSearchParams, type CustomerResponseDto, type PageCustomerResponseDto } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SearchInput } from "@/components/ui/search-input";
@@ -20,7 +20,7 @@ export default function CustomersPage() {
   const query = useQuery({
     queryKey: ["customers", params],
     queryFn: () => listCustomers(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     staleTime: 30_000,
   });
 
@@ -28,7 +28,7 @@ export default function CustomersPage() {
   const [editing, setEditing] = useState<CustomerResponseDto | null>(null);
 
   const isLoading = query.isLoading || (query.isFetching && !query.data);
-  const data = query.data;
+  const data = query.data as PageCustomerResponseDto ;
   const rows = data?.content ?? [];
   const current = data?.number ?? page;
   const totalPages = data?.totalPages ?? 0;
@@ -46,7 +46,7 @@ export default function CustomersPage() {
           <Button onClick={() => { setEditing(null); setOpen(true); }}>New Customer</Button>
         </div>
 
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Search</CardTitle>
           </CardHeader>
@@ -67,7 +67,7 @@ export default function CustomersPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Results</CardTitle>
           </CardHeader>

@@ -50,3 +50,26 @@ test("renders customers list", async () => {
   expect(within(row).getByText(/Paris/)).toBeInTheDocument();
 });
 
+test("should have proper card layout classes to prevent overflow", async () => {
+  render(
+    <Providers>
+      <CustomersPage />
+    </Providers>
+  );
+
+  // Wait for the component to render
+  await waitFor(() => expect(screen.getByText("Search")).toBeInTheDocument());
+
+  // Find all card elements (they should have the rounded-xl border classes)
+  const cards = document.querySelectorAll('.rounded-xl.border');
+
+  // Verify that cards have the overflow prevention classes
+  cards.forEach((card) => {
+    expect(card).toHaveClass('w-full');
+    expect(card).toHaveClass('min-w-0');
+  });
+
+  // Should have at least 2 cards (search and results)
+  expect(cards.length).toBeGreaterThanOrEqual(2);
+});
+

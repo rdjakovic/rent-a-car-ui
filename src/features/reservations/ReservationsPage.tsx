@@ -242,7 +242,7 @@ export default function ReservationsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -350,7 +350,7 @@ export default function ReservationsPage() {
         </Card>
 
         {/* Results */}
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Reservations</CardTitle>

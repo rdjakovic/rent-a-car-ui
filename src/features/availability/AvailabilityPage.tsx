@@ -127,7 +127,7 @@ export default function AvailabilityPage() {
       {/* Search Section */}
       <section className="container mx-auto px-4 py-2">
         <div className="grid gap-6">
-          <Card>
+          <Card className="w-full min-w-0">
         <CardHeader>
           <CardTitle>Availability Search</CardTitle>
         </CardHeader>
@@ -232,7 +232,7 @@ export default function AvailabilityPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
           <CardTitle>Results</CardTitle>
         </CardHeader>
