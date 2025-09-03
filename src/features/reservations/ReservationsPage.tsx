@@ -221,7 +221,7 @@ export default function ReservationsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-6 px-4 lg:px-2">
       <div className="grid gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -403,18 +403,19 @@ export default function ReservationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reservation</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Car</TableHead>
-                      <TableHead>Dates</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[1080px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[120px]">Reservation</TableHead>
+                        <TableHead className="w-[200px]">Customer</TableHead>
+                        <TableHead className="w-[180px]">Car</TableHead>
+                        <TableHead className="w-[200px]">Dates</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[120px]">Total</TableHead>
+                        <TableHead className="w-[160px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {reservations.map((reservation) => (
                       <TableRow key={reservation.id}>
@@ -527,7 +528,8 @@ export default function ReservationsPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
 
                 {/* Pagination - only show for list queries */}
                 {!isSearchingById && totalPages > 1 && (
