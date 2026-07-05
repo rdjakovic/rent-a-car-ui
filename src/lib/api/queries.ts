@@ -140,6 +140,7 @@ export type ReservationRequestDto = components["schemas"]["ReservationRequestDto
 export type ReservationSearchParams = {
   page?: number;
   size?: number;
+  search?: string; // multi-field search: customer name/email/phone, reservation ID, car, branch
   customerId?: number;
   carId?: number;
   status?: ReservationResponseDto["status"];

@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  listReservations, 
-  confirmReservation, 
-  cancelReservation, 
+import {
+  listReservations,
+  confirmReservation,
+  cancelReservation,
   completeReservation,
-  searchCustomers,
-  type ReservationSearchParams, 
-  type ReservationResponseDto,
-  type CustomerResponseDto 
+  type ReservationSearchParams,
+  type ReservationResponseDto
 } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +16,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, User, Car, Filter, Eye, Check, X, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -35,76 +33,26 @@ export default function ReservationsPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   
-  // Customer search state
-  const [customerSearchResults, setCustomerSearchResults] = useState<CustomerResponseDto[]>([]);
-  const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
-  
   // Dialog state
   const [selectedReservation, setSelectedReservation] = useState<ReservationResponseDto | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
-
-  // Search customers when search term changes
-  useEffect(() => {
-    const searchCustomersAsync = async () => {
-      if (search.trim()) {
-        // Check if it's a numeric reservation ID first
-        if (!isNaN(Number(search.trim()))) {
-          setCustomerSearchResults([]);
-          return;
-        }
-        
-        setIsSearchingCustomers(true);
-        try {
-          const results = await searchCustomers({ 
-            search: search.trim(), 
-            size: 50 // Get more results for better matching
-          });
-          setCustomerSearchResults(results.content || []);
-        } catch (error) {
-          console.error('Error searching customers:', error);
-          setCustomerSearchResults([]);
-        } finally {
-          setIsSearchingCustomers(false);
-        }
-      } else {
-        setCustomerSearchResults([]);
-      }
-    };
-
-    const debounceTimer = setTimeout(searchCustomersAsync, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [search]);
 
   // Build filter params
   const filterParams: ReservationSearchParams = useMemo(() => {
     const params: ReservationSearchParams = { page, size };
-    
-    if (search.trim()) {
-      // Check if it's a numeric reservation ID
-      if (!isNaN(Number(search.trim()))) {
-        // If it's numeric, we can't filter by reservation ID directly in the current API
-        // For now, we'll let it return all results and the user can visually search
-        // This could be enhanced by adding reservation ID search to the backend
-      } else if (customerSearchResults.length > 0) {
-        // Use the first customer ID from search results
-        // Note: The current API only supports filtering by a single customerId
-        // In a future enhancement, we could make multiple API calls for all matching customers
-        // and combine the results, or enhance the backend to support multiple customer IDs
-        params.customerId = customerSearchResults[0].id;
-      } else if (!isSearchingCustomers && search.trim()) {
-        // If we have a search term but no customer results and we're not currently searching,
-        // set an impossible customer ID to return no results
-        params.customerId = -1;
-      }
-    }
-    
+
+    // Backend searches customer name/email/phone, reservation ID, car, and branch
+    // in a single call; it requires at least 2 characters.
+    const trimmedSearch = search.trim();
+    if (trimmedSearch.length >= 2) params.search = trimmedSearch;
+
     if (status && status !== "ALL") params.status = status as ReservationResponseDto["status"];
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     return params;
-  }, [search, customerSearchResults, isSearchingCustomers, status, startDate, endDate, page, size]);
+  }, [search, status, startDate, endDate, page, size]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -187,7 +135,6 @@ export default function ReservationsPage() {
     setStatus("");
     setStartDate("");
     setEndDate("");
-    setCustomerSearchResults([]);
     setPage(0);
   };
 
@@ -225,7 +172,7 @@ export default function ReservationsPage() {
     completeMutation.mutate(reservationId);
   };
 
-  const handleReservationUpdate = (updatedReservation: ReservationResponseDto) => {
+  const handleReservationUpdate = (_updatedReservation: ReservationResponseDto) => {
     // The query will be invalidated by the mutations, so we don't need to do anything here
     // This callback is mainly for the ReservationDetails component
   };
@@ -281,34 +228,14 @@ export default function ReservationsPage() {
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium mb-1">Search</label>
-                <div className="relative">
-                  <SearchInput
-                    placeholder="Customer name or reservation ID..."
-                    value={search}
-                    onChange={setSearch}
-                  />
-                  {isSearchingCustomers && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                    </div>
-                  )}
-                </div>
-                {search.trim() && !isNaN(Number(search.trim())) && (
+                <SearchInput
+                  placeholder="Customer, car, branch or reservation ID..."
+                  value={search}
+                  onChange={setSearch}
+                />
+                {search.trim().length === 1 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Searching by reservation ID
-                  </p>
-                )}
-                {search.trim() && isNaN(Number(search.trim())) && customerSearchResults.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {customerSearchResults.length === 1 
-                      ? `Searching reservations for: ${customerSearchResults[0].fullName || `${customerSearchResults[0].firstName} ${customerSearchResults[0].lastName}`}`
-                      : `Found ${customerSearchResults.length} customers. Showing reservations for: ${customerSearchResults[0].fullName || `${customerSearchResults[0].firstName} ${customerSearchResults[0].lastName}`}`
-                    }
-                  </p>
-                )}
-                {search.trim() && isNaN(Number(search.trim())) && customerSearchResults.length === 0 && !isSearchingCustomers && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No customers found matching "{search}"
+                    Type at least 2 characters to search
                   </p>
                 )}
               </div>
@@ -463,7 +390,7 @@ export default function ReservationsPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(reservation.status)}>
-                            {reservation.status?.charAt(0) + reservation.status?.slice(1).toLowerCase()}
+                            {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
                           </Badge>
                         </TableCell>
                         <TableCell>

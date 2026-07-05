@@ -3,13 +3,16 @@ import type { CustomerResponseDto } from "@/lib/api/queries";
 /**
  * Error types for customer selection
  */
-export enum CustomerSelectionErrorType {
-  VALIDATION_ERROR = "VALIDATION_ERROR",
-  API_ERROR = "API_ERROR",
-  NETWORK_ERROR = "NETWORK_ERROR",
-  LICENSE_ERROR = "LICENSE_ERROR",
-  REQUIRED_FIELD_ERROR = "REQUIRED_FIELD_ERROR",
-}
+export const CustomerSelectionErrorType = {
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  API_ERROR: "API_ERROR",
+  NETWORK_ERROR: "NETWORK_ERROR",
+  LICENSE_ERROR: "LICENSE_ERROR",
+  REQUIRED_FIELD_ERROR: "REQUIRED_FIELD_ERROR",
+} as const;
+
+export type CustomerSelectionErrorType =
+  (typeof CustomerSelectionErrorType)[keyof typeof CustomerSelectionErrorType];
 
 /**
  * Customer selection error interface
@@ -94,7 +97,7 @@ export function handleCustomerSelectionError(error: unknown): CustomerSelectionE
       return createApiError("Invalid customer data provided");
     }
     
-    if (apiError.status >= 500) {
+    if (apiError.status !== undefined && apiError.status >= 500) {
       return createApiError("Server error occurred. Please try again later.");
     }
     

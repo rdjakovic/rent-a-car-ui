@@ -22,7 +22,7 @@ const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): Custo
   address: '123 Main St',
   city: 'New York',
   country: 'US',
-  licenseExpiryDate: '2025-12-31',
+  licenseExpiryDate: '2099-12-31',
   fullName: 'John Doe',
   ...overrides,
 });
@@ -52,7 +52,7 @@ describe('formValidation', () => {
 
   describe('driverLicenseExpiryValidation', () => {
     it('should accept future dates', () => {
-      const futureDate = '2025-12-31';
+      const futureDate = '2099-12-31';
       const result = driverLicenseExpiryValidation.safeParse(futureDate);
       expect(result.success).toBe(true);
     });

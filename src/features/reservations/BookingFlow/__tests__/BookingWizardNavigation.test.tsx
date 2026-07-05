@@ -3,10 +3,36 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import BookingWizard from '../BookingWizard'
+import type { CarListResponseDto, CustomerResponseDto, ReservationResponseDto } from '@/lib/api/queries'
+import type { BookingDetails } from '@/stores/useBookingFlowStore'
 
 // Mock the useBookingFlow hook
-const mockBookingFlow = {
-  currentStep: 'customer' as const,
+const mockBookingFlow: {
+  currentStep: 'customer' | 'review' | 'confirmation'
+  carDetails: CarListResponseDto | null
+  bookingDetails: BookingDetails | null
+  customer: CustomerResponseDto | null
+  totalDays: number
+  totalCost: number
+  reservation: ReservationResponseDto | null
+  isSubmitting: boolean
+  submissionError: string | null
+  initializeBooking: ReturnType<typeof vi.fn>
+  setCustomer: ReturnType<typeof vi.fn>
+  calculateCost: ReturnType<typeof vi.fn>
+  nextStep: ReturnType<typeof vi.fn>
+  previousStep: ReturnType<typeof vi.fn>
+  setReservation: ReturnType<typeof vi.fn>
+  setSubmitting: ReturnType<typeof vi.fn>
+  setSubmissionError: ReturnType<typeof vi.fn>
+  reset: ReturnType<typeof vi.fn>
+  canProceedToReview: ReturnType<typeof vi.fn>
+  canSubmitBooking: ReturnType<typeof vi.fn>
+  isStepComplete: ReturnType<typeof vi.fn>
+  getStepNumber: ReturnType<typeof vi.fn>
+  initializeFromUrlParams: ReturnType<typeof vi.fn>
+} = {
+  currentStep: 'customer',
   carDetails: null,
   bookingDetails: null,
   customer: null,

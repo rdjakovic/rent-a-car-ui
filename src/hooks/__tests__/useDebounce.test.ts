@@ -185,7 +185,7 @@ describe('useDebounce', () => {
   it('should handle null and undefined values', () => {
     const { result, rerender } = renderHook(
       ({ value, delay }) => useDebounce(value, delay),
-      { initialProps: { value: null as string | null, delay: 100 } }
+      { initialProps: { value: null as string | null | undefined, delay: 100 } }
     );
 
     expect(result.current).toBe(null);

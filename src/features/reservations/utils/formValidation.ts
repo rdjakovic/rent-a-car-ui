@@ -18,11 +18,11 @@ export const driverLicenseExpiryValidation = z
   .optional()
   .refine((date) => {
     if (!date) return true; // Optional field
-    const expiryDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    expiryDate.setHours(0, 0, 0, 0);
-    return expiryDate >= today;
+    if (isNaN(new Date(date).getTime())) return false;
+    // Compare as date-only strings to avoid UTC-parse/local-timezone
+    // mismatches that a Date-object comparison would introduce.
+    const todayString = new Date().toISOString().split('T')[0];
+    return date >= todayString;
   }, {
     message: "Driver license must not be expired",
   });

@@ -76,12 +76,12 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
 
     // Validate dates
     if (bookingFlow.bookingDetails) {
-      const startDate = new Date(bookingFlow.bookingDetails.startDate);
-      const endDate = new Date(bookingFlow.bookingDetails.endDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const { startDate, endDate } = bookingFlow.bookingDetails;
+      // Compare as date-only strings to avoid UTC-parse/local-timezone
+      // mismatches that a Date-object comparison would introduce.
+      const todayString = new Date().toISOString().split('T')[0];
 
-      if (startDate < today) {
+      if (startDate < todayString) {
         errors.push('Pickup date cannot be in the past');
       }
 
@@ -108,14 +108,11 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
 
     const reservationRequest: ReservationRequestDto = {
       customerId: bookingFlow.customer.id!,
-      carId: bookingFlow.carDetails.id,
+      carId: bookingFlow.carDetails.id!,
       startDate: bookingFlow.bookingDetails.startDate,
       endDate: bookingFlow.bookingDetails.endDate,
       pickupBranchId: bookingFlow.bookingDetails.branchId,
       dropoffBranchId: bookingFlow.bookingDetails.branchId, // Same branch for now
-      totalPrice: bookingFlow.totalCost,
-      dailyRate: bookingFlow.bookingDetails.dailyPrice,
-      currency: 'USD',
       notes: '',
     };
 

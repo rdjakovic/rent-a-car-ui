@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CustomerSelection from '../CustomerSelection';
@@ -40,7 +40,7 @@ const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): Custo
   address: '123 Main St',
   city: 'New York',
   country: 'US',
-  licenseExpiryDate: '2025-12-31',
+  licenseExpiryDate: '2099-12-31',
   fullName: 'John Doe',
   ...overrides,
 });
@@ -251,7 +251,6 @@ describe('CustomerSelection', () => {
     });
 
     it('should prevent selecting customer without license', async () => {
-      const user = userEvent.setup();
       const customer = createMockCustomer({ driverLicenseNo: '' });
       mockListCustomers.mockResolvedValue(createMockCustomersResponse([customer]));
 
@@ -271,7 +270,6 @@ describe('CustomerSelection', () => {
     });
 
     it('should prevent selecting customer with expired license', async () => {
-      const user = userEvent.setup();
       const customer = createMockCustomer({ licenseExpiryDate: '2020-01-01' });
       mockListCustomers.mockResolvedValue(createMockCustomersResponse([customer]));
 

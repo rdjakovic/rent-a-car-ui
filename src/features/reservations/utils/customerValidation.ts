@@ -50,15 +50,16 @@ export function validateCustomerForBooking(
     if (!customer.driverLicenseNo?.trim()) {
       errors.push("Customer must have a driver license number");
     } else if (checkLicenseExpiry && customer.licenseExpiryDate) {
-      const expiryDate = new Date(customer.licenseExpiryDate);
-      const today = new Date();
-      
-      // Set time to start of day for accurate comparison
-      today.setHours(0, 0, 0, 0);
-      expiryDate.setHours(0, 0, 0, 0);
-      
-      if (expiryDate < today) {
+      if (isNaN(new Date(customer.licenseExpiryDate).getTime())) {
         errors.push("Customer's driver license has expired");
+      } else {
+        // Compare as date-only strings to avoid UTC-parse/local-timezone
+        // mismatches that a Date-object comparison would introduce.
+        const todayString = new Date().toISOString().split('T')[0];
+
+        if (customer.licenseExpiryDate < todayString) {
+          errors.push("Customer's driver license has expired");
+        }
       }
     }
   }
@@ -85,14 +86,13 @@ export function hasValidDriverLicense(customer: CustomerResponseDto | null): boo
   }
 
   if (customer.licenseExpiryDate) {
-    const expiryDate = new Date(customer.licenseExpiryDate);
-    const today = new Date();
-    
-    // Set time to start of day for accurate comparison
-    today.setHours(0, 0, 0, 0);
-    expiryDate.setHours(0, 0, 0, 0);
-    
-    return expiryDate >= today;
+    if (isNaN(new Date(customer.licenseExpiryDate).getTime())) {
+      return false;
+    }
+    // Compare as date-only strings to avoid UTC-parse/local-timezone
+    // mismatches that a Date-object comparison would introduce.
+    const todayString = new Date().toISOString().split('T')[0];
+    return customer.licenseExpiryDate >= todayString;
   }
 
   // If no expiry date is provided, assume license is valid

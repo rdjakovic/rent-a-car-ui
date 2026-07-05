@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Search, Plus, User, Phone, Mail, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { listCustomers, type CustomerSearchParams, type CustomerResponseDto } from "@/lib/api/queries";
 import { useBookingFlowStore } from "@/stores/useBookingFlowStore";
 import CustomerFormDialog from "@/features/customers/CustomerFormDialog";
-import { 
-  validateCustomerForBooking, 
-  hasValidDriverLicense, 
-  getCustomerValidationError 
+import {
+  hasValidDriverLicense,
+  getCustomerValidationError
 } from "../utils/customerValidation";
 
 interface CustomerSelectionProps {
@@ -47,7 +46,7 @@ export default function CustomerSelection({ onNext, onBack }: CustomerSelectionP
   } = useQuery({
     queryKey: ["customers", searchParams],
     queryFn: () => listCustomers(searchParams),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

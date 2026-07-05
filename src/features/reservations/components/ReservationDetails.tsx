@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getReservationById, 
-  updateReservation, 
-  confirmReservation, 
-  cancelReservation, 
+import {
+  confirmReservation,
+  cancelReservation,
   completeReservation,
-  type ReservationResponseDto,
-  type ReservationRequestDto 
+  type ReservationResponseDto
 } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,7 +76,7 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
         description: `Reservation #${reservation.id} has been confirmed.`,
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to confirm reservation. Please try again.",
@@ -99,7 +96,7 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
         description: `Reservation #${reservation.id} has been cancelled.`,
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to cancel reservation. Please try again.",
@@ -119,7 +116,7 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
         description: `Reservation #${reservation.id} has been marked as completed.`,
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to complete reservation. Please try again.",
@@ -163,7 +160,7 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={getStatusBadgeVariant(reservation.status)} className="text-sm">
-            {reservation.status?.charAt(0) + reservation.status?.slice(1).toLowerCase()}
+            {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
           </Badge>
           <div className="flex gap-2">
             {canEdit && (

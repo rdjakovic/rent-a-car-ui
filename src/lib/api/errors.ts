@@ -96,7 +96,7 @@ export function normalizeError(error: any): ApiError {
 
     // Extract message from various response formats
     let message = 'An error occurred';
-    let code = ERROR_CODES.UNKNOWN_ERROR;
+    let code: (typeof ERROR_CODES)[keyof typeof ERROR_CODES] = ERROR_CODES.UNKNOWN_ERROR;
     let details = {};
 
     if (responseData) {

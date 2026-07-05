@@ -13,7 +13,6 @@ vi.mock('@/lib/api/queries', () => ({
   confirmReservation: vi.fn(),
   cancelReservation: vi.fn(),
   completeReservation: vi.fn(),
-  searchCustomers: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -25,7 +24,6 @@ const mockListReservations = vi.mocked(queries.listReservations);
 const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
 const mockCompleteReservation = vi.mocked(queries.completeReservation);
-const mockSearchCustomers = vi.mocked(queries.searchCustomers);
 const mockToast = vi.mocked(toast);
 
 const mockReservations = [
@@ -107,7 +105,7 @@ const mockReservations = [
     status: 'CONFIRMED' as const,
     totalPrice: 90,
     currency: 'USD',
-    notes: null,
+    notes: undefined,
     customer: {
       id: 2,
       firstName: 'Bob',
@@ -207,34 +205,6 @@ describe('ReservationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListReservations.mockResolvedValue(mockPagedResponse);
-    mockSearchCustomers.mockResolvedValue({
-      content: [
-        {
-          id: 1,
-          firstName: 'Alice',
-          lastName: 'Johnson',
-          email: 'alice.johnson@email.com',
-          phone: '+1-555-0301',
-          driverLicenseNo: 'DL123456789',
-          dateOfBirth: '1985-03-15',
-          address: '789 Oak Street',
-          city: 'New York',
-          country: 'USA',
-          licenseExpiryDate: '2028-03-15',
-          fullName: 'Alice Johnson',
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-01T00:00:00Z',
-        }
-      ],
-      totalPages: 1,
-      totalElements: 1,
-      size: 20,
-      number: 0,
-      first: true,
-      last: true,
-      numberOfElements: 1,
-      empty: false,
-    });
   });
 
   it('renders reservations list correctly', async () => {
@@ -288,7 +258,7 @@ describe('ReservationsPage', () => {
     }
   });
 
-  it('handles search functionality', async () => {
+  it('handles search functionality with a single API call', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReservationsPage />);
 
@@ -296,18 +266,60 @@ describe('ReservationsPage', () => {
       expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText('Customer name or reservation ID...');
+    const searchInput = screen.getByPlaceholderText('Customer, car, branch or reservation ID...');
     await user.type(searchInput, 'Alice');
 
-    // Should trigger a new API call with search parameters
+    // Should forward the search term directly to the reservations endpoint
     await waitFor(() => {
       expect(mockListReservations).toHaveBeenCalledWith(
         expect.objectContaining({
+          search: 'Alice',
           page: 0,
           size: 10,
         })
       );
     });
+  });
+
+  it('forwards numeric search terms as reservation ID search', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReservationsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText('Customer, car, branch or reservation ID...');
+    await user.type(searchInput, '12345');
+
+    await waitFor(() => {
+      expect(mockListReservations).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: '12345',
+        })
+      );
+    });
+  });
+
+  it('does not send search terms shorter than 2 characters', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReservationsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText('Customer, car, branch or reservation ID...');
+    await user.type(searchInput, 'A');
+
+    // The hint renders only after the debounced search state updates
+    await waitFor(() => {
+      expect(screen.getByText('Type at least 2 characters to search')).toBeInTheDocument();
+    });
+
+    expect(mockListReservations).not.toHaveBeenCalledWith(
+      expect.objectContaining({ search: expect.anything() })
+    );
   });
 
   it('handles status filter', async () => {

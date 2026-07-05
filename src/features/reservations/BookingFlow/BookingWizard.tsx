@@ -57,15 +57,17 @@ export default function BookingWizard() {
         if (startDate && endDate) {
           const start = new Date(startDate);
           const end = new Date(endDate);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
 
           if (isNaN(start.getTime()) || isNaN(end.getTime())) {
             setInitializationError('Invalid date format. Please start from the availability search.');
             return;
           }
 
-          if (start < today) {
+          // Compare as date-only strings to avoid UTC-parse/local-timezone
+          // mismatches that a Date-object comparison would introduce.
+          const todayString = new Date().toISOString().split('T')[0];
+
+          if (startDate < todayString) {
             setInitializationError('Start date cannot be in the past. Please start from the availability search.');
             return;
           }
@@ -91,11 +93,6 @@ export default function BookingWizard() {
       }
     }
   }, [searchParams, navigate, bookingFlow.bookingDetails, bookingFlow.initializeFromUrlParams]); // Only depend on specific values
-
-  const handleComplete = (reservationId: number) => {
-    // Navigate to reservations page or show success
-    navigate(`/reservations/${reservationId}`);
-  };
 
   const handleCancel = () => {
     bookingFlow.reset();

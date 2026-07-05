@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { listBranches, findAvailableCars, type AvailabilityParams } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,7 +82,7 @@ export default function AvailabilityPage() {
     ],
     queryFn: () => findAvailableCars(availParams as AvailabilityParams),
     enabled: !!availParams,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     staleTime: 10_000,
   });
 

@@ -26,6 +26,7 @@ export function SearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const isExternalUpdate = useRef(false);
   const isClearing = useRef(false);
+  const lastExternalValue = useRef(value);
   
   // Debounce the internal value
   const debouncedValue = useDebounce(internalValue, debounceMs);
@@ -39,13 +40,16 @@ export function SearchInput({
     isClearing.current = false;
   }, [debouncedValue, onChange, value]);
   
-  // Update internal value when external value changes (e.g., programmatic reset)
+  // Update internal value when external value changes (e.g., programmatic reset).
+  // Only react to actual external changes; comparing against internalValue here
+  // would revert user keystrokes before the debounced onChange reaches the parent.
   useEffect(() => {
-    if (value !== internalValue) {
+    if (value !== lastExternalValue.current) {
+      lastExternalValue.current = value;
       isExternalUpdate.current = true;
       setInternalValue(value);
     }
-  }, [value, internalValue]);
+  }, [value]);
 
   const handleClear = () => {
     isClearing.current = true;

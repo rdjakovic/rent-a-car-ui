@@ -25,13 +25,13 @@ const mockCustomer: CustomerResponseDto = {
   address: '123 Main St',
   city: 'New York',
   country: 'USA',
-  licenseExpiryDate: '2025-12-31',
+  licenseExpiryDate: '2099-12-31',
 };
 
 const mockCarDetails: CarListResponseDto = {
   id: 1,
   displayName: 'Toyota Camry 2024',
-  category: 'MIDSIZE',
+  category: 'INTERMEDIATE',
   dailyPrice: 45.99,
   branchName: 'Downtown Branch',
 };
@@ -65,12 +65,16 @@ const defaultBookingFlowState = {
   totalDays: 4,
   totalCost: 183.96,
   reservation: null,
+  isSubmitting: false,
+  submissionError: null,
   initializeBooking: vi.fn(),
   setCustomer: vi.fn(),
   calculateCost: vi.fn(),
   nextStep: vi.fn(),
   previousStep: vi.fn(),
   setReservation: vi.fn(),
+  setSubmitting: vi.fn(),
+  setSubmissionError: vi.fn(),
   reset: vi.fn(),
   canProceedToReview: vi.fn(() => true),
   canSubmitBooking: vi.fn(() => true),
@@ -127,7 +131,7 @@ describe('BookingReview', () => {
       // Check vehicle information
       expect(screen.getByText('Vehicle Information')).toBeInTheDocument();
       expect(screen.getByText('Toyota Camry 2024')).toBeInTheDocument();
-      expect(screen.getByText('MIDSIZE')).toBeInTheDocument();
+      expect(screen.getByText('INTERMEDIATE')).toBeInTheDocument();
       expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
 
       // Check rental period

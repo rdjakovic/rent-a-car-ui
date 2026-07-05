@@ -40,7 +40,7 @@ export interface BookingFlowState {
     carDetails: CarListResponseDto;
     bookingDetails: BookingDetails;
   }) => void;
-  setCustomer: (customer: CustomerResponseDto) => void;
+  setCustomer: (customer: CustomerResponseDto | null) => void;
   calculateCost: () => void;
   nextStep: () => void;
   previousStep: () => void;

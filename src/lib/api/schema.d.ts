@@ -1442,6 +1442,8 @@ export interface operations {
                 branchId?: number;
                 startDate?: string;
                 endDate?: string;
+                /** @description Multi-field search across customer name/email/phone, reservation ID, car details, and branch names (2-100 characters). Hand-added to mirror the backend controller; will also appear when regenerating via `npm run api:gen`. */
+                search?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

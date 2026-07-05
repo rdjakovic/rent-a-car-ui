@@ -77,9 +77,6 @@ export const handlers = [
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '0');
     const size = parseInt(url.searchParams.get('size') || '10');
-    const branchId = url.searchParams.get('branchId');
-    const startDate = url.searchParams.get('startDate');
-    const endDate = url.searchParams.get('endDate');
 
     // Filter available cars (not rented and not in maintenance)
     let availableCars = cars.filter(car =>

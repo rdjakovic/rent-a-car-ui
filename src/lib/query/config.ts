@@ -1,7 +1,7 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryCache, QueryClient } from '@tanstack/react-query';
 import type { DefaultOptions } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { normalizeError, isNetworkError, getErrorMessage, type ApiError } from '@/lib/api/errors';
+import { normalizeError, isNetworkError, getErrorMessage } from '@/lib/api/errors';
 
 /**
  * Retry configuration for different types of operations
@@ -117,6 +117,9 @@ export const queryClientDefaults: DefaultOptions = {
  */
 export function createQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: handleQueryError,
+    }),
     defaultOptions: queryClientDefaults,
   });
 }
@@ -184,7 +187,7 @@ export const mutationKeys = {
  * Utility function to invalidate related queries after mutations
  */
 export function getInvalidationQueries(mutationType: string, entityId?: number) {
-  const invalidations: any[][] = [];
+  const invalidations: (readonly unknown[])[] = [];
   
   switch (mutationType) {
     case 'createCustomer':
