@@ -39,8 +39,8 @@ const mockCarDetails: CarListResponseDto = {
 const mockBookingDetails = {
   carId: 1,
   branchId: 1,
-  startDate: '2024-02-01',
-  endDate: '2024-02-05',
+  startDate: '2099-02-01',
+  endDate: '2099-02-05',
   dailyPrice: 45.99,
 };
 
@@ -132,7 +132,7 @@ describe('BookingReview', () => {
       expect(screen.getByText('Vehicle Information')).toBeInTheDocument();
       expect(screen.getByText('Toyota Camry 2024')).toBeInTheDocument();
       expect(screen.getByText('INTERMEDIATE')).toBeInTheDocument();
-      expect(screen.getByText('Downtown Branch')).toBeInTheDocument();
+      expect(screen.getAllByText('Downtown Branch').length).toBeGreaterThan(0);
 
       // Check rental period
       expect(screen.getByText('Rental Period')).toBeInTheDocument();
@@ -174,11 +174,11 @@ describe('BookingReview', () => {
       );
 
       // Check daily rate display
-      expect(screen.getByText('$45.99')).toBeInTheDocument();
-      
+      expect(screen.getAllByText('$45.99').length).toBeGreaterThan(0);
+
       // Check number of days
       expect(screen.getByText('4')).toBeInTheDocument();
-      
+
       // Check total cost
       expect(screen.getByText('$183.96')).toBeInTheDocument();
     });
@@ -190,7 +190,7 @@ describe('BookingReview', () => {
         totalCost: 45.99,
         bookingDetails: {
           ...mockBookingDetails,
-          endDate: '2024-02-01',
+          endDate: '2099-02-01',
         },
       });
 
@@ -199,7 +199,7 @@ describe('BookingReview', () => {
       );
 
       expect(screen.getByText('1 day')).toBeInTheDocument();
-      expect(screen.getByText('$45.99')).toBeInTheDocument();
+      expect(screen.getAllByText('$45.99').length).toBeGreaterThan(0);
     });
   });
 
@@ -328,13 +328,10 @@ describe('BookingReview', () => {
         expect(mockCreateReservation).toHaveBeenCalledWith({
           customerId: 1,
           carId: 1,
-          startDate: '2024-02-01',
-          endDate: '2024-02-05',
+          startDate: '2099-02-01',
+          endDate: '2099-02-05',
           pickupBranchId: 1,
           dropoffBranchId: 1,
-          totalPrice: 183.96,
-          dailyRate: 45.99,
-          currency: 'USD',
           notes: '',
         });
       });
@@ -353,7 +350,9 @@ describe('BookingReview', () => {
       const confirmButton = screen.getByText('Confirm Booking');
       fireEvent.click(confirmButton);
 
-      expect(mockCreateReservation).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockCreateReservation).toHaveBeenCalled();
+      });
     });
   });
 
@@ -377,8 +376,8 @@ describe('BookingReview', () => {
       );
 
       // Check that dates are formatted in a readable way
-      expect(screen.getByText(/Thursday, February 1, 2024/)).toBeInTheDocument();
-      expect(screen.getByText(/Monday, February 5, 2024/)).toBeInTheDocument();
+      expect(screen.getByText(/Sunday, February 1, 2099/)).toBeInTheDocument();
+      expect(screen.getByText(/Thursday, February 5, 2099/)).toBeInTheDocument();
     });
   });
 

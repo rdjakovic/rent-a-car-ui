@@ -29,21 +29,28 @@ vi.mock('@/features/customers/CustomerFormDialog', () => ({
 }));
 
 // Mock customer data
-const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => ({
-  id: 1,
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john.doe@example.com',
-  phone: '+1234567890',
-  driverLicenseNo: 'DL123456789',
-  dateOfBirth: '1990-01-01',
-  address: '123 Main St',
-  city: 'New York',
-  country: 'US',
-  licenseExpiryDate: '2099-12-31',
-  fullName: 'John Doe',
-  ...overrides,
-});
+const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => {
+  const base = {
+    id: 1,
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1234567890',
+    driverLicenseNo: 'DL123456789',
+    dateOfBirth: '1990-01-01',
+    address: '123 Main St',
+    city: 'New York',
+    country: 'US',
+    licenseExpiryDate: '2099-12-31',
+    ...overrides,
+  };
+  // Derive fullName from the final firstName/lastName unless explicitly overridden,
+  // so overriding just firstName/lastName doesn't leave a stale default fullName.
+  return {
+    ...base,
+    fullName: overrides.fullName ?? `${base.firstName} ${base.lastName}`,
+  };
+};
 
 const createMockCustomersResponse = (customers: CustomerResponseDto[]): PageCustomerResponseDto => ({
   content: customers,
@@ -335,12 +342,13 @@ describe('CustomerSelection', () => {
         </TestProviders>
       );
 
+      // The Continue button is disabled while no customer is selected, which
+      // is what actually prevents continuing -- clicking it is a no-op, so
+      // handleNext's "Please select a customer" message is unreachable here.
       const continueButton = screen.getByText('Continue to Review');
-      await user.click(continueButton);
+      expect(continueButton).toBeDisabled();
 
-      await waitFor(() => {
-        expect(screen.getByText('Please select a customer')).toBeInTheDocument();
-      });
+      await user.click(continueButton);
 
       expect(mockOnNext).not.toHaveBeenCalled();
     });

@@ -63,12 +63,15 @@ vi.mock('@/hooks/useBookingFlow', () => ({
 
 // Mock react-router-dom
 const mockNavigate = vi.fn()
+const mockUseSearchParams = vi.fn(() => [
+  new URLSearchParams('carId=101&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99&carDisplayName=Toyota%20Camry&carCategory=INTERMEDIATE&branchName=Main%20Branch')
+])
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useSearchParams: () => [new URLSearchParams('carId=101&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99&carDisplayName=Toyota%20Camry&carCategory=INTERMEDIATE&branchName=Main%20Branch')],
+    useSearchParams: () => mockUseSearchParams(),
   }
 })
 
@@ -99,7 +102,7 @@ vi.mock('../BookingConfirmation', () => ({
   ),
 }))
 
-vi.mock('../components/BookingBreadcrumbs', () => ({
+vi.mock('../../components/BookingBreadcrumbs', () => ({
   default: ({ currentStep, carDisplayName }: any) => (
     <div data-testid="booking-breadcrumbs">
       Step: {currentStep}, Car: {carDisplayName}
@@ -139,27 +142,46 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   }
 
   it('initializes booking from valid URL parameters', async () => {
-    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
-    mockBookingFlow.carDetails = {
-      id: 101,
-      displayName: 'Toyota Camry',
-      category: 'INTERMEDIATE',
-      dailyPrice: 45.99,
-      branchName: 'Main Branch',
-    }
-    mockBookingFlow.bookingDetails = {
-      carId: 101,
-      branchId: 1,
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
-      dailyPrice: 45.99,
-    }
+    // Simulate the real store: a successful initializeFromUrlParams call
+    // populates carDetails/bookingDetails, which is what lets the wizard
+    // move past its loading state.
+    mockBookingFlow.initializeFromUrlParams.mockImplementation(() => {
+      mockBookingFlow.carDetails = {
+        id: 101,
+        displayName: 'Toyota Camry',
+        category: 'INTERMEDIATE',
+        dailyPrice: 45.99,
+        branchName: 'Main Branch',
+      }
+      mockBookingFlow.bookingDetails = {
+        carId: 101,
+        branchId: 1,
+        startDate: '2099-12-01',
+        endDate: '2099-12-05',
+        dailyPrice: 45.99,
+      }
+      return true
+    })
+    mockUseSearchParams.mockReturnValue([
+      new URLSearchParams('carId=101&branchId=1&startDate=2099-12-01&endDate=2099-12-05&dailyPrice=45.99&carDisplayName=Toyota%20Camry&carCategory=INTERMEDIATE&branchName=Main%20Branch')
+    ])
 
-    renderWithProviders(<BookingWizard />)
+    const { rerender } = renderWithProviders(<BookingWizard />)
 
     await waitFor(() => {
       expect(mockBookingFlow.initializeFromUrlParams).toHaveBeenCalled()
     })
+
+    // Force a fresh render pass so the component picks up the mock's
+    // now-populated carDetails/bookingDetails (a plain mutable mock object
+    // isn't reactive the way the real Zustand store is).
+    rerender(
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <BookingWizard />
+        </QueryClientProvider>
+      </BrowserRouter>
+    )
 
     expect(screen.getByText('Book Your Rental')).toBeInTheDocument()
     expect(screen.getByTestId('customer-selection')).toBeInTheDocument()
@@ -169,19 +191,9 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
     mockBookingFlow.bookingDetails = null // Ensure no booking details
 
-    // Create a new mock for this specific test
-    const mockUseSearchParams = vi.fn(() => [
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams('carId=101&branchId=1') // Missing required params
     ])
-    
-    vi.doMock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom')
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-        useSearchParams: mockUseSearchParams,
-      }
-    })
 
     renderWithProviders(<BookingWizard />)
 
@@ -197,7 +209,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return invalid carId
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams('carId=invalid&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99')
     ])
 
@@ -213,7 +225,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return invalid branchId
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams('carId=101&branchId=0&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=45.99')
     ])
 
@@ -229,7 +241,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return invalid dailyPrice
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams('carId=101&branchId=1&startDate=2024-12-01&endDate=2024-12-05&dailyPrice=-10')
     ])
 
@@ -245,7 +257,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return invalid date format
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams('carId=101&branchId=1&startDate=invalid-date&endDate=2024-12-05&dailyPrice=45.99')
     ])
 
@@ -265,7 +277,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     yesterday.setDate(yesterday.getDate() - 1)
     const pastDate = yesterday.toISOString().split('T')[0]
 
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
+    mockUseSearchParams.mockReturnValue([
       new URLSearchParams(`carId=101&branchId=1&startDate=${pastDate}&endDate=2024-12-05&dailyPrice=45.99`)
     ])
 
@@ -281,8 +293,8 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return end date before start date
-    vi.mocked(require('react-router-dom').useSearchParams).mockReturnValue([
-      new URLSearchParams('carId=101&branchId=1&startDate=2024-12-05&endDate=2024-12-01&dailyPrice=45.99')
+    mockUseSearchParams.mockReturnValue([
+      new URLSearchParams('carId=101&branchId=1&startDate=2099-12-05&endDate=2099-12-01&dailyPrice=45.99')
     ])
 
     renderWithProviders(<BookingWizard />)
@@ -348,6 +360,10 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
   it('shows loading state when booking details are not yet loaded', () => {
     mockBookingFlow.carDetails = null
     mockBookingFlow.bookingDetails = null
+    mockBookingFlow.initializeFromUrlParams.mockReturnValue(true)
+    mockUseSearchParams.mockReturnValue([
+      new URLSearchParams('carId=101&branchId=1&startDate=2099-12-01&endDate=2099-12-05&dailyPrice=45.99')
+    ])
 
     renderWithProviders(<BookingWizard />)
 

@@ -265,10 +265,11 @@ describe('AvailabilityPage - Booking Integration', () => {
       fireEvent.click(bookButton)
     })
 
-    // Verify URL encoding
+    // Verify URL encoding (URLSearchParams encodes spaces as '+', per
+    // application/x-www-form-urlencoded, not '%20')
     const navigationCall = mockNavigate.mock.calls[0][0]
-    expect(navigationCall).toContain('carDisplayName=BMW%20X5%20M-Sport%20%26%20Luxury')
-    expect(navigationCall).toContain('branchName=Downtown%20%26%20Airport')
+    expect(navigationCall).toContain('carDisplayName=BMW+X5+M-Sport+%26+Luxury')
+    expect(navigationCall).toContain('branchName=Downtown+%26+Airport')
   })
 
   it('handles missing optional car details gracefully', async () => {

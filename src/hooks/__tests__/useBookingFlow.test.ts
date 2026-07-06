@@ -342,9 +342,9 @@ describe('useBookingFlow', () => {
       });
     });
 
-    it('should handle invalid number parameters gracefully', () => {
+    it('should reject invalid number parameters gracefully', () => {
       const { result } = renderHook(() => useBookingFlow());
-      
+
       const searchParams = new URLSearchParams({
         carId: 'invalid',
         branchId: '2',
@@ -352,14 +352,16 @@ describe('useBookingFlow', () => {
         endDate: '2024-01-05',
         dailyPrice: '75.50',
       });
-      
+
       act(() => {
+        // initializeFromUrlParams validates each numeric param and rejects
+        // the whole call (rather than propagating NaN) when carId doesn't parse.
         const initialized = result.current.initializeFromUrlParams(searchParams);
-        expect(initialized).toBe(true); // Should still work with NaN conversion
+        expect(initialized).toBe(false);
       });
-      
-      expect(result.current.carDetails?.id).toBeNaN();
-      expect(result.current.bookingDetails?.carId).toBeNaN();
+
+      expect(result.current.carDetails).toBeNull();
+      expect(result.current.bookingDetails).toBeNull();
     });
   });
 

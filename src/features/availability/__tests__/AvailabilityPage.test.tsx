@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
 import { listBranches, findAvailableCars } from '@/lib/api/queries'
 
@@ -42,9 +43,11 @@ describe('AvailabilityPage', () => {
 
   const renderWithQueryClient = (component: React.ReactElement) => {
     return render(
-      <QueryClientProvider client={queryClient}>
-        {component}
-      </QueryClientProvider>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          {component}
+        </QueryClientProvider>
+      </BrowserRouter>
     )
   }
 

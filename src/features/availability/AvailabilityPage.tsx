@@ -138,9 +138,9 @@ export default function AvailabilityPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Branch</label>
+              <label htmlFor="branch" className="block text-sm font-medium mb-1">Branch</label>
               <Select value={branchId} onValueChange={setBranchId}>
-                <SelectTrigger>
+                <SelectTrigger id="branch">
                   <SelectValue placeholder={branchesQuery.isPending ? "Loading..." : "Select branch"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -153,18 +153,18 @@ export default function AvailabilityPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Start date</label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <label htmlFor="start-date" className="block text-sm font-medium mb-1">Start date</label>
+              <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">End date</label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <label htmlFor="end-date" className="block text-sm font-medium mb-1">End date</label>
+              <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div className="md:col-span-3 lg:col-span-1" />
             <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
+              <label htmlFor="category" className="block text-sm font-medium mb-1">Category</label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+                <SelectTrigger id="category">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -175,9 +175,9 @@ export default function AvailabilityPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Transmission</label>
+              <label htmlFor="transmission" className="block text-sm font-medium mb-1">Transmission</label>
               <Select value={transmission} onValueChange={setTransmission}>
-                <SelectTrigger>
+                <SelectTrigger id="transmission">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -188,9 +188,9 @@ export default function AvailabilityPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Fuel type</label>
+              <label htmlFor="fuel-type" className="block text-sm font-medium mb-1">Fuel type</label>
               <Select value={fuelType} onValueChange={setFuelType}>
-                <SelectTrigger>
+                <SelectTrigger id="fuel-type">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,12 +201,12 @@ export default function AvailabilityPage() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Min seats</label>
-              <Input type="number" min={1} value={minSeats} onChange={(e) => setMinSeats(e.target.value)} />
+              <label htmlFor="min-seats" className="block text-sm font-medium mb-1">Min seats</label>
+              <Input id="min-seats" type="number" min={1} value={minSeats} onChange={(e) => setMinSeats(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Max daily price</label>
-              <Input type="number" min={0} step="0.01" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+              <label htmlFor="max-price" className="block text-sm font-medium mb-1">Max daily price</label>
+              <Input id="max-price" type="number" min={0} step="0.01" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
             </div>
           </div>
 

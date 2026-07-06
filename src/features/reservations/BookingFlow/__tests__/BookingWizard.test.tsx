@@ -64,7 +64,7 @@ describe('BookingWizard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument();
-        expect(screen.getByText('Invalid booking parameters. Please start from the availability search.')).toBeInTheDocument();
+        expect(screen.getByText(/Missing required booking parameters/)).toBeInTheDocument();
       });
     });
 
@@ -77,12 +77,12 @@ describe('BookingWizard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument();
-        expect(screen.getByText('Invalid booking parameters. Please start from the availability search.')).toBeInTheDocument();
+        expect(screen.getByText(/Missing required booking parameters/)).toBeInTheDocument();
       });
     });
 
     it('should initialize booking when all required URL parameters are provided', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry&carCategory=MIDSIZE&branchName=Downtown';
+      const urlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry&carCategory=INTERMEDIATE&branchName=Downtown';
       
       render(
         <TestProviders initialEntries={[`/book${urlParams}`]}>
@@ -99,14 +99,14 @@ describe('BookingWizard', () => {
       
       // Check if booking summary is displayed with correct data
       expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-      expect(screen.getByText('2024-01-01')).toBeInTheDocument();
-      expect(screen.getByText('2024-01-05')).toBeInTheDocument();
+      expect(screen.getByText('2099-01-01')).toBeInTheDocument();
+      expect(screen.getByText('2099-01-05')).toBeInTheDocument();
       expect(screen.getByText('4 days')).toBeInTheDocument();
       expect(screen.getByText('$200.00')).toBeInTheDocument();
     });
 
     it('should handle URL-encoded parameters correctly', async () => {
-      const urlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=75.50&carDisplayName=Honda%20Civic%20Hybrid&carCategory=COMPACT&branchName=Airport%20Terminal%201';
+      const urlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=75.50&carDisplayName=Honda%20Civic%20Hybrid&carCategory=COMPACT&branchName=Airport%20Terminal%201';
       
       render(
         <TestProviders initialEntries={[`/book${urlParams}`]}>
@@ -160,7 +160,7 @@ describe('BookingWizard', () => {
   });
 
   describe('step navigation UI', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should display correct step indicators', async () => {
       render(
@@ -193,20 +193,24 @@ describe('BookingWizard', () => {
       });
     });
 
-    it('should show loading state initially', async () => {
+    it('should show an error for incomplete URL parameters', async () => {
       render(
         <TestProviders initialEntries={['/book?carId=1']}>
           <BookingWizard />
         </TestProviders>
       );
 
-      // Should show loading state before error
-      expect(screen.getByText('Loading booking details...')).toBeInTheDocument();
+      // The initialization effect runs synchronously (no async work), so by
+      // the time render() returns there's no observable intermediate loading
+      // state here -- it goes straight to the missing-params error.
+      await waitFor(() => {
+        expect(screen.getByText(/Missing required booking parameters/)).toBeInTheDocument();
+      });
     });
   });
 
   describe('booking summary display', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry&branchName=Downtown%20Branch';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry&branchName=Downtown%20Branch';
 
     it('should display booking summary with correct information', async () => {
       render(
@@ -218,8 +222,8 @@ describe('BookingWizard', () => {
       await waitFor(() => {
         expect(screen.getByText('Booking Summary')).toBeInTheDocument();
         expect(screen.getByText('Toyota Camry')).toBeInTheDocument();
-        expect(screen.getByText('2024-01-01')).toBeInTheDocument();
-        expect(screen.getByText('2024-01-05')).toBeInTheDocument();
+        expect(screen.getByText('2099-01-01')).toBeInTheDocument();
+        expect(screen.getByText('2099-01-05')).toBeInTheDocument();
         expect(screen.getByText('4 days')).toBeInTheDocument();
         expect(screen.getByText('$200.00')).toBeInTheDocument();
       });
@@ -250,8 +254,8 @@ describe('BookingWizard', () => {
           bookingDetails: {
             carId: 1,
             branchId: 2,
-            startDate: '2024-01-01',
-            endDate: '2024-01-03',
+            startDate: '2099-01-01',
+            endDate: '2099-01-03',
             dailyPrice: 100,
           },
         });
@@ -266,7 +270,7 @@ describe('BookingWizard', () => {
   });
 
   describe('navigation handlers', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should handle cancel navigation and reset store', async () => {
       render(
@@ -276,26 +280,36 @@ describe('BookingWizard', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Cancel')).toBeInTheDocument();
+        expect(screen.getByText('Back')).toBeInTheDocument();
       });
 
       // Verify store has data before cancel
       const storeBefore = useBookingFlowStore.getState();
       expect(storeBefore.carDetails).not.toBeNull();
 
-      const cancelButton = screen.getByText('Cancel');
-      
+      // vi.spyOn on a getState() snapshot won't intercept future calls --
+      // Zustand replaces the state object on every set(), so the component
+      // reads the reset function from a later, un-spied snapshot. Inject the
+      // spy via setState instead, so it becomes part of the live store.
+      const resetSpy = vi.fn(useBookingFlowStore.getState().reset);
+      await act(async () => {
+        useBookingFlowStore.setState({ reset: resetSpy });
+      });
+
+      const cancelButton = screen.getByText('Back');
+
       await act(async () => {
         fireEvent.click(cancelButton);
       });
 
-      // Verify store is reset after cancel
-      const storeAfter = useBookingFlowStore.getState();
-      expect(storeAfter.carDetails).toBeNull();
-      expect(storeAfter.bookingDetails).toBeNull();
-      expect(storeAfter.customer).toBeNull();
-
-      // The cancel handler should call navigate to home
+      // The cancel handler resets the store and navigates home. Because
+      // useNavigate is mocked as a no-op here, the route never actually
+      // changes, so the wizard's own init effect re-fires (bookingDetails
+      // went null) and repopulates the store from the still-present URL
+      // params -- unlike the real app, where navigating away unmounts this
+      // component. So we assert the reset/navigate calls themselves rather
+      // than the post-click store snapshot.
+      expect(resetSpy).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
 
@@ -353,13 +367,16 @@ describe('BookingWizard', () => {
       });
 
       render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50']}>
+        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50']}>
           <BookingWizard />
         </TestProviders>
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load booking details. Please try again.')).toBeInTheDocument();
+        // useBookingFlow's initializeFromUrlParams catches the thrown error
+        // internally and returns false; BookingWizard then reports it as a
+        // normal "failed to initialize" outcome, not its own catch-block message.
+        expect(screen.getByText('Failed to initialize booking. Please start from the availability search.')).toBeInTheDocument();
       });
 
       // Restore original function
@@ -370,13 +387,26 @@ describe('BookingWizard', () => {
     });
 
     it('should show skeleton loading state', async () => {
-      // Reset store to trigger loading state
+      // With valid URL params, initialization completes synchronously within
+      // render()'s act() scope, so the loading UI is never observable that
+      // way. Instead, force the exact state the loading branch checks for:
+      // bookingDetails already set (so the URL-param init effect skips) but
+      // carDetails still null.
       await act(async () => {
-        useBookingFlowStore.getState().reset();
+        useBookingFlowStore.setState({
+          bookingDetails: {
+            carId: 1,
+            branchId: 2,
+            startDate: '2099-01-01',
+            endDate: '2099-01-05',
+            dailyPrice: 50,
+          },
+          carDetails: null,
+        });
       });
 
       render(
-        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50']}>
+        <TestProviders initialEntries={['/book?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50']}>
           <BookingWizard />
         </TestProviders>
       );
@@ -388,7 +418,7 @@ describe('BookingWizard', () => {
   });
 
   describe('booking submission integration', () => {
-    const validUrlParams = '?carId=1&branchId=2&startDate=2024-01-01&endDate=2024-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
+    const validUrlParams = '?carId=1&branchId=2&startDate=2099-01-01&endDate=2099-01-05&dailyPrice=50&carDisplayName=Toyota%20Camry';
 
     it('should handle successful booking submission', async () => {
       render(
