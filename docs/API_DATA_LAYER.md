@@ -49,7 +49,7 @@ All reservation types are properly typed using the generated OpenAPI schema:
 
 ### New Search Endpoint
 
-The customer search functionality has been enhanced to use the new backend endpoint `/api/customers/searchany` which provides more comprehensive search capabilities.
+The customer search functionality has been enhanced to use the new backend endpoint `/api/v1/customers/searchany` which provides more comprehensive search capabilities.
 
 ### Implementation
 
@@ -76,10 +76,10 @@ The enhanced search now covers:
 The search is automatically used when a search parameter is provided:
 
 ```typescript
-// This will use the enhanced /api/customers/searchany endpoint
+// This will use the enhanced /api/v1/customers/searchany endpoint
 const results = await listCustomers({ search: 'smith', page: 0, size: 10 });
 
-// This will use the regular /api/customers endpoint
+// This will use the regular /api/v1/customers endpoint
 const allCustomers = await listCustomers({ page: 0, size: 10 });
 ```
 
@@ -208,7 +208,7 @@ Realistic seed data includes:
 All major API endpoints are mocked:
 - Branches: List with pagination
 - Cars: List, search, availability check, details
-- Customers: CRUD operations with validation, enhanced search via `/api/customers/searchany`
+- Customers: CRUD operations with validation, enhanced search via `/api/v1/customers/searchany`
 - Reservations: Full lifecycle management
 
 ### Usage
