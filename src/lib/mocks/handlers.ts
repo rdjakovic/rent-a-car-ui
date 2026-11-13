@@ -21,7 +21,7 @@ let reservations = [...mockReservations];
 
 export const handlers = [
   // Branch endpoints
-  http.get('/api/branches', async ({ request }) => {
+  http.get('/api/v1/branches', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -33,7 +33,7 @@ export const handlers = [
   }),
 
   // Car endpoints
-  http.get('/api/cars', async ({ request }) => {
+  http.get('/api/v1/cars', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -71,7 +71,7 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  http.get('/api/cars/available', async ({ request }) => {
+  http.get('/api/v1/cars/available', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -91,7 +91,7 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  http.get('/api/cars/:id', async ({ params }) => {
+  http.get('/api/v1/cars/:id', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -108,7 +108,7 @@ export const handlers = [
   }),
 
   // Customer endpoints
-  http.get('/api/customers', async ({ request }) => {
+  http.get('/api/v1/customers', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -133,7 +133,7 @@ export const handlers = [
   }),
 
   // Enhanced customer search endpoint
-  http.get('/api/customers/searchany', async ({ request }) => {
+  http.get('/api/v1/customers/searchany', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -159,7 +159,7 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  http.get('/api/customers/:id', async ({ params }) => {
+  http.get('/api/v1/customers/:id', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -175,7 +175,7 @@ export const handlers = [
     return HttpResponse.json(customer);
   }),
 
-  http.post('/api/customers', async ({ request }) => {
+  http.post('/api/v1/customers', async ({ request }) => {
     await delay();
 
     const customerData = await request.json() as CustomerRequestDto;
@@ -207,7 +207,7 @@ export const handlers = [
     return HttpResponse.json(newCustomer, { status: 201 });
   }),
 
-  http.put('/api/customers/:id', async ({ params, request }) => {
+  http.put('/api/v1/customers/:id', async ({ params, request }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -233,7 +233,7 @@ export const handlers = [
   }),
 
   // Reservation endpoints
-  http.get('/api/reservations', async ({ request }) => {
+  http.get('/api/v1/reservations', async ({ request }) => {
     await delay();
 
     const url = new URL(request.url);
@@ -258,7 +258,7 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  http.get('/api/reservations/:id', async ({ params }) => {
+  http.get('/api/v1/reservations/:id', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -274,7 +274,7 @@ export const handlers = [
     return HttpResponse.json(reservation);
   }),
 
-  http.post('/api/reservations', async ({ request }) => {
+  http.post('/api/v1/reservations', async ({ request }) => {
     await delay();
 
     const reservationData = await request.json() as ReservationRequestDto;
@@ -321,7 +321,7 @@ export const handlers = [
   }),
 
   // Reservation status change endpoints
-  http.post('/api/reservations/:id/confirm', async ({ params }) => {
+  http.post('/api/v1/reservations/:id/confirm', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -343,7 +343,7 @@ export const handlers = [
     return HttpResponse.json(reservations[reservationIndex]);
   }),
 
-  http.post('/api/reservations/:id/cancel', async ({ params }) => {
+  http.post('/api/v1/reservations/:id/cancel', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
@@ -365,7 +365,7 @@ export const handlers = [
     return HttpResponse.json(reservations[reservationIndex]);
   }),
 
-  http.post('/api/reservations/:id/complete', async ({ params }) => {
+  http.post('/api/v1/reservations/:id/complete', async ({ params }) => {
     await delay();
 
     const id = parseInt(params.id as string);
