@@ -137,7 +137,7 @@ describe('BookingConfirmation', () => {
       expect(screen.getByText('Booking Confirmed!')).toBeInTheDocument();
       expect(screen.getByText('Your reservation has been successfully created.')).toBeInTheDocument();
       expect(screen.getByText('#123')).toBeInTheDocument();
-      expect(screen.getByText('CONFIRMED')).toBeInTheDocument();
+      expect(screen.getByText('Confirmed')).toBeInTheDocument();
     });
 
     it('renders all reservation details', () => {
@@ -220,7 +220,7 @@ describe('BookingConfirmation', () => {
         <BookingConfirmation onNewBooking={mockOnNewBooking} />
       );
 
-      const badge = screen.getByText('CONFIRMED');
+      const badge = screen.getByText('Confirmed');
       expect(badge).toBeInTheDocument();
     });
 
@@ -237,7 +237,7 @@ describe('BookingConfirmation', () => {
         <BookingConfirmation onNewBooking={mockOnNewBooking} />
       );
 
-      const badge = screen.getByText('PENDING');
+      const badge = screen.getByText('Pending');
       expect(badge).toBeInTheDocument();
     });
 
@@ -254,7 +254,7 @@ describe('BookingConfirmation', () => {
         <BookingConfirmation onNewBooking={mockOnNewBooking} />
       );
 
-      const badge = screen.getByText('CANCELLED');
+      const badge = screen.getByText('Cancelled');
       expect(badge).toBeInTheDocument();
     });
 
@@ -271,7 +271,7 @@ describe('BookingConfirmation', () => {
         <BookingConfirmation onNewBooking={mockOnNewBooking} />
       );
 
-      const badge = screen.getByText('COMPLETED');
+      const badge = screen.getByText('Completed');
       expect(badge).toBeInTheDocument();
     });
   });

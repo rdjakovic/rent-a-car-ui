@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, User, Car, MapPin, DollarSign, Clock, Edit, Check, X, KeyRound, CornerDownLeft } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
 import { RentalHandoverDialog } from "./RentalHandoverDialog";
+import { EditReservationDialog } from "./EditReservationDialog";
+import { ReservationStatusBadge } from "./ReservationStatusBadge";
 import { canPickUp, isOverdueReturn } from "../utils/rentalStatus";
 
 interface ReservationDetailsProps {
@@ -29,21 +30,6 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
   const queryClient = useQueryClient();
   const settings = useSettings();
 
-  const getStatusBadgeVariant = (status: ReservationResponseDto["status"]) => {
-    switch (status) {
-      case "PENDING":
-        return "secondary";
-      case "CONFIRMED":
-      case "ACTIVE":
-        return "default";
-      case "CANCELLED":
-        return "destructive";
-      case "COMPLETED":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
 
   const formatCurrency = (amount: number | undefined, currency: string | undefined) => {
     if (!amount) return "N/A";
@@ -126,7 +112,8 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
   const canConfirm = reservation.status === "PENDING";
   const canCancel = reservation.status === "PENDING" || reservation.status === "CONFIRMED";
   const canReturn = reservation.status === "ACTIVE";
-  const canEdit = reservation.status === "PENDING" || reservation.status === "CONFIRMED";
+  // The backend only accepts changes while the reservation is PENDING
+  const canEdit = reservation.status === "PENDING";
 
   return (
     <div className="space-y-6">
@@ -140,30 +127,13 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
         </div>
         <div className="flex items-center gap-2">
           {isOverdueReturn(reservation) && <Badge variant="destructive" className="text-sm">Overdue return</Badge>}
-          <Badge
-            variant={getStatusBadgeVariant(reservation.status)}
-            className={`text-sm ${reservation.status === "ACTIVE" ? "bg-brand-emerald hover:bg-brand-emerald/80" : ""}`}
-          >
-            {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
-          </Badge>
+          <ReservationStatusBadge status={reservation.status} className="text-sm" />
           <div className="flex gap-2">
             {canEdit && (
-              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Edit Reservation</DialogTitle>
-                  </DialogHeader>
-                  <div className="text-center py-8 text-muted-foreground">
-                    Reservation editing functionality will be implemented in a future update.
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
             )}
             {canConfirm && (
               <Button 
@@ -372,6 +342,15 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
           </CardContent>
         </Card>
       </div>
+
+      {canEdit && (
+        <EditReservationDialog
+          reservation={reservation}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSaved={onUpdate}
+        />
+      )}
 
       {handoverMode && (
         <RentalHandoverDialog

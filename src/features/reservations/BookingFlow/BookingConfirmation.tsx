@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  CheckCircle, 
+import { ReservationStatusBadge } from "../components/ReservationStatusBadge";
+import {
+  CheckCircle,
   Calendar, 
   Car, 
   User, 
@@ -181,20 +182,6 @@ export default function BookingConfirmation({ onNewBooking }: BookingConfirmatio
     });
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'default';
-      case 'PENDING':
-        return 'secondary';
-      case 'CANCELLED':
-        return 'destructive';
-      case 'COMPLETED':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
 
   if (!bookingFlow.reservation) {
     return (
@@ -219,9 +206,7 @@ export default function BookingConfirmation({ onNewBooking }: BookingConfirmatio
         <div className="bg-white rounded-lg p-4 inline-block shadow-sm">
           <p className="text-sm text-gray-600 mb-1">Reservation Number</p>
           <p className="text-2xl font-bold text-gray-900">#{reservation.id}</p>
-          <Badge variant={getStatusBadgeVariant(reservation.status!)} className="mt-2">
-            {reservation.status}
-          </Badge>
+          <ReservationStatusBadge status={reservation.status} className="mt-2" />
         </div>
       </div>
 

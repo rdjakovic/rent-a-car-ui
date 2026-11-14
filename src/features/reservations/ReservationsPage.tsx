@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { ReservationDetails } from "./components/ReservationDetails";
 import { RentalHandoverDialog } from "./components/RentalHandoverDialog";
+import { ReservationStatusBadge } from "./components/ReservationStatusBadge";
 import { canPickUp, isOverdueReturn } from "./utils/rentalStatus";
 
 const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "ACTIVE", "CANCELLED", "COMPLETED"] as const;
@@ -123,21 +124,6 @@ export default function ReservationsPage() {
 
   const hasActiveFilters = search || (status && status !== "ALL") || startDate || endDate;
 
-  const getStatusBadgeVariant = (status: ReservationResponseDto["status"]) => {
-    switch (status) {
-      case "PENDING":
-        return "secondary";
-      case "CONFIRMED":
-      case "ACTIVE":
-        return "default";
-      case "CANCELLED":
-        return "destructive";
-      case "COMPLETED":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
 
   const handleViewReservation = (reservation: ReservationResponseDto) => {
     setSelectedReservation(reservation);
@@ -152,9 +138,9 @@ export default function ReservationsPage() {
     cancelMutation.mutate(reservationId);
   };
 
-  const handleReservationUpdate = (_updatedReservation: ReservationResponseDto) => {
-    // The query will be invalidated by the mutations, so we don't need to do anything here
-    // This callback is mainly for the ReservationDetails component
+  // The list refreshes through query invalidation; the open details dialog needs the updated copy
+  const handleReservationUpdate = (updatedReservation: ReservationResponseDto) => {
+    setSelectedReservation(updatedReservation);
   };
 
   const formatCurrency = (amount: number | undefined, currency: string | undefined) => {
@@ -372,12 +358,7 @@ export default function ReservationsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(reservation.status)}
-                            className={reservation.status === "ACTIVE" ? "bg-brand-emerald hover:bg-brand-emerald/80" : undefined}
-                          >
-                            {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
-                          </Badge>
+                          <ReservationStatusBadge status={reservation.status} />
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">
