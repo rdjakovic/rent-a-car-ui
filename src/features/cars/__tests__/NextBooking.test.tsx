@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describeNextBooking, NextBooking } from '../NextBooking'
 
 const TODAY = '2026-11-14'
@@ -32,6 +33,15 @@ describe('describeNextBooking', () => {
 })
 
 describe('NextBooking', () => {
+  it('links to the reservation', () => {
+    render(
+      <MemoryRouter>
+        <NextBooking next={{ id: 30, status: 'CONFIRMED', startDate: '2099-01-10', endDate: '2099-01-12' }} />
+      </MemoryRouter>
+    )
+    expect(screen.getByRole('link', { name: /^Next booking:/ })).toHaveAttribute('href', '/reservations/30')
+  })
+
   it('shows nothing, or the empty text, without a booking', () => {
     const { container, rerender } = render(<NextBooking next={undefined} />)
     expect(container).toBeEmptyDOMElement()

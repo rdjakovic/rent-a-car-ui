@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -205,7 +205,9 @@ export default function BookingConfirmation({ onNewBooking }: BookingConfirmatio
         <p className="text-green-700 mb-4">Your reservation has been successfully created.</p>
         <div className="bg-white rounded-lg p-4 inline-block shadow-sm">
           <p className="text-sm text-gray-600 mb-1">Reservation Number</p>
-          <p className="text-2xl font-bold text-gray-900">#{reservation.id}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            <Link to={`/reservations/${reservation.id}`} className="hover:underline">#{reservation.id}</Link>
+          </p>
           <ReservationStatusBadge status={reservation.status} className="mt-2" />
         </div>
       </div>

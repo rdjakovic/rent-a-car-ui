@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { CalendarClock } from "lucide-react";
 import type { CarResponseDto } from "@/lib/api/queries";
 import { todayString } from "@/lib/dates";
@@ -43,7 +44,7 @@ export function NextBooking({ next, emptyText, className }: {
   return (
     <p className={cn("flex items-center gap-1 text-sm", urgent ? "text-brand-orange font-medium" : "text-muted-foreground", className)}>
       <CalendarClock className="h-4 w-4 shrink-0" aria-hidden="true" />
-      {text}
+      {next.id ? <Link to={`/reservations/${next.id}`} className="hover:underline">{text}</Link> : text}
     </p>
   );
 }
