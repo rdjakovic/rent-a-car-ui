@@ -57,7 +57,7 @@ pnpm dev
 
 The app runs at http://localhost:3000 by default.
 
-On Windows builds that block pnpm's symlinked `node_modules` ("untrusted mount point", os error 448), add `nodeLinker: hoisted` to pnpm-workspace.yaml and reinstall.
+pnpm 12.11.2 is pinned in package.json (`packageManager`). pnpm-workspace.yaml sets `nodeLinker: hoisted` (a flat, npm-style `node_modules`), because some Windows builds block pnpm's symlinked one ("untrusted mount point", os error 448), and allows the esbuild and msw build scripts.
 
 Tip: You can start the backend from PowerShell via scripts/start-backend.ps1 (edit path if needed).
 
