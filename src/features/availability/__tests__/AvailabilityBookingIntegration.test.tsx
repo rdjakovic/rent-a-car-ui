@@ -29,7 +29,7 @@ describe('AvailabilityPage - Booking Integration', () => {
 
   const mockBranches = {
     content: [
-      { id: 1, name: 'Main Branch', city: 'New York' },
+      { id: 1, name: 'Main Branch', city: 'New York', active: true },
       { id: 2, name: 'Airport Branch', city: 'Los Angeles' }
     ],
     totalPages: 1,
