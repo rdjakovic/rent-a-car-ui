@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+  msw: true
+# Flat node_modules without symlinks: this Windows build blocks traversing pnpm's links (os error 448)
+nodeLinker: hoisted
