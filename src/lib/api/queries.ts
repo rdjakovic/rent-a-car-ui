@@ -171,17 +171,14 @@ export async function createReservation(reservation: ReservationRequestDto) {
   }
 }
 
+/** Only PENDING reservations can be updated. Failures are thrown as { status, ...problemDetail }. */
 export async function updateReservation(id: number, reservation: ReservationRequestDto) {
-  try {
-    const res = await api.PUT("/api/v1/reservations/{id}", {
-      params: { path: { id } },
-      body: reservation
-    });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as ReservationResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+  const res = await api.PUT("/api/v1/reservations/{id}", {
+    params: { path: { id } },
+    body: reservation
+  });
+  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
+  return res.data as ReservationResponseDto;
 }
 
 export async function confirmReservation(id: number) {

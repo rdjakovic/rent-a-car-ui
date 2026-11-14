@@ -527,6 +527,23 @@ describe('ReservationsPage', () => {
     });
   });
 
+  it('shows the updated reservation in the open details dialog after an action', async () => {
+    const user = userEvent.setup();
+    mockConfirmReservation.mockResolvedValue({ ...mockReservations[0], status: 'CONFIRMED' as const });
+    renderWithProviders(<ReservationsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    });
+    await user.click(screen.getAllByText('View')[0]);
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Pending')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: /Confirm/ }));
+
+    expect(await within(dialog).findByText('Confirmed')).toBeInTheDocument();
+  });
+
   it('displays empty state when no reservations found', async () => {
     mockListReservations.mockResolvedValue({
       ...mockPagedResponse,

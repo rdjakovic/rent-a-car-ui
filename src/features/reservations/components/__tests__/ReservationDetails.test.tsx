@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -16,6 +16,8 @@ vi.mock('@/lib/api/queries', () => ({
   pickUpReservation: vi.fn(),
   getCarById: vi.fn(),
   getSettings: vi.fn(),
+  updateReservation: vi.fn(),
+  listBranches: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -27,6 +29,7 @@ const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
 const mockCompleteReservation = vi.mocked(queries.completeReservation);
 const mockPickUpReservation = vi.mocked(queries.pickUpReservation);
+const mockUpdateReservation = vi.mocked(queries.updateReservation);
 const mockToast = vi.mocked(toast);
 
 const mockPendingReservation: ReservationResponseDto = {
@@ -147,6 +150,7 @@ describe('ReservationDetails', () => {
     vi.clearAllMocks();
     vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' });
     vi.mocked(queries.getCarById).mockResolvedValue({ id: 1, mileage: 15100 } as any);
+    vi.mocked(queries.listBranches).mockResolvedValue({ content: [{ id: 1, name: 'Downtown Branch' }] } as any);
   });
 
   it('renders reservation details correctly', () => {
@@ -197,7 +201,8 @@ describe('ReservationDetails', () => {
   it('shows correct action buttons for confirmed reservation', () => {
     renderWithProviders(<ReservationDetails reservation={mockConfirmedReservation} />);
 
-    expect(screen.getByText('Edit')).toBeInTheDocument();
+    // Only PENDING reservations can be edited (the backend rejects changes to confirmed ones)
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
     expect(screen.getByText('Pick up')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.queryByText('Confirm')).not.toBeInTheDocument();
@@ -351,17 +356,65 @@ describe('ReservationDetails', () => {
     });
   });
 
-  it('opens edit dialog when edit button is clicked', async () => {
+  it('edits the dates of a pending reservation and shows the new total', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ReservationDetails reservation={mockPendingReservation} />);
+    const onUpdate = vi.fn();
+    const updatedReservation = { ...mockPendingReservation, startDate: daysFromToday(10), endDate: daysFromToday(14) };
+    mockUpdateReservation.mockResolvedValue(updatedReservation);
 
-    const editButton = screen.getByText('Edit');
-    await user.click(editButton);
+    renderWithProviders(<ReservationDetails reservation={mockPendingReservation} onUpdate={onUpdate} />);
+
+    await user.click(screen.getByText('Edit'));
+    const dialog = await screen.findByRole('dialog');
+    const start = within(dialog).getByLabelText('Pickup date');
+    const end = within(dialog).getByLabelText('Return date');
+    expect(start).toHaveValue(mockPendingReservation.startDate);
+
+    fireEvent.change(start, { target: { value: daysFromToday(10) } });
+    fireEvent.change(end, { target: { value: daysFromToday(14) } });
+    // 4 days at $45
+    expect(within(dialog).getByText('$180.00')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Reservation')).toBeInTheDocument();
-      expect(screen.getByText('Reservation editing functionality will be implemented in a future update.')).toBeInTheDocument();
+      expect(mockUpdateReservation).toHaveBeenCalledWith(1, {
+        customerId: 1,
+        carId: 1,
+        pickupBranchId: 1,
+        dropoffBranchId: mockPendingReservation.dropoffBranch!.id,
+        startDate: daysFromToday(10),
+        endDate: daysFromToday(14),
+        notes: mockPendingReservation.notes,
+      });
+      expect(onUpdate).toHaveBeenCalledWith(updatedReservation);
     });
+  });
+
+  it('rejects past or reversed dates and shows a conflict from the server', async () => {
+    const user = userEvent.setup();
+    mockUpdateReservation.mockRejectedValue({ status: 409, detail: 'Car is not available for the selected dates' });
+
+    renderWithProviders(<ReservationDetails reservation={mockPendingReservation} />);
+
+    await user.click(screen.getByText('Edit'));
+    const dialog = await screen.findByRole('dialog');
+    const start = within(dialog).getByLabelText('Pickup date');
+    const end = within(dialog).getByLabelText('Return date');
+
+    fireEvent.change(start, { target: { value: daysFromToday(-1) } });
+    fireEvent.change(end, { target: { value: daysFromToday(2) } });
+    expect(within(dialog).getByText('Pickup date cannot be in the past')).toBeInTheDocument();
+
+    fireEvent.change(start, { target: { value: daysFromToday(5) } });
+    fireEvent.change(end, { target: { value: daysFromToday(4) } });
+    expect(within(dialog).getByText('Return date cannot be before pickup date')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Save changes' })).toBeDisabled();
+
+    fireEvent.change(end, { target: { value: daysFromToday(6) } });
+    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+
+    expect(await within(dialog).findByText('Car is not available for the selected dates')).toBeInTheDocument();
   });
 
   it('formats currency correctly', () => {
