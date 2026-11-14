@@ -4,7 +4,6 @@ import {
   listReservations,
   confirmReservation,
   cancelReservation,
-  completeReservation,
   type ReservationSearchParams,
   type ReservationResponseDto
 } from "@/lib/api/queries";
@@ -17,12 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, User, Car, Filter, Eye, Check, X, CheckCircle } from "lucide-react";
+import { Calendar, User, Car, Filter, Eye, Check, X, KeyRound, CornerDownLeft } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { ReservationDetails } from "./components/ReservationDetails";
+import { RentalHandoverDialog } from "./components/RentalHandoverDialog";
+import { canPickUp, isOverdueReturn } from "./utils/rentalStatus";
 
-const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] as const;
+const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "ACTIVE", "CANCELLED", "COMPLETED"] as const;
 
 export default function ReservationsPage() {
   // Filter state
@@ -36,6 +37,7 @@ export default function ReservationsPage() {
   // Dialog state
   const [selectedReservation, setSelectedReservation] = useState<ReservationResponseDto | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [handover, setHandover] = useState<{ mode: "pickup" | "return"; reservation: ReservationResponseDto } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -111,25 +113,6 @@ export default function ReservationsPage() {
     },
   });
 
-  // Mutation for completing reservation
-  const completeMutation = useMutation({
-    mutationFn: (reservationId: number) => completeReservation(reservationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reservations"] });
-      toast({
-        title: "Reservation Completed",
-        description: "The reservation has been marked as completed.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to complete reservation. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const clearFilters = () => {
     setSearch("");
     setStatus("");
@@ -145,6 +128,7 @@ export default function ReservationsPage() {
       case "PENDING":
         return "secondary";
       case "CONFIRMED":
+      case "ACTIVE":
         return "default";
       case "CANCELLED":
         return "destructive";
@@ -166,10 +150,6 @@ export default function ReservationsPage() {
 
   const handleCancelReservation = (reservationId: number) => {
     cancelMutation.mutate(reservationId);
-  };
-
-  const handleCompleteReservation = (reservationId: number) => {
-    completeMutation.mutate(reservationId);
   };
 
   const handleReservationUpdate = (_updatedReservation: ReservationResponseDto) => {
@@ -386,10 +366,16 @@ export default function ReservationsPage() {
                             <div className="text-sm text-muted-foreground">
                               {reservation.durationDays} days
                             </div>
+                            {isOverdueReturn(reservation) && (
+                              <Badge variant="destructive" className="mt-1">Overdue return</Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusBadgeVariant(reservation.status)}>
+                          <Badge
+                            variant={getStatusBadgeVariant(reservation.status)}
+                            className={reservation.status === "ACTIVE" ? "bg-brand-emerald hover:bg-brand-emerald/80" : undefined}
+                          >
                             {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
                           </Badge>
                         </TableCell>
@@ -424,15 +410,24 @@ export default function ReservationsPage() {
                                 {confirmMutation.isPending ? "..." : "Confirm"}
                               </Button>
                             )}
-                            {reservation.status === "CONFIRMED" && (
-                              <Button 
-                                variant="ghost" 
+                            {canPickUp(reservation) && (
+                              <Button
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleCompleteReservation(reservation.id!)}
-                                disabled={completeMutation.isPending}
+                                onClick={() => setHandover({ mode: "pickup", reservation })}
                               >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                {completeMutation.isPending ? "..." : "Complete"}
+                                <KeyRound className="h-4 w-4 mr-1" />
+                                Pick up
+                              </Button>
+                            )}
+                            {reservation.status === "ACTIVE" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setHandover({ mode: "return", reservation })}
+                              >
+                                <CornerDownLeft className="h-4 w-4 mr-1" />
+                                Return
                               </Button>
                             )}
                             {(reservation.status === "PENDING" || reservation.status === "CONFIRMED") && (
@@ -479,6 +474,15 @@ export default function ReservationsPage() {
             )}
           </CardContent>
         </Card>
+
+        {handover && (
+          <RentalHandoverDialog
+            mode={handover.mode}
+            reservation={handover.reservation}
+            open
+            onOpenChange={(open) => !open && setHandover(null)}
+          />
+        )}
 
         {/* Reservation Details Dialog */}
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>

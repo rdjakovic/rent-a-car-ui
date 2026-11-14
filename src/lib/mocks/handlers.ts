@@ -489,22 +489,50 @@ export const handlers = [
     return HttpResponse.json(reservations[reservationIndex]);
   }),
 
-  http.post('/api/v1/reservations/:id/complete', async ({ params }) => {
+  // Pick-up and return (simplified: no date or car status checks)
+  http.post('/api/v1/reservations/:id/pickup', async ({ params, request }) => {
     await delay();
 
     const id = parseInt(params.id as string);
     const reservationIndex = reservations.findIndex(r => r.id === id);
-
     if (reservationIndex === -1) {
-      return HttpResponse.json(
-        { message: 'Reservation not found' },
-        { status: 404 }
-      );
+      return HttpResponse.json({ detail: 'Reservation not found' }, { status: 404 });
+    }
+    if (reservations[reservationIndex].status !== 'CONFIRMED') {
+      return HttpResponse.json({ detail: 'Only CONFIRMED reservations can be picked up' }, { status: 409 });
     }
 
+    const body = (await request.json().catch(() => null)) as { mileageOut?: number } | null;
+    reservations[reservationIndex] = {
+      ...reservations[reservationIndex],
+      status: 'ACTIVE',
+      mileageOut: body?.mileageOut,
+      pickedUpAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(reservations[reservationIndex]);
+  }),
+
+  http.post('/api/v1/reservations/:id/complete', async ({ params, request }) => {
+    await delay();
+
+    const id = parseInt(params.id as string);
+    const reservationIndex = reservations.findIndex(r => r.id === id);
+    if (reservationIndex === -1) {
+      return HttpResponse.json({ detail: 'Reservation not found' }, { status: 404 });
+    }
+    if (reservations[reservationIndex].status !== 'ACTIVE') {
+      return HttpResponse.json({ detail: 'Reservation cannot be completed in current status: '
+        + reservations[reservationIndex].status }, { status: 409 });
+    }
+
+    const body = (await request.json().catch(() => null)) as { mileageIn?: number } | null;
     reservations[reservationIndex] = {
       ...reservations[reservationIndex],
       status: 'COMPLETED',
+      mileageIn: body?.mileageIn,
+      returnedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 

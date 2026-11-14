@@ -6,12 +6,16 @@ import { ReservationDetails } from '../ReservationDetails';
 import * as queries from '@/lib/api/queries';
 import { toast } from '@/hooks/use-toast';
 import type { ReservationResponseDto } from '@/lib/api/queries';
+import { daysFromToday } from '@/lib/dates';
 
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
   confirmReservation: vi.fn(),
   cancelReservation: vi.fn(),
   completeReservation: vi.fn(),
+  pickUpReservation: vi.fn(),
+  getCarById: vi.fn(),
+  getSettings: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -22,6 +26,7 @@ vi.mock('@/hooks/use-toast', () => ({
 const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
 const mockCompleteReservation = vi.mocked(queries.completeReservation);
+const mockPickUpReservation = vi.mocked(queries.pickUpReservation);
 const mockToast = vi.mocked(toast);
 
 const mockPendingReservation: ReservationResponseDto = {
@@ -96,10 +101,23 @@ const mockPendingReservation: ReservationResponseDto = {
   dailyRate: 45,
 };
 
+// Starts today, so the car can be picked up
 const mockConfirmedReservation: ReservationResponseDto = {
   ...mockPendingReservation,
   id: 2,
   status: 'CONFIRMED',
+  startDate: daysFromToday(0),
+  endDate: daysFromToday(2),
+};
+
+const mockActiveReservation: ReservationResponseDto = {
+  ...mockPendingReservation,
+  id: 4,
+  status: 'ACTIVE',
+  startDate: daysFromToday(-3),
+  endDate: daysFromToday(-1),
+  mileageOut: 15100,
+  pickedUpAt: '2025-09-06T10:00:00+02:00',
 };
 
 const mockCompletedReservation: ReservationResponseDto = {
@@ -127,6 +145,8 @@ function renderWithProviders(component: React.ReactElement) {
 describe('ReservationDetails', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' });
+    vi.mocked(queries.getCarById).mockResolvedValue({ id: 1, mileage: 15100 } as any);
   });
 
   it('renders reservation details correctly', () => {
@@ -178,9 +198,10 @@ describe('ReservationDetails', () => {
     renderWithProviders(<ReservationDetails reservation={mockConfirmedReservation} />);
 
     expect(screen.getByText('Edit')).toBeInTheDocument();
-    expect(screen.getByText('Complete')).toBeInTheDocument();
+    expect(screen.getByText('Pick up')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.queryByText('Confirm')).not.toBeInTheDocument();
+    expect(screen.queryByText('Return')).not.toBeInTheDocument();
   });
 
   it('shows no action buttons for completed reservation', () => {
@@ -188,8 +209,51 @@ describe('ReservationDetails', () => {
 
     expect(screen.queryByText('Edit')).not.toBeInTheDocument();
     expect(screen.queryByText('Confirm')).not.toBeInTheDocument();
-    expect(screen.queryByText('Complete')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pick up')).not.toBeInTheDocument();
+    expect(screen.queryByText('Return')).not.toBeInTheDocument();
     expect(screen.queryByText('Cancel')).not.toBeInTheDocument();
+  });
+
+  it('does not offer pick-up outside the rental dates', () => {
+    renderWithProviders(
+      <ReservationDetails reservation={{ ...mockConfirmedReservation, startDate: daysFromToday(3), endDate: daysFromToday(5) }} />
+    );
+
+    expect(screen.queryByText('Pick up')).not.toBeInTheDocument();
+  });
+
+  it('shows an active rental with its pick-up details and an overdue return', async () => {
+    renderWithProviders(<ReservationDetails reservation={mockActiveReservation} />);
+
+    expect(screen.getByText('Overdue return')).toBeInTheDocument();
+    expect(screen.getByText('Return')).toBeInTheDocument();
+    expect(screen.queryByText('Cancel')).not.toBeInTheDocument();
+    expect(await screen.findByText(new RegExp(`${(15100).toLocaleString()} km`))).toBeInTheDocument();
+  });
+
+  it('picks up a car with the odometer reading', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    const updatedReservation = { ...mockConfirmedReservation, status: 'ACTIVE' as const };
+    mockPickUpReservation.mockResolvedValue(updatedReservation);
+
+    renderWithProviders(
+      <ReservationDetails reservation={mockConfirmedReservation} onUpdate={onUpdate} />
+    );
+
+    await user.click(screen.getByText('Pick up'));
+    const odometer = await screen.findByLabelText('Odometer (km)');
+    await waitFor(() => expect(odometer).toHaveValue(15100));
+    await user.click(screen.getByRole('button', { name: 'Pick up' }));
+
+    await waitFor(() => {
+      expect(mockPickUpReservation).toHaveBeenCalledWith(2, { mileageOut: 15100 });
+      expect(onUpdate).toHaveBeenCalledWith(updatedReservation);
+      expect(mockToast).toHaveBeenCalledWith({
+        title: 'Car picked up',
+        description: 'Reservation #2 is now active.',
+      });
+    });
   });
 
   it('confirms reservation successfully', async () => {
@@ -238,25 +302,33 @@ describe('ReservationDetails', () => {
     });
   });
 
-  it('completes reservation successfully', async () => {
+  it('returns a car; the odometer cannot be below the pick-up reading', async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn();
-    const updatedReservation = { ...mockConfirmedReservation, status: 'COMPLETED' as const };
+    const updatedReservation = { ...mockActiveReservation, status: 'COMPLETED' as const };
     mockCompleteReservation.mockResolvedValue(updatedReservation);
 
     renderWithProviders(
-      <ReservationDetails reservation={mockConfirmedReservation} onUpdate={onUpdate} />
+      <ReservationDetails reservation={mockActiveReservation} onUpdate={onUpdate} />
     );
 
-    const completeButton = screen.getByText('Complete');
-    await user.click(completeButton);
+    await user.click(screen.getByText('Return'));
+    const odometer = await screen.findByLabelText('Odometer (km)');
+    await user.clear(odometer);
+    await user.type(odometer, '15050');
+    expect(screen.getByText(/can't be lower than/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Return' })).toBeDisabled();
+
+    await user.clear(odometer);
+    await user.type(odometer, '15400');
+    await user.click(screen.getByRole('button', { name: 'Return' }));
 
     await waitFor(() => {
-      expect(mockCompleteReservation).toHaveBeenCalledWith(2);
+      expect(mockCompleteReservation).toHaveBeenCalledWith(4, { mileageIn: 15400 });
       expect(onUpdate).toHaveBeenCalledWith(updatedReservation);
       expect(mockToast).toHaveBeenCalledWith({
-        title: 'Reservation Completed',
-        description: 'Reservation #2 has been marked as completed.',
+        title: 'Car returned',
+        description: 'Reservation #4 is now completed.',
       });
     });
   });

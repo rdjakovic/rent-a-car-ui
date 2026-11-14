@@ -6,6 +6,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ReservationsPage from '../ReservationsPage';
 import * as queries from '@/lib/api/queries';
 import { toast } from '@/hooks/use-toast';
+import { daysFromToday } from '@/lib/dates';
 
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
@@ -13,6 +14,9 @@ vi.mock('@/lib/api/queries', () => ({
   confirmReservation: vi.fn(),
   cancelReservation: vi.fn(),
   completeReservation: vi.fn(),
+  pickUpReservation: vi.fn(),
+  getCarById: vi.fn(),
+  getSettings: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -23,7 +27,7 @@ vi.mock('@/hooks/use-toast', () => ({
 const mockListReservations = vi.mocked(queries.listReservations);
 const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
-const mockCompleteReservation = vi.mocked(queries.completeReservation);
+const mockPickUpReservation = vi.mocked(queries.pickUpReservation);
 const mockToast = vi.mocked(toast);
 
 const mockReservations = [
@@ -100,8 +104,9 @@ const mockReservations = [
   },
   {
     id: 2,
-    startDate: '2025-09-10',
-    endDate: '2025-09-12',
+    // Starts today, so the car can be picked up
+    startDate: daysFromToday(0),
+    endDate: daysFromToday(2),
     status: 'CONFIRMED' as const,
     totalPrice: 90,
     currency: 'USD',
@@ -247,12 +252,12 @@ describe('ReservationsPage', () => {
     if (pendingRow) {
       expect(within(pendingRow).getByText('Confirm')).toBeInTheDocument();
       expect(within(pendingRow).getByText('Cancel')).toBeInTheDocument();
-      expect(within(pendingRow).queryByText('Complete')).not.toBeInTheDocument();
+      expect(within(pendingRow).queryByText('Pick up')).not.toBeInTheDocument();
     }
 
-    // Confirmed reservation should have Complete and Cancel buttons
+    // Confirmed reservation starting today can be picked up or cancelled
     if (confirmedRow) {
-      expect(within(confirmedRow).getByText('Complete')).toBeInTheDocument();
+      expect(within(confirmedRow).getByText('Pick up')).toBeInTheDocument();
       expect(within(confirmedRow).getByText('Cancel')).toBeInTheDocument();
       expect(within(confirmedRow).queryByText('Confirm')).not.toBeInTheDocument();
     }
@@ -456,10 +461,11 @@ describe('ReservationsPage', () => {
     });
   });
 
-  it('completes reservation successfully', async () => {
+  it('picks up a car from the list', async () => {
     const user = userEvent.setup();
-    const updatedReservation = { ...mockReservations[1], status: 'COMPLETED' as const };
-    mockCompleteReservation.mockResolvedValue(updatedReservation);
+    vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' });
+    vi.mocked(queries.getCarById).mockResolvedValue({ id: 1, mileage: 8000 } as any);
+    mockPickUpReservation.mockResolvedValue({ ...mockReservations[1], status: 'ACTIVE' as const });
 
     renderWithProviders(<ReservationsPage />);
 
@@ -467,14 +473,16 @@ describe('ReservationsPage', () => {
       expect(screen.getByText('Bob Smith')).toBeInTheDocument();
     });
 
-    const completeButton = screen.getByText('Complete');
-    await user.click(completeButton);
+    await user.click(screen.getByText('Pick up'));
+    const odometer = await screen.findByLabelText('Odometer (km)');
+    await waitFor(() => expect(odometer).toHaveValue(8000));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pick up' }));
 
     await waitFor(() => {
-      expect(mockCompleteReservation).toHaveBeenCalledWith(2);
+      expect(mockPickUpReservation).toHaveBeenCalledWith(2, { mileageOut: 8000 });
       expect(mockToast).toHaveBeenCalledWith({
-        title: 'Reservation Completed',
-        description: 'The reservation has been marked as completed.',
+        title: 'Car picked up',
+        description: 'Reservation #2 is now active.',
       });
     });
   });
