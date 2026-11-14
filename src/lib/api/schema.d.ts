@@ -46,6 +46,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/maintenance/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a maintenance record */
+        get: operations["getById_1"];
+        /** Edit a maintenance record that is still SCHEDULED */
+        put: operations["update_2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/{id}": {
         parameters: {
             query?: never;
@@ -53,8 +71,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getById_1"];
-        put: operations["update_2"];
+        get: operations["getById_2"];
+        put: operations["update_3"];
         post?: never;
         delete: operations["delete"];
         options?: never;
@@ -70,8 +88,8 @@ export interface paths {
             cookie?: never;
         };
         /** Get a car by ID */
-        get: operations["getById_2"];
-        put: operations["update_3"];
+        get: operations["getById_3"];
+        put: operations["update_4"];
         post?: never;
         delete: operations["delete_1"];
         options?: never;
@@ -86,8 +104,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getById_3"];
-        put: operations["update_4"];
+        get: operations["getById_4"];
+        put: operations["update_5"];
         post?: never;
         delete: operations["delete_2"];
         options?: never;
@@ -225,6 +243,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Complete a maintenance in progress, optionally recording cost, odometer, notes and the next service date */
         post: operations["complete_1"];
         delete?: never;
         options?: never;
@@ -423,6 +442,23 @@ export interface paths {
             cookie?: never;
         };
         get: operations["scheduledForDate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance/due-cars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cars whose next service is due within the given days (or overdue) and that have no open maintenance */
+        get: operations["carsDueForService"];
         put?: never;
         post?: never;
         delete?: never;
@@ -733,6 +769,41 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        MaintenanceUpdateRequestDto: {
+            /** @enum {string} */
+            type: "ROUTINE" | "REPAIR" | "INSPECTION" | "EMERGENCY" | "RECALL";
+            description: string;
+            /** Format: date */
+            scheduledDate: string;
+            cost?: number;
+            notes?: string;
+        };
+        MaintenanceResponseDto: {
+            /** Format: int64 */
+            id?: number;
+            car?: components["schemas"]["CarListResponseDto"];
+            /** Format: int64 */
+            employeeId?: number;
+            employeeName?: string;
+            /** @enum {string} */
+            maintenanceType?: "ROUTINE" | "REPAIR" | "INSPECTION" | "EMERGENCY" | "RECALL";
+            description?: string;
+            /** Format: date */
+            scheduledDate?: string;
+            /** Format: date */
+            completedDate?: string;
+            cost?: number;
+            currency?: string;
+            /** Format: int32 */
+            odometerReading?: number;
+            /** @enum {string} */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            notes?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         CustomerRequestDto: {
             firstName: string;
             lastName: string;
@@ -819,29 +890,13 @@ export interface components {
             openingHours?: string;
             active?: boolean;
         };
-        MaintenanceResponseDto: {
-            /** Format: int64 */
-            id?: number;
-            car?: components["schemas"]["CarListResponseDto"];
-            /** Format: int64 */
-            employeeId?: number;
-            employeeName?: string;
-            /** @enum {string} */
-            maintenanceType?: "ROUTINE" | "REPAIR" | "INSPECTION" | "EMERGENCY" | "RECALL";
-            description?: string;
-            /** Format: date */
-            scheduledDate?: string;
-            /** Format: date */
-            completedDate?: string;
+        MaintenanceCompleteRequestDto: {
             cost?: number;
-            currency?: string;
-            /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            /** Format: int32 */
+            odometerReading?: number;
             notes?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
+            /** Format: date */
+            nextServiceDate?: string;
         };
         MaintenanceScheduleRequestDto: {
             /** Format: int64 */
@@ -851,6 +906,8 @@ export interface components {
             description: string;
             /** Format: date */
             scheduledDate: string;
+            cost?: number;
+            notes?: string;
         };
         RegisterRequestDto: {
             username: string;
@@ -1158,12 +1215,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CustomerResponseDto"];
+                    "*/*": components["schemas"]["MaintenanceResponseDto"];
                 };
             };
         };
     };
     update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaintenanceUpdateRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaintenanceResponseDto"];
+                };
+            };
+        };
+    };
+    getById_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerResponseDto"];
+                };
+            };
+        };
+    };
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1209,7 +1314,7 @@ export interface operations {
             };
         };
     };
-    getById_2: {
+    getById_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1240,7 +1345,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1286,7 +1391,7 @@ export interface operations {
             };
         };
     };
-    getById_3: {
+    getById_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1308,7 +1413,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -1626,7 +1731,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MaintenanceCompleteRequestDto"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -1757,6 +1866,7 @@ export interface operations {
     list_1: {
         parameters: {
             query?: {
+                search?: string;
                 vin?: string;
                 make?: string;
                 model?: string;
@@ -2099,6 +2209,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MaintenanceResponseDto"][];
+                };
+            };
+        };
+    };
+    carsDueForService: {
+        parameters: {
+            query?: {
+                withinDays?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarResponseDto"][];
                 };
             };
         };

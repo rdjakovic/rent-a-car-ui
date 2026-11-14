@@ -5,6 +5,8 @@ import AvailabilityPage from '@/features/availability/AvailabilityPage'
 import CarsPage from '@/features/cars/CarsPage'
 import CarDetailsPage from '@/features/cars/CarDetailsPage'
 import SettingsPage from '@/features/settings/SettingsPage'
+import MaintenancePage from '@/features/maintenance/MaintenancePage'
+import MaintenanceDetailsPage from '@/features/maintenance/MaintenanceDetailsPage'
 import CustomersPage from '@/features/customers/CustomersPage'
 import ReservationsPage from '@/features/reservations/ReservationsPage'
 import BookingWizard from '@/features/reservations/BookingFlow/BookingWizard'
@@ -41,7 +43,8 @@ export default function App() {
           <Route path="/reservations" element={<ReservationsPage />} />
           <Route path="/reservations/:id" element={<div>Reservation Details</div>} />
           <Route path="/book" element={<BookingWizard />} />
-          <Route path="/maintenance" element={<div>Maintenance</div>} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
+          <Route path="/maintenance/:id" element={<MaintenanceDetailsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>

@@ -3,12 +3,15 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import CarDetailsPage from '../CarDetailsPage'
-import { getCarById, findAvailableCars, getSettings } from '@/lib/api/queries'
+import { getCarById, findAvailableCars, getSettings, listMaintenance } from '@/lib/api/queries'
 
 vi.mock('@/lib/api/queries', () => ({
   getCarById: vi.fn(),
   findAvailableCars: vi.fn(),
   getSettings: vi.fn(),
+  listMaintenance: vi.fn(),
+  listCars: vi.fn(),
+  scheduleMaintenance: vi.fn(),
 }))
 
 const mockGetCarById = getCarById as any
@@ -63,6 +66,7 @@ describe('CarDetailsPage', () => {
     vi.clearAllMocks()
     mockGetCarById.mockResolvedValue(car)
     mockGetSettings.mockResolvedValue({ mileageUnit: 'MILES' })
+    ;(listMaintenance as any).mockResolvedValue({ content: [], totalElements: 0, totalPages: 0, number: 0 })
   })
 
   it('shows the car details and its branch', async () => {
@@ -76,6 +80,20 @@ describe('CarDetailsPage', () => {
     expect(screen.getByText('123 Main Street')).toBeInTheDocument()
     expect(await screen.findByText(`${(12000).toLocaleString()} mi`)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Back to catalog/ })).toHaveAttribute('href', '/cars')
+  })
+
+  it("shows the car's maintenance history", async () => {
+    ;(listMaintenance as any).mockResolvedValue({
+      content: [{ id: 3, description: 'Oil change', maintenanceType: 'ROUTINE', status: 'COMPLETED',
+        scheduledDate: '2026-01-10', completedDate: '2026-01-10', cost: 129.9, currency: 'USD' }],
+      totalElements: 1, totalPages: 1, number: 0,
+    })
+
+    renderAt('/cars/7')
+
+    expect(await screen.findByRole('link', { name: 'Oil change' })).toHaveAttribute('href', '/maintenance/3')
+    expect(listMaintenance).toHaveBeenCalledWith({ carId: 7, page: 0, size: 5 })
+    expect(screen.getByRole('button', { name: 'Schedule maintenance' })).toBeInTheDocument()
   })
 
   it('shows a not-found message when the car cannot be loaded', async () => {
