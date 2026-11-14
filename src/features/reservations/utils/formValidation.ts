@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CustomerResponseDto } from "@/lib/api/queries";
+import { todayString } from "@/lib/dates";
 
 /**
  * Schema for customer selection validation
@@ -19,10 +20,9 @@ export const driverLicenseExpiryValidation = z
   .refine((date) => {
     if (!date) return true; // Optional field
     if (isNaN(new Date(date).getTime())) return false;
-    // Compare as date-only strings to avoid UTC-parse/local-timezone
-    // mismatches that a Date-object comparison would introduce.
-    const todayString = new Date().toISOString().split('T')[0];
-    return date >= todayString;
+    // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
+    const today = todayString();
+    return date >= today;
   }, {
     message: "Driver license must not be expired",
   });
