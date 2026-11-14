@@ -72,8 +72,8 @@ export default function BookingWizard() {
             return;
           }
 
-          if (end <= start) {
-            setInitializationError('End date must be after start date. Please start from the availability search.');
+          if (end < start) {
+            setInitializationError('End date cannot be before start date. Please start from the availability search.');
             return;
           }
         }

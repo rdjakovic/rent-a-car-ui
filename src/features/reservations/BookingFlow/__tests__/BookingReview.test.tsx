@@ -254,7 +254,7 @@ describe('BookingReview', () => {
       });
     });
 
-    it('validates end date is after start date', async () => {
+    it('validates end date is not before start date', async () => {
       const queryClient = new QueryClient({
         defaultOptions: {
           queries: { retry: false },
@@ -281,7 +281,37 @@ describe('BookingReview', () => {
       fireEvent.click(confirmButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Return date must be after pickup date/)).toBeInTheDocument();
+        expect(screen.getByText(/Return date cannot be before pickup date/)).toBeInTheDocument();
+      });
+    });
+
+    it('accepts a same-day rental (return date equals pickup date)', async () => {
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+
+      mockUseBookingFlow.mockReturnValue({
+        ...defaultBookingFlowState,
+        bookingDetails: {
+          ...mockBookingDetails,
+          startDate: '2099-02-05',
+          endDate: '2099-02-05',
+        },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <BookingReview onBack={mockOnBack} onSubmit={mockOnSubmit} />
+        </QueryClientProvider>
+      );
+
+      fireEvent.click(screen.getByText('Confirm Booking'));
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Return date cannot be before pickup date/)).not.toBeInTheDocument();
       });
     });
 

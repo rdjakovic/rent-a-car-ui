@@ -295,7 +295,8 @@ export const handlers = [
     // Calculate duration and total price
     const startDate = new Date(reservationData.startDate);
     const endDate = new Date(reservationData.endDate);
-    const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Same-day rental counts as 1 day (matches the backend)
+    const durationDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
     const totalPrice = (car.dailyPrice || 0) * durationDays;
 
     const newReservation = {
