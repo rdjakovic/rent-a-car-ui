@@ -21,6 +21,37 @@ let reservations = [...mockReservations];
 
 let mockSettings: components['schemas']['SettingsResponseDto'] = { mileageUnit: 'KILOMETERS' };
 
+type MaintenanceResponseDto = components['schemas']['MaintenanceResponseDto'];
+type MaintenanceScheduleRequestDto = components['schemas']['MaintenanceScheduleRequestDto'];
+type MaintenanceUpdateRequestDto = components['schemas']['MaintenanceUpdateRequestDto'];
+type MaintenanceCompleteRequestDto = components['schemas']['MaintenanceCompleteRequestDto'];
+
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+let maintenanceJobs: MaintenanceResponseDto[] = [
+  { id: 9001, car: mockCars[0], maintenanceType: 'ROUTINE', description: 'Oil and filter change',
+    scheduledDate: daysFromNow(5), status: 'SCHEDULED', cost: 120, currency: 'USD' },
+  { id: 9002, car: mockCars[1], maintenanceType: 'REPAIR', description: 'Front brake pads replacement',
+    scheduledDate: daysFromNow(-1), status: 'IN_PROGRESS', cost: 320, currency: 'USD' },
+  { id: 9003, car: mockCars[2], maintenanceType: 'RECALL', description: 'Safety recall: airbag inflator',
+    scheduledDate: daysFromNow(2), status: 'SCHEDULED', currency: 'USD' },
+  { id: 9004, car: mockCars[0], maintenanceType: 'INSPECTION', description: 'Annual safety inspection',
+    scheduledDate: daysFromNow(-40), completedDate: daysFromNow(-40), status: 'COMPLETED', cost: 60,
+    currency: 'USD', odometerReading: 14000 },
+];
+
+/** Applies a change to a job if it is in the expected status, like the backend's state checks (409 otherwise). */
+function updateJob(id: number, requiredStatus: MaintenanceResponseDto['status'], changes: Partial<MaintenanceResponseDto>) {
+  const job = maintenanceJobs.find(m => m.id === id);
+  if (!job) return HttpResponse.json({ detail: 'Maintenance not found' }, { status: 404 });
+  if (job.status !== requiredStatus) {
+    return HttpResponse.json({ detail: `Not allowed in status ${job.status}` }, { status: 409 });
+  }
+  const updated = { ...job, ...changes };
+  maintenanceJobs = maintenanceJobs.map(m => (m.id === id ? updated : m));
+  return HttpResponse.json(updated);
+}
+
 export const handlers = [
   // Branch endpoints
   http.get('/api/v1/branches', async ({ request }) => {
@@ -123,6 +154,80 @@ export const handlers = [
     }
     mockSettings = { mileageUnit: body.mileageUnit };
     return HttpResponse.json(mockSettings);
+  }),
+
+  // Maintenance endpoints (simplified: no reservation conflict checks)
+  http.get('/api/v1/maintenance/due-cars', async () => {
+    await delay();
+    return HttpResponse.json([]);
+  }),
+
+  http.get('/api/v1/maintenance', async ({ request }) => {
+    await delay();
+    const url = new URL(request.url);
+    const q = (name: string) => url.searchParams.get(name);
+    const filtered = maintenanceJobs
+      .filter(m => !q('status') || m.status === q('status'))
+      .filter(m => !q('maintenanceType') || m.maintenanceType === q('maintenanceType'))
+      .filter(m => !q('carId') || m.car?.id === Number(q('carId')))
+      .filter(m => !q('startDate') || m.scheduledDate! >= q('startDate')!)
+      .filter(m => !q('endDate') || m.scheduledDate! <= q('endDate')!)
+      .sort((a, b) => b.scheduledDate!.localeCompare(a.scheduledDate!));
+    return HttpResponse.json(generatePaginatedResponse(filtered,
+      parseInt(q('page') || '0'), parseInt(q('size') || '10')));
+  }),
+
+  http.get('/api/v1/maintenance/:id', async ({ params }) => {
+    await delay();
+    const job = maintenanceJobs.find(m => m.id === Number(params.id));
+    return job
+      ? HttpResponse.json(job)
+      : HttpResponse.json({ detail: 'Maintenance not found' }, { status: 404 });
+  }),
+
+  http.post('/api/v1/maintenance/schedule', async ({ request }) => {
+    await delay();
+    const body = await request.json() as MaintenanceScheduleRequestDto;
+    const car = cars.find(c => c.id === body.carId);
+    if (!car) return HttpResponse.json({ detail: 'Car not found' }, { status: 404 });
+    const job: MaintenanceResponseDto = {
+      id: generateId(), car, maintenanceType: body.type, description: body.description,
+      scheduledDate: body.scheduledDate, cost: body.cost, currency: 'USD', notes: body.notes, status: 'SCHEDULED',
+    };
+    maintenanceJobs.push(job);
+    return HttpResponse.json(job);
+  }),
+
+  http.put('/api/v1/maintenance/:id', async ({ params, request }) => {
+    await delay();
+    const body = await request.json() as MaintenanceUpdateRequestDto;
+    return updateJob(Number(params.id), 'SCHEDULED', {
+      maintenanceType: body.type, description: body.description, scheduledDate: body.scheduledDate,
+      cost: body.cost, notes: body.notes,
+    });
+  }),
+
+  http.post('/api/v1/maintenance/:id/start', async ({ params }) => {
+    await delay();
+    return updateJob(Number(params.id), 'SCHEDULED', { status: 'IN_PROGRESS' });
+  }),
+
+  http.post('/api/v1/maintenance/:id/complete', async ({ params, request }) => {
+    await delay();
+    const body = (await request.json().catch(() => null)) as MaintenanceCompleteRequestDto | null;
+    return updateJob(Number(params.id), 'IN_PROGRESS', {
+      status: 'COMPLETED', completedDate: new Date().toISOString().slice(0, 10),
+      ...(body?.cost != null && { cost: body.cost }),
+      ...(body?.notes != null && { notes: body.notes }),
+      ...(body?.odometerReading != null && { odometerReading: body.odometerReading }),
+    });
+  }),
+
+  http.post('/api/v1/maintenance/:id/cancel', async ({ params }) => {
+    await delay();
+    const job = maintenanceJobs.find(m => m.id === Number(params.id));
+    return updateJob(Number(params.id), job?.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'SCHEDULED',
+      { status: 'CANCELLED' });
   }),
 
   // Customer endpoints

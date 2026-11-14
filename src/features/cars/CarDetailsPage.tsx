@@ -11,13 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Car, MapPin } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
-
-/** Today as yyyy-mm-dd in local time (the date inputs work in local dates). */
-function todayString() {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
+import { todayString } from "@/lib/dates";
+import { CarMaintenanceHistory } from "@/features/maintenance/CarMaintenanceHistory";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -138,6 +133,8 @@ export default function CarDetailsPage() {
               </CardContent>
             </Card>
           </div>
+
+          <CarMaintenanceHistory car={car} />
         </div>
 
         <div className="grid gap-6 content-start">

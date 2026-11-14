@@ -5,6 +5,11 @@ const MILEAGE_UNIT_LABELS: Record<MileageUnit, string> = {
   MILES: "mi",
 };
 
+/** Short label for a unit, e.g. "km"; empty while the unit is unknown. */
+export function mileageUnitLabel(unit: MileageUnit | undefined): string {
+  return unit ? MILEAGE_UNIT_LABELS[unit] : "";
+}
+
 /**
  * Formats a mileage value with the configured unit, e.g. "15,000 km".
  * The unit is a label only: values are shown as stored, never converted.

@@ -202,6 +202,80 @@ export async function completeReservation(id: number) {
   return res.data as ReservationResponseDto;
 }
 
+// Maintenance queries
+export type PageMaintenanceResponseDto = components["schemas"]["PageMaintenanceResponseDto"];
+export type MaintenanceResponseDto = components["schemas"]["MaintenanceResponseDto"];
+export type MaintenanceScheduleRequestDto = components["schemas"]["MaintenanceScheduleRequestDto"];
+export type MaintenanceUpdateRequestDto = components["schemas"]["MaintenanceUpdateRequestDto"];
+export type MaintenanceCompleteRequestDto = components["schemas"]["MaintenanceCompleteRequestDto"];
+export type MaintenanceStatus = NonNullable<MaintenanceResponseDto["status"]>;
+export type MaintenanceType = NonNullable<MaintenanceResponseDto["maintenanceType"]>;
+
+export type MaintenanceSearchParams = {
+  page?: number;
+  size?: number;
+  carId?: number;
+  status?: MaintenanceStatus;
+  maintenanceType?: MaintenanceType;
+  branchId?: number;
+  startDate?: string; // yyyy-mm-dd, scheduled on or after
+  endDate?: string;   // yyyy-mm-dd, scheduled on or before
+};
+
+// Maintenance calls report failures as { status, ...problemDetail } so callers can show the
+// backend's reason (e.g. a reservation conflict) and recognise a 403, which has no body.
+function maintenanceError(res: { response: Response; error?: unknown }) {
+  return { status: res.response.status, ...(res.error as object | undefined) };
+}
+
+export async function listMaintenance(params: MaintenanceSearchParams = {}) {
+  const res = await api.GET("/api/v1/maintenance", { params: { query: params } });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as PageMaintenanceResponseDto;
+}
+
+export async function getMaintenance(id: number) {
+  const res = await api.GET("/api/v1/maintenance/{id}", { params: { path: { id } } });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function scheduleMaintenance(body: MaintenanceScheduleRequestDto) {
+  const res = await api.POST("/api/v1/maintenance/schedule", { body });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function updateMaintenance(id: number, body: MaintenanceUpdateRequestDto) {
+  const res = await api.PUT("/api/v1/maintenance/{id}", { params: { path: { id } }, body });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function startMaintenance(id: number) {
+  const res = await api.POST("/api/v1/maintenance/{id}/start", { params: { path: { id } } });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function completeMaintenance(id: number, body: MaintenanceCompleteRequestDto) {
+  const res = await api.POST("/api/v1/maintenance/{id}/complete", { params: { path: { id } }, body });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function cancelMaintenance(id: number) {
+  const res = await api.POST("/api/v1/maintenance/{id}/cancel", { params: { path: { id } } });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as MaintenanceResponseDto;
+}
+
+export async function listCarsDueForService(withinDays = 14) {
+  const res = await api.GET("/api/v1/maintenance/due-cars", { params: { query: { withinDays } } });
+  if (!res.response.ok) throw maintenanceError(res);
+  return res.data as CarResponseDto[];
+}
+
 // Application settings
 export type SettingsResponseDto = components["schemas"]["SettingsResponseDto"];
 export type SettingsRequestDto = components["schemas"]["SettingsRequestDto"];
