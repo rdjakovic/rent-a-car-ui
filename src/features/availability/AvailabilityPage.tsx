@@ -141,7 +141,8 @@ export default function AvailabilityPage() {
                   <SelectValue placeholder={branchesQuery.isPending ? "Loading..." : "Select branch"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(branchesQuery.data?.content ?? []).map((b) => (
+                  {/* Closed (inactive) branches aren't offered for booking */}
+                  {(branchesQuery.data?.content ?? []).filter((b) => b.active).map((b) => (
                     <SelectItem key={b.id} value={String(b.id!)}>
                       {b.name} ({b.city})
                     </SelectItem>

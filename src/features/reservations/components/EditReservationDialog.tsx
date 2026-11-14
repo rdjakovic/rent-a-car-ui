@@ -127,9 +127,12 @@ export function EditReservationDialog({ reservation, open, onOpenChange, onSaved
                 <SelectValue placeholder={reservation.dropoffBranch?.name ?? "Select a branch"} />
               </SelectTrigger>
               <SelectContent>
-                {(branches.data?.content ?? []).map((b) => (
-                  <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-                ))}
+                {/* Closed (inactive) branches can't be chosen, but the current one stays listed */}
+                {(branches.data?.content ?? [])
+                  .filter((b) => b.active || b.id === reservation.dropoffBranch?.id)
+                  .map((b) => (
+                    <SelectItem key={b.id} value={String(b.id)}>{b.name}{b.active ? "" : " (inactive)"}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

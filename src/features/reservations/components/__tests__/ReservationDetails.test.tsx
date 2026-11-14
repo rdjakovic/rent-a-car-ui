@@ -150,7 +150,13 @@ describe('ReservationDetails', () => {
     vi.clearAllMocks();
     vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' });
     vi.mocked(queries.getCarById).mockResolvedValue({ id: 1, mileage: 15100 } as any);
-    vi.mocked(queries.listBranches).mockResolvedValue({ content: [{ id: 1, name: 'Downtown Branch' }] } as any);
+    vi.mocked(queries.listBranches).mockResolvedValue({
+      content: [
+        { id: 1, name: 'Downtown Branch', active: true },
+        { id: 2, name: 'Airport Branch', active: true },
+        { id: 3, name: 'Closed Branch', active: false },
+      ],
+    } as any);
   });
 
   it('renders reservation details correctly', () => {
@@ -389,6 +395,18 @@ describe('ReservationDetails', () => {
       });
       expect(onUpdate).toHaveBeenCalledWith(updatedReservation);
     });
+  });
+
+  it('offers only active return locations when editing', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<ReservationDetails reservation={mockPendingReservation} />);
+
+    await user.click(screen.getByText('Edit'))
+    const dialog = await screen.findByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('combobox', { name: 'Return location' }))
+
+    expect(await screen.findByRole('option', { name: 'Airport Branch' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Closed Branch/ })).not.toBeInTheDocument()
   });
 
   it('rejects past or reversed dates and shows a conflict from the server', async () => {

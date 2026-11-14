@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
@@ -29,7 +29,10 @@ describe('AvailabilityPage', () => {
     
     // Mock API responses
     mockListBranches.mockResolvedValue({
-      content: [{ id: 1, name: 'Main Branch', city: 'New York' }],
+      content: [
+        { id: 1, name: 'Main Branch', city: 'New York', active: true },
+        { id: 2, name: 'Closed Branch', city: 'Boston', active: false },
+      ],
       totalPages: 1,
       number: 0,
     })
@@ -58,6 +61,16 @@ describe('AvailabilityPage', () => {
     expect(screen.getByText(/RentACar/)).toBeInTheDocument()
     expect(screen.getByText(/Your journey starts here/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /rent now/i })).not.toBeInTheDocument()
+  })
+
+  it('offers only active branches for booking', async () => {
+    renderWithQueryClient(<AvailabilityPage />)
+
+    // The first combobox is the branch select
+    fireEvent.click(screen.getAllByRole('combobox')[0])
+
+    expect(await screen.findByText('Main Branch (New York)')).toBeInTheDocument()
+    expect(screen.queryByText(/Closed Branch/)).not.toBeInTheDocument()
   })
 
   it('renders availability search form', () => {
