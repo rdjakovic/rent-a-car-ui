@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listReservations,
@@ -15,11 +16,9 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, User, Car, Filter, Eye, Check, X, KeyRound, CornerDownLeft } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import { ReservationDetails } from "./components/ReservationDetails";
 import { RentalHandoverDialog } from "./components/RentalHandoverDialog";
 import { ReservationStatusBadge } from "./components/ReservationStatusBadge";
 import { canPickUp, isOverdueReturn } from "./utils/rentalStatus";
@@ -35,9 +34,7 @@ export default function ReservationsPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   
-  // Dialog state
-  const [selectedReservation, setSelectedReservation] = useState<ReservationResponseDto | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  // Pick-up/return dialog state
   const [handover, setHandover] = useState<{ mode: "pickup" | "return"; reservation: ReservationResponseDto } | null>(null);
 
   const queryClient = useQueryClient();
@@ -125,22 +122,12 @@ export default function ReservationsPage() {
   const hasActiveFilters = search || (status && status !== "ALL") || startDate || endDate;
 
 
-  const handleViewReservation = (reservation: ReservationResponseDto) => {
-    setSelectedReservation(reservation);
-    setIsDetailsDialogOpen(true);
-  };
-
   const handleConfirmReservation = (reservationId: number) => {
     confirmMutation.mutate(reservationId);
   };
 
   const handleCancelReservation = (reservationId: number) => {
     cancelMutation.mutate(reservationId);
-  };
-
-  // The list refreshes through query invalidation; the open details dialog needs the updated copy
-  const handleReservationUpdate = (updatedReservation: ReservationResponseDto) => {
-    setSelectedReservation(updatedReservation);
   };
 
   const formatCurrency = (amount: number | undefined, currency: string | undefined) => {
@@ -372,13 +359,11 @@ export default function ReservationsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewReservation(reservation)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
+                            <Button asChild variant="ghost" size="sm">
+                              <Link to={`/reservations/${reservation.id}`}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Link>
                             </Button>
                             {reservation.status === "PENDING" && (
                               <Button 
@@ -465,20 +450,6 @@ export default function ReservationsPage() {
           />
         )}
 
-        {/* Reservation Details Dialog */}
-        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Reservation Details</DialogTitle>
-            </DialogHeader>
-            {selectedReservation && (
-              <ReservationDetails 
-                reservation={selectedReservation} 
-                onUpdate={handleReservationUpdate}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

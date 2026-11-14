@@ -9,6 +9,7 @@ import MaintenancePage from '@/features/maintenance/MaintenancePage'
 import MaintenanceDetailsPage from '@/features/maintenance/MaintenanceDetailsPage'
 import CustomersPage from '@/features/customers/CustomersPage'
 import ReservationsPage from '@/features/reservations/ReservationsPage'
+import ReservationDetailsPage from '@/features/reservations/ReservationDetailsPage'
 import BookingWizard from '@/features/reservations/BookingFlow/BookingWizard'
 
 export default function App() {
@@ -41,7 +42,7 @@ export default function App() {
           <Route path="/cars/:id" element={<CarDetailsPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/reservations" element={<ReservationsPage />} />
-          <Route path="/reservations/:id" element={<div>Reservation Details</div>} />
+          <Route path="/reservations/:id" element={<ReservationDetailsPage />} />
           <Route path="/book" element={<BookingWizard />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/maintenance/:id" element={<MaintenanceDetailsPage />} />
