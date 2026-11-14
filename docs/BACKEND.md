@@ -1,164 +1,56 @@
-# WARP.md
+# Backend for UI development
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+The backend is the Rent-a-Car API in the `rent-a-car-be` repository (Spring Boot 4.1, Java 25).
+Its README is the single source of truth for business rules, the full API and configuration;
+this page only covers what you need to run the UI against it.
 
-## Project Overview
+## Running the backend
 
-This is a **Rent-a-Car API** built with Spring Boot 3.5.5 and Java 21, providing a comprehensive car rental management system with JWT authentication and role-based authorization.
+Run these in the backend repository (JDK 25 required):
 
-## Common Commands
-
-### Development
 ```bash
-# Run the application (default local profile with H2 database)
+# PostgreSQL in Docker (Docker Desktop must be running); data survives restarts
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+
+# H2 in memory (default local profile); data resets on every start
 ./mvnw spring-boot:run
-
-# Run with local profile explicitly (Windows PowerShell)
-./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=local"
-
-# Run with local profile explicitly (Unix/macOS)
-./mvnw spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=local
-
-# Run with specific profile (e.g., dev)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# Build the application
-./mvnw clean package
-
-# Run tests
-./mvnw test
-
-# Run specific test class
-./mvnw test -Dtest=CarServiceIntegrationTest
-
-# Run specific test method
-./mvnw test -Dtest=CarServiceIntegrationTest#carLifecycleAndAvailability
-
-# Clean and rebuild
-./mvnw clean compile
 ```
 
-### Database
-```bash
-# Check database migrations
-./mvnw flyway:info
+Both listen on http://localhost:8080, which is what `VITE_API_BASE_URL` in `.env.local` should point to.
 
-# Run migrations
-./mvnw flyway:migrate
+After switching branches, start with a clean build (`./mvnw clean spring-boot:run ...`) so no stale classes are left in `target/`.
 
-# Reset database (WARNING: destructive)
-./mvnw flyway:clean flyway:migrate
-```
+## Profiles and security
 
-### Useful Development URLs (when running locally)
-- Application: http://localhost:8080
-- H2 Console: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:rentacar`)
+| Profile | Database | Security |
+|---|---|---|
+| `local` (default) | H2 in memory | open: the UI works without login |
+| `docker` | PostgreSQL from `compose.yaml` | open: the UI works without login |
+| `dev` | your own PostgreSQL | real rules: most calls need a JWT |
+| `prod` | PostgreSQL, needs `JWT_SECRET` etc. | real rules |
+
+The UI has no login yet, so use `local` or `docker`. With the real rules, customers, reservations and
+maintenance need ADMIN or EMPLOYEE, and changing settings needs ADMIN.
+
+## Seed data
+
+- Users: `admin`/`admin123` and `john.doe`/`admin123` (local, dev and docker only)
+- Branches, 13 cars, customers and reservations, with dates relative to the day the database was created
+- Local, dev and docker also get sample maintenance jobs in every state, cars due for service, one car out on rental and one overdue return
+
+## API
+
+- All endpoints are under `/api/v1`
 - Swagger UI: http://localhost:8080/swagger-ui.html
-- API Docs: http://localhost:8080/api-docs
-- Health Check: http://localhost:8080/actuator/health
+- OpenAPI docs: http://localhost:8080/api-docs (used by `pnpm api:gen` to regenerate src/lib/api/schema.d.ts)
+- Errors are RFC 7807 problem details (`{ title, status, detail, ... }`); 409 means a state or booking conflict, and `detail` explains it
 
-## Architecture Overview
+## Rules the UI depends on
 
-### Domain Model
-The application follows a layered architecture with distinct domain entities:
+- A car's status is its physical state (AVAILABLE, RENTED, MAINTENANCE, OUT_OF_SERVICE); bookings are date-based and shown through `nextReservation` on car responses
+- Reservations: PENDING → CONFIRMED → ACTIVE (picked up) → COMPLETED (returned); only PENDING can be edited, only PENDING/CONFIRMED cancelled
+- Same-day rentals are allowed and charged as one day
+- Scheduled maintenance blocks bookings on its date; a car can't go into the shop while rented
+- The mileage unit setting is a label only; values are never converted
 
-**Core Entities:**
-- **Car**: Vehicle inventory with soft delete capability (uses `@Where(clause = "deleted = false")`)
-- **Reservation**: Customer bookings with overlap prevention logic
-- **Customer**: Customer information with driver license validation
-- **Branch**: Rental locations where cars are picked up/dropped off
-- **User/Role**: Authentication system with ADMIN/EMPLOYEE/CUSTOMER roles
-- **Employee**: Staff members associated with branches
-- **Maintenance**: Car maintenance records and scheduling
-- **Payment**: Payment processing for reservations
-
-### Key Business Logic
-
-**Reservation Pricing:** 
-- Calculated as `dailyPrice × numberOfDays` (no taxes/fees included per business rules)
-- Overlap validation prevents double-booking of cars
-
-**Car Management:**
-- Cars use **soft delete** (others use hard delete)
-- Availability filtering considers reservation overlaps and car status
-
-**Security:**
-- JWT-based authentication using Nimbus library
-- Role-based access control (RBAC)
-- Different endpoints protected by different roles
-
-### Package Structure
-```
-com.nextstep.rentacar/
-├── config/                  # Configuration classes
-│   └── security/           # JWT and security configuration
-├── domain/
-│   ├── entity/             # JPA entities with BaseEntity (Long IDs)
-│   └── enums/              # Business enums (CarStatus, ReservationStatus, etc.)
-├── dto/
-│   ├── request/            # Request DTOs for API endpoints
-│   └── response/           # Response DTOs
-├── mapper/                 # MapStruct mappers for entity-DTO conversion
-├── repository/             # Spring Data JPA repositories
-├── service/
-│   ├── impl/               # Service implementations
-│   └── auth/               # Authentication services (AuthService, JwtService)
-└── web/
-    ├── controller/         # REST controllers
-    └── exception/          # Global exception handling
-```
-
-## Environment Profiles
-
-- **local**: H2 in-memory database (default)
-- **dev**: Local PostgreSQL database
-- **test**: Testcontainers with PostgreSQL for integration tests  
-- **prod**: Production PostgreSQL with placeholders
-
-## Key Configuration Notes
-
-### Database
-- Uses **Flyway** for migrations (located in `src/main/resources/db/migration/`)
-- **Long** type used for all entity IDs
-- Audit fields (`created_at`, `updated_at`) handled by `BaseEntity` with JPA auditing
-- JPA auditing configured with UTC timezone via `dateTimeProvider` bean in `JpaConfig`
-
-### Testing
-- Integration tests use `@SpringBootTest` with `@ActiveProfiles("test")`
-- **Testcontainers** used for PostgreSQL in test environment
-- UTC timestamps for consistent auditing across all environments
-
-### Security
-- JWT tokens with configurable expiration
-- Password encoding with BCrypt
-- CORS configured for local development
-- Method-level security enabled with `@EnableMethodSecurity`
-
-## Data Seeding
-
-Initial data is created via Flyway migration `V2__seed_roles_and_admin.sql`:
-- **Admin user**: `admin`/`admin123`
-- **Employee user**: `john.doe`/`admin123`
-- Sample branches, cars, customers, and reservations
-
-## MapStruct Integration
-
-The project uses MapStruct for DTO-Entity mapping with Spring component model:
-- Configured in `pom.xml` with annotation processor
-- Mappers are Spring beans (auto-injected)
-- Custom mapping logic for complex transformations
-
-## Important Implementation Details
-
-1. **Car Soft Delete**: Cars use `deleted` boolean flag with `@Where` clause
-2. **Reservation Overlaps**: Prevented in service layer with date range queries
-3. **JWT Configuration**: Separate properties for different environments
-4. **Validation**: Bean validation annotations on DTOs and entities
-5. **Exception Handling**: Global exception handler for consistent API responses
-
-## Testing Strategy
-
-- **Integration Tests**: Full Spring context with real database (Testcontainers)
-- **Service Layer Focus**: Core business logic testing
-- **Entity Manager Clearing**: Tests simulate transaction boundaries
-- **Date-based Logic**: Reservation availability and overlap scenarios
+See the backend README for the details.
