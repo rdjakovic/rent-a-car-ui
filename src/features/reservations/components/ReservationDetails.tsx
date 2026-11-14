@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   confirmReservation,
   cancelReservation,
-  completeReservation,
   type ReservationResponseDto
 } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, User, Car, MapPin, DollarSign, Clock, Edit, Check, X, CheckCircle } from "lucide-react";
+import { Calendar, User, Car, MapPin, DollarSign, Clock, Edit, Check, X, KeyRound, CornerDownLeft } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { useSettings } from "@/hooks/useSettings";
+import { formatMileage } from "@/lib/units";
+import { RentalHandoverDialog } from "./RentalHandoverDialog";
+import { canPickUp, isOverdueReturn } from "../utils/rentalStatus";
 
 interface ReservationDetailsProps {
   reservation: ReservationResponseDto;
@@ -22,13 +25,16 @@ interface ReservationDetailsProps {
 
 export function ReservationDetails({ reservation, onUpdate }: ReservationDetailsProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [handoverMode, setHandoverMode] = useState<"pickup" | "return" | null>(null);
   const queryClient = useQueryClient();
+  const settings = useSettings();
 
   const getStatusBadgeVariant = (status: ReservationResponseDto["status"]) => {
     switch (status) {
       case "PENDING":
         return "secondary";
       case "CONFIRMED":
+      case "ACTIVE":
         return "default";
       case "CANCELLED":
         return "destructive";
@@ -105,26 +111,6 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
     },
   });
 
-  // Mutation for completing reservation
-  const completeMutation = useMutation({
-    mutationFn: () => completeReservation(reservation.id!),
-    onSuccess: (updatedReservation) => {
-      queryClient.invalidateQueries({ queryKey: ["reservations"] });
-      onUpdate?.(updatedReservation);
-      toast({
-        title: "Reservation Completed",
-        description: `Reservation #${reservation.id} has been marked as completed.`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to complete reservation. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleConfirm = () => {
     if (reservation.status === "PENDING") {
       confirmMutation.mutate();
@@ -137,15 +123,9 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
     }
   };
 
-  const handleComplete = () => {
-    if (reservation.status === "CONFIRMED") {
-      completeMutation.mutate();
-    }
-  };
-
   const canConfirm = reservation.status === "PENDING";
   const canCancel = reservation.status === "PENDING" || reservation.status === "CONFIRMED";
-  const canComplete = reservation.status === "CONFIRMED";
+  const canReturn = reservation.status === "ACTIVE";
   const canEdit = reservation.status === "PENDING" || reservation.status === "CONFIRMED";
 
   return (
@@ -159,7 +139,11 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={getStatusBadgeVariant(reservation.status)} className="text-sm">
+          {isOverdueReturn(reservation) && <Badge variant="destructive" className="text-sm">Overdue return</Badge>}
+          <Badge
+            variant={getStatusBadgeVariant(reservation.status)}
+            className={`text-sm ${reservation.status === "ACTIVE" ? "bg-brand-emerald hover:bg-brand-emerald/80" : ""}`}
+          >
             {reservation.status?.charAt(0) + (reservation.status?.slice(1)?.toLowerCase() ?? "")}
           </Badge>
           <div className="flex gap-2">
@@ -191,15 +175,16 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
                 {confirmMutation.isPending ? "Confirming..." : "Confirm"}
               </Button>
             )}
-            {canComplete && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={handleComplete}
-                disabled={completeMutation.isPending}
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                {completeMutation.isPending ? "Completing..." : "Complete"}
+            {canPickUp(reservation) && (
+              <Button size="sm" variant="outline" onClick={() => setHandoverMode("pickup")}>
+                <KeyRound className="h-4 w-4 mr-1" />
+                Pick up
+              </Button>
+            )}
+            {canReturn && (
+              <Button size="sm" variant="outline" onClick={() => setHandoverMode("return")}>
+                <CornerDownLeft className="h-4 w-4 mr-1" />
+                Return
               </Button>
             )}
             {canCancel && (
@@ -316,6 +301,24 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
                 {reservation.durationDays} days
               </p>
             </div>
+            {reservation.pickedUpAt && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Picked Up</label>
+                <p>
+                  {formatDateTime(reservation.pickedUpAt)}
+                  {reservation.mileageOut != null && ` · ${formatMileage(reservation.mileageOut, settings.data?.mileageUnit)}`}
+                </p>
+              </div>
+            )}
+            {reservation.returnedAt && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Returned</label>
+                <p>
+                  {formatDateTime(reservation.returnedAt)}
+                  {reservation.mileageIn != null && ` · ${formatMileage(reservation.mileageIn, settings.data?.mileageUnit)}`}
+                </p>
+              </div>
+            )}
             <Separator />
             <div>
               <label className="text-sm font-medium text-muted-foreground">Pickup Location</label>
@@ -369,6 +372,16 @@ export function ReservationDetails({ reservation, onUpdate }: ReservationDetails
           </CardContent>
         </Card>
       </div>
+
+      {handoverMode && (
+        <RentalHandoverDialog
+          mode={handoverMode}
+          reservation={reservation}
+          open
+          onOpenChange={(open) => !open && setHandoverMode(null)}
+          onDone={onUpdate}
+        />
+      )}
 
       {/* Notes */}
       {reservation.notes && (

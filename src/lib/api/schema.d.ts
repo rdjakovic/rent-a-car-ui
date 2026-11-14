@@ -161,6 +161,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reservations/{id}/pickup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pick up the car
+         * @description Hands the car over for a CONFIRMED reservation between its start and end date: the reservation becomes ACTIVE and the car RENTED. Optionally records the odometer.
+         */
+        post: operations["pickUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reservations/{id}/confirm": {
         parameters: {
             query?: never;
@@ -190,7 +210,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete a reservation */
+        /**
+         * Return the car
+         * @description Completes an ACTIVE rental (also after its end date): the car becomes AVAILABLE at the drop-off branch. Optionally records the odometer, which updates the car's mileage.
+         */
         post: operations["complete"];
         delete?: never;
         options?: never;
@@ -740,10 +763,18 @@ export interface components {
             /** Format: date */
             endDate?: string;
             /** @enum {string} */
-            status?: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+            status?: "PENDING" | "CONFIRMED" | "ACTIVE" | "CANCELLED" | "COMPLETED";
             totalPrice?: number;
             currency?: string;
             notes?: string;
+            /** Format: int32 */
+            mileageOut?: number;
+            /** Format: int32 */
+            mileageIn?: number;
+            /** Format: date-time */
+            pickedUpAt?: string;
+            /** Format: date-time */
+            returnedAt?: string;
             customer?: components["schemas"]["CustomerResponseDto"];
             car?: components["schemas"]["CarListResponseDto"];
             pickupBranch?: components["schemas"]["BranchResponseDto"];
@@ -889,6 +920,14 @@ export interface components {
             email?: string;
             openingHours?: string;
             active?: boolean;
+        };
+        ReservationPickupRequestDto: {
+            /** Format: int32 */
+            mileageOut?: number;
+        };
+        ReservationReturnRequestDto: {
+            /** Format: int32 */
+            mileageIn?: number;
         };
         MaintenanceCompleteRequestDto: {
             cost?: number;
@@ -1476,7 +1515,7 @@ export interface operations {
                  * @description Filter by reservation status
                  * @example CONFIRMED
                  */
-                status?: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+                status?: "PENDING" | "CONFIRMED" | "ACTIVE" | "CANCELLED" | "COMPLETED";
                 /**
                  * @description Filter by pickup/dropoff branch ID
                  * @example 789
@@ -1581,6 +1620,41 @@ export interface operations {
             };
         };
     };
+    pickUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReservationPickupRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Picked up */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReservationResponseDto"];
+                };
+            };
+            /** @description Not CONFIRMED, outside the rental dates, or the car is not available */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     confirm: {
         parameters: {
             query?: never;
@@ -1634,7 +1708,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReservationReturnRequestDto"];
+            };
+        };
         responses: {
             /** @description Completed */
             200: {

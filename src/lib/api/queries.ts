@@ -196,9 +196,20 @@ export async function cancelReservation(id: number) {
   return res.data as ReservationResponseDto;
 }
 
-export async function completeReservation(id: number) {
-  const res = await api.POST("/api/v1/reservations/{id}/complete", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
+export type ReservationPickupRequestDto = components["schemas"]["ReservationPickupRequestDto"];
+export type ReservationReturnRequestDto = components["schemas"]["ReservationReturnRequestDto"];
+
+/** Hand the car over (CONFIRMED -> ACTIVE). Failures are thrown as { status, ...problemDetail }. */
+export async function pickUpReservation(id: number, body?: ReservationPickupRequestDto) {
+  const res = await api.POST("/api/v1/reservations/{id}/pickup", { params: { path: { id } }, body });
+  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
+  return res.data as ReservationResponseDto;
+}
+
+/** Car returned (ACTIVE -> COMPLETED). Failures are thrown as { status, ...problemDetail }. */
+export async function completeReservation(id: number, body?: ReservationReturnRequestDto) {
+  const res = await api.POST("/api/v1/reservations/{id}/complete", { params: { path: { id } }, body });
+  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
   return res.data as ReservationResponseDto;
 }
 
