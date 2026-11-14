@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage, mileageUnitLabel } from "@/lib/units";
 import { todayString } from "@/lib/dates";
-import { maintenanceErrorMessage } from "./maintenance";
+import { errorMessage } from "@/lib/api/errors";
 
 type Props = {
   open: boolean;
@@ -67,7 +67,7 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, job, car, onComp
       onOpenChange(false);
       onCompleted(updated);
     },
-    onError: (error) => setSubmitError(maintenanceErrorMessage(error)),
+    onError: (error) => setSubmitError(errorMessage(error)),
   });
 
   const unitLabel = mileageUnitLabel(settings.data?.mileageUnit);

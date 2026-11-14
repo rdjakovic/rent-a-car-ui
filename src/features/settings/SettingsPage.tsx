@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { errorMessage } from "@/lib/api/errors";
 
 const MILEAGE_UNIT_OPTIONS: { value: MileageUnit; label: string }[] = [
   { value: "KILOMETERS", label: "Kilometers (km)" },
@@ -38,7 +39,7 @@ export default function SettingsPage() {
       title: "Save failed",
       description: error?.status === 403
         ? "Only administrators can change settings."
-        : error?.detail ?? error?.message ?? "Unknown error",
+        : errorMessage(error),
       variant: "destructive" as any,
     }),
   });

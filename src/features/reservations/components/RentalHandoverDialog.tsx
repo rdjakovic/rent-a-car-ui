@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { errorMessage } from "@/lib/api/errors";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage, mileageUnitLabel } from "@/lib/units";
 
@@ -72,10 +73,7 @@ export function RentalHandoverDialog({ mode, reservation, open, onOpenChange, on
       onOpenChange(false);
       onDone?.(updated);
     },
-    onError: (error: any) => setSubmitError(
-      error?.status === 403
-        ? "You don't have permission to do this."
-        : error?.detail ?? error?.message ?? "Something went wrong. Please try again."),
+    onError: (error) => setSubmitError(errorMessage(error)),
   });
 
   const unitLabel = mileageUnitLabel(unit);

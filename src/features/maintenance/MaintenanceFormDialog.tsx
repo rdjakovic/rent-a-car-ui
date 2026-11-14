@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { todayString } from "@/lib/dates";
-import { MAINTENANCE_TYPES, maintenanceErrorMessage } from "./maintenance";
+import { MAINTENANCE_TYPES } from "./maintenance";
+import { errorMessage } from "@/lib/api/errors";
 
 type Props = {
   open: boolean;
@@ -92,7 +93,7 @@ export function MaintenanceFormDialog({ open, onOpenChange, job, car, defaultTyp
       onOpenChange(false);
       onSaved?.(saved);
     },
-    onError: (error) => setSubmitError(maintenanceErrorMessage(error)),
+    onError: (error) => setSubmitError(errorMessage(error)),
   });
 
   return (
