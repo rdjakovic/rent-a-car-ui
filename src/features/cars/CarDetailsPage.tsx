@@ -13,6 +13,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
 import { todayString } from "@/lib/dates";
 import { CarMaintenanceHistory } from "@/features/maintenance/CarMaintenanceHistory";
+import { NextBooking } from "./NextBooking";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -86,6 +87,7 @@ export default function CarDetailsPage() {
             <Badge variant="secondary">{car.category}</Badge>
             <Badge variant="outline">{car.status}</Badge>
           </div>
+          <NextBooking next={car.nextReservation} emptyText="No upcoming bookings" className="mt-2" />
         </div>
         <div className="text-right">
           <span className="text-3xl font-bold text-brand-navy">${car.dailyPrice?.toFixed(2)}</span>

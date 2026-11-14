@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBookingFlow } from "@/hooks/useBookingFlow";
 import { createReservation } from "@/lib/api/queries";
 import type { ReservationRequestDto } from "@/lib/api/queries";
@@ -22,9 +22,15 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
   const [retryCount, setRetryCount] = useState(0);
   const [lastError, setLastError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
   const createReservationMutation = useMutation({
     mutationFn: createReservation,
     onSuccess: (reservation) => {
+      // The car is now taken for these dates: drop cached availability, car and reservation lists
+      queryClient.invalidateQueries({ queryKey: ["available-cars"] });
+      queryClient.invalidateQueries({ queryKey: ["cars"] });
+      queryClient.invalidateQueries({ queryKey: ["car"] });
+      queryClient.invalidateQueries({ queryKey: ["reservations"] });
       bookingFlow.setReservation(reservation);
       setRetryCount(0);
       setLastError(null);

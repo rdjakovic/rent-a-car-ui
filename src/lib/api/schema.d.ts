@@ -733,6 +733,7 @@ export interface components {
             color?: string;
             displayName?: string;
             branchName?: string;
+            nextReservation?: components["schemas"]["NextReservationDto"];
         };
         CustomerResponseDto: {
             /** Format: int64 */
@@ -754,6 +755,16 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        NextReservationDto: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+            /** @enum {string} */
+            status?: "PENDING" | "CONFIRMED" | "ACTIVE" | "CANCELLED" | "COMPLETED";
         };
         ReservationResponseDto: {
             /** Format: int64 */
@@ -909,6 +920,7 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+            nextReservation?: components["schemas"]["NextReservationDto"];
         };
         BranchRequestDto: {
             name: string;
