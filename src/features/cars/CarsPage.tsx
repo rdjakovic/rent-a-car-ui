@@ -10,6 +10,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel } from "lucide-react";
+import { NextBooking } from "./NextBooking";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
@@ -260,6 +261,7 @@ export default function CarsPage() {
                           <Badge variant="secondary">{car.category}</Badge>
                           <Badge variant="outline">{car.status}</Badge>
                         </div>
+                        <NextBooking next={car.nextReservation} />
 
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div className="flex items-center gap-1">

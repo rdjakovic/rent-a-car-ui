@@ -96,6 +96,23 @@ describe('CarDetailsPage', () => {
     expect(screen.getByRole('button', { name: 'Schedule maintenance' })).toBeInTheDocument()
   })
 
+  it('shows when the car is booked next', async () => {
+    mockGetCarById.mockResolvedValue({
+      ...car,
+      nextReservation: { id: 30, status: 'CONFIRMED', startDate: '2099-01-10', endDate: '2099-01-12' },
+    })
+
+    renderAt('/cars/7')
+
+    expect(await screen.findByText(/^Next booking:/)).toBeInTheDocument()
+  })
+
+  it('says when there are no upcoming bookings', async () => {
+    renderAt('/cars/7')
+
+    expect(await screen.findByText('No upcoming bookings')).toBeInTheDocument()
+  })
+
   it('shows a not-found message when the car cannot be loaded', async () => {
     mockGetCarById.mockRejectedValue({ message: 'Car not found' })
 
