@@ -301,7 +301,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Booking')).toBeInTheDocument()
-      expect(screen.getByText(/End date must be after start date/)).toBeInTheDocument()
+      expect(screen.getByText(/End date cannot be before start date/)).toBeInTheDocument()
     })
   })
 

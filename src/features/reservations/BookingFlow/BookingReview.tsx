@@ -85,8 +85,8 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
         errors.push('Pickup date cannot be in the past');
       }
 
-      if (endDate <= startDate) {
-        errors.push('Return date must be after pickup date');
+      if (endDate < startDate) {
+        errors.push('Return date cannot be before pickup date');
       }
     }
 

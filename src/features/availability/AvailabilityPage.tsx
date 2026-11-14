@@ -41,7 +41,7 @@ export default function AvailabilityPage() {
   // Derived validation
   const dateError = useMemo(() => {
     if (!startDate || !endDate) return "";
-    if (endDate <= startDate) return "End date must be after start date";
+    if (endDate < startDate) return "End date cannot be before start date";
     return "";
   }, [startDate, endDate]);
 
