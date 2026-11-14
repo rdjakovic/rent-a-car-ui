@@ -55,9 +55,3 @@ export function formatCost(amount: number | undefined, currency: string | undefi
   if (amount == null) return undefined;
   return new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "USD" }).format(amount);
 }
-
-/** Message for a failed maintenance call (see maintenanceError in queries.ts). */
-export function maintenanceErrorMessage(error: any) {
-  if (error?.status === 403) return "You don't have permission to manage maintenance.";
-  return error?.detail ?? error?.message ?? "Something went wrong. Please try again.";
-}

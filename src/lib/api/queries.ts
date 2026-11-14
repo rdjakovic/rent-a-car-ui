@@ -1,20 +1,32 @@
 import { api } from "./client";
 import type { components } from "./schema";
-import { normalizeError } from "./errors";
+import { apiErrorFromResponse, normalizeError } from "./errors";
+
+/**
+ * Runs an openapi-fetch call and returns its data, or throws an ApiError: for any non-2xx response
+ * (including a 403 without a body) and for network failures. The error's message is the backend's
+ * reason where there is one, e.g. "Car is not available for the selected dates".
+ */
+async function request<T>(call: Promise<{ data?: unknown; error?: unknown; response: Response }>): Promise<T> {
+  let res;
+  try {
+    res = await call;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+  if (!res.response.ok) {
+    throw apiErrorFromResponse(res.response.status, res.error);
+  }
+  return res.data as T;
+}
 
 export type PageBranchResponseDto = components["schemas"]["PageBranchResponseDto"];
 export type BranchResponseDto = components["schemas"]["BranchResponseDto"];
 export type PageCarListResponseDto = components["schemas"]["PageCarListResponseDto"];
 export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
-export async function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
-  try {
-    const res = await api.GET("/api/v1/branches", { params: { query: params } });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as PageBranchResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+export function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
+  return request<PageBranchResponseDto>(api.GET("/api/v1/branches", { params: { query: params } }));
 }
 
 export type AvailabilityParams = {
@@ -31,10 +43,8 @@ export type AvailabilityParams = {
   sort?: string[];
 };
 
-export async function findAvailableCars(params: AvailabilityParams) {
-  const res = await api.GET("/api/v1/cars/available", { params: { query: params } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as PageCarListResponseDto;
+export function findAvailableCars(params: AvailabilityParams) {
+  return request<PageCarListResponseDto>(api.GET("/api/v1/cars/available", { params: { query: params } }));
 }
 
 // Car catalog queries
@@ -50,18 +60,14 @@ export type CarFilterParams = {
   sort?: string[];
 };
 
-export async function listCars(params: CarFilterParams = {}) {
-  const res = await api.GET("/api/v1/cars", { params: { query: params } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as PageCarListResponseDto;
+export function listCars(params: CarFilterParams = {}) {
+  return request<PageCarListResponseDto>(api.GET("/api/v1/cars", { params: { query: params } }));
 }
 
 export type CarResponseDto = components["schemas"]["CarResponseDto"];
 
-export async function getCarById(id: number) {
-  const res = await api.GET("/api/v1/cars/{id}", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as CarResponseDto;
+export function getCarById(id: number) {
+  return request<CarResponseDto>(api.GET("/api/v1/cars/{id}", { params: { path: { id } } }));
 }
 
 // Customer queries
@@ -76,60 +82,32 @@ export type CustomerSearchParams = {
   sort?: string[];
 };
 
-export async function searchCustomers(params: CustomerSearchParams = {}) {
-  try {
-    // Use the new searchany endpoint for enhanced search
-    const res = await (api as any).GET("/api/v1/customers/searchany", { params: { query: params } });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as PageCustomerResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+export function searchCustomers(params: CustomerSearchParams = {}) {
+  // The searchany endpoint matches first/last name, email, phone, city and driver license
+  return request<PageCustomerResponseDto>(api.GET("/api/v1/customers/searchany", { params: { query: params as any } }));
 }
 
-export async function listCustomers(params: CustomerSearchParams = {}) {
-  try {
-    // Use the search endpoint if search parameter is provided for better results
-    if (params.search) {
-      return searchCustomers(params);
-    } else {
-      // Use the regular list endpoint for non-search queries
-      const res = await api.GET("/api/v1/customers", { params: { query: params } });
-      if ((res as any).error) throw (res as any).error;
-      return res.data as PageCustomerResponseDto;
-    }
-  } catch (error) {
-    throw normalizeError(error);
+export function listCustomers(params: CustomerSearchParams = {}) {
+  // Use the search endpoint if search parameter is provided for better results
+  if (params.search) {
+    return searchCustomers(params);
   }
+  return request<PageCustomerResponseDto>(api.GET("/api/v1/customers", { params: { query: params } }));
 }
 
-export async function getCustomerById(id: number) {
-  const res = await api.GET("/api/v1/customers/{id}", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as CustomerResponseDto;
+export function getCustomerById(id: number) {
+  return request<CustomerResponseDto>(api.GET("/api/v1/customers/{id}", { params: { path: { id } } }));
 }
 
-export async function createCustomer(customer: CustomerRequestDto) {
-  try {
-    const res = await api.POST("/api/v1/customers", { body: customer });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as CustomerResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+export function createCustomer(customer: CustomerRequestDto) {
+  return request<CustomerResponseDto>(api.POST("/api/v1/customers", { body: customer }));
 }
 
-export async function updateCustomer(id: number, customer: CustomerRequestDto) {
-  try {
-    const res = await api.PUT("/api/v1/customers/{id}", {
-      params: { path: { id } },
-      body: customer
-    });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as CustomerResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+export function updateCustomer(id: number, customer: CustomerRequestDto) {
+  return request<CustomerResponseDto>(api.PUT("/api/v1/customers/{id}", {
+    params: { path: { id } },
+    body: customer
+  }));
 }
 
 // Reservation queries
@@ -149,65 +127,45 @@ export type ReservationSearchParams = {
   sort?: string[];
 };
 
-export async function listReservations(params: ReservationSearchParams = {}) {
-  const res = await api.GET("/api/v1/reservations", { params: { query: params } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as PageReservationResponseDto;
+export function listReservations(params: ReservationSearchParams = {}) {
+  return request<PageReservationResponseDto>(api.GET("/api/v1/reservations", { params: { query: params } }));
 }
 
-export async function getReservationById(id: number) {
-  const res = await api.GET("/api/v1/reservations/{id}", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as ReservationResponseDto;
+export function getReservationById(id: number) {
+  return request<ReservationResponseDto>(api.GET("/api/v1/reservations/{id}", { params: { path: { id } } }));
 }
 
-export async function createReservation(reservation: ReservationRequestDto) {
-  try {
-    const res = await api.POST("/api/v1/reservations", { body: reservation });
-    if ((res as any).error) throw (res as any).error;
-    return res.data as ReservationResponseDto;
-  } catch (error) {
-    throw normalizeError(error);
-  }
+export function createReservation(reservation: ReservationRequestDto) {
+  return request<ReservationResponseDto>(api.POST("/api/v1/reservations", { body: reservation }));
 }
 
-/** Only PENDING reservations can be updated. Failures are thrown as { status, ...problemDetail }. */
-export async function updateReservation(id: number, reservation: ReservationRequestDto) {
-  const res = await api.PUT("/api/v1/reservations/{id}", {
+/** Only PENDING reservations can be updated. */
+export function updateReservation(id: number, reservation: ReservationRequestDto) {
+  return request<ReservationResponseDto>(api.PUT("/api/v1/reservations/{id}", {
     params: { path: { id } },
     body: reservation
-  });
-  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
-  return res.data as ReservationResponseDto;
+  }));
 }
 
-export async function confirmReservation(id: number) {
-  const res = await api.POST("/api/v1/reservations/{id}/confirm", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as ReservationResponseDto;
+export function confirmReservation(id: number) {
+  return request<ReservationResponseDto>(api.POST("/api/v1/reservations/{id}/confirm", { params: { path: { id } } }));
 }
 
-export async function cancelReservation(id: number) {
-  const res = await api.POST("/api/v1/reservations/{id}/cancel", { params: { path: { id } } });
-  if ((res as any).error) throw (res as any).error;
-  return res.data as ReservationResponseDto;
+export function cancelReservation(id: number) {
+  return request<ReservationResponseDto>(api.POST("/api/v1/reservations/{id}/cancel", { params: { path: { id } } }));
 }
 
 export type ReservationPickupRequestDto = components["schemas"]["ReservationPickupRequestDto"];
 export type ReservationReturnRequestDto = components["schemas"]["ReservationReturnRequestDto"];
 
-/** Hand the car over (CONFIRMED -> ACTIVE). Failures are thrown as { status, ...problemDetail }. */
-export async function pickUpReservation(id: number, body?: ReservationPickupRequestDto) {
-  const res = await api.POST("/api/v1/reservations/{id}/pickup", { params: { path: { id } }, body });
-  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
-  return res.data as ReservationResponseDto;
+/** Hand the car over (CONFIRMED -> ACTIVE). */
+export function pickUpReservation(id: number, body?: ReservationPickupRequestDto) {
+  return request<ReservationResponseDto>(api.POST("/api/v1/reservations/{id}/pickup", { params: { path: { id } }, body }));
 }
 
-/** Car returned (ACTIVE -> COMPLETED). Failures are thrown as { status, ...problemDetail }. */
-export async function completeReservation(id: number, body?: ReservationReturnRequestDto) {
-  const res = await api.POST("/api/v1/reservations/{id}/complete", { params: { path: { id } }, body });
-  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
-  return res.data as ReservationResponseDto;
+/** Car returned (ACTIVE -> COMPLETED). */
+export function completeReservation(id: number, body?: ReservationReturnRequestDto) {
+  return request<ReservationResponseDto>(api.POST("/api/v1/reservations/{id}/complete", { params: { path: { id } }, body }));
 }
 
 // Maintenance queries
@@ -230,58 +188,36 @@ export type MaintenanceSearchParams = {
   endDate?: string;   // yyyy-mm-dd, scheduled on or before
 };
 
-// Maintenance calls report failures as { status, ...problemDetail } so callers can show the
-// backend's reason (e.g. a reservation conflict) and recognise a 403, which has no body.
-function maintenanceError(res: { response: Response; error?: unknown }) {
-  return { status: res.response.status, ...(res.error as object | undefined) };
+export function listMaintenance(params: MaintenanceSearchParams = {}) {
+  return request<PageMaintenanceResponseDto>(api.GET("/api/v1/maintenance", { params: { query: params } }));
 }
 
-export async function listMaintenance(params: MaintenanceSearchParams = {}) {
-  const res = await api.GET("/api/v1/maintenance", { params: { query: params } });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as PageMaintenanceResponseDto;
+export function getMaintenance(id: number) {
+  return request<MaintenanceResponseDto>(api.GET("/api/v1/maintenance/{id}", { params: { path: { id } } }));
 }
 
-export async function getMaintenance(id: number) {
-  const res = await api.GET("/api/v1/maintenance/{id}", { params: { path: { id } } });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
+export function scheduleMaintenance(body: MaintenanceScheduleRequestDto) {
+  return request<MaintenanceResponseDto>(api.POST("/api/v1/maintenance/schedule", { body }));
 }
 
-export async function scheduleMaintenance(body: MaintenanceScheduleRequestDto) {
-  const res = await api.POST("/api/v1/maintenance/schedule", { body });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
+export function updateMaintenance(id: number, body: MaintenanceUpdateRequestDto) {
+  return request<MaintenanceResponseDto>(api.PUT("/api/v1/maintenance/{id}", { params: { path: { id } }, body }));
 }
 
-export async function updateMaintenance(id: number, body: MaintenanceUpdateRequestDto) {
-  const res = await api.PUT("/api/v1/maintenance/{id}", { params: { path: { id } }, body });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
+export function startMaintenance(id: number) {
+  return request<MaintenanceResponseDto>(api.POST("/api/v1/maintenance/{id}/start", { params: { path: { id } } }));
 }
 
-export async function startMaintenance(id: number) {
-  const res = await api.POST("/api/v1/maintenance/{id}/start", { params: { path: { id } } });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
+export function completeMaintenance(id: number, body: MaintenanceCompleteRequestDto) {
+  return request<MaintenanceResponseDto>(api.POST("/api/v1/maintenance/{id}/complete", { params: { path: { id } }, body }));
 }
 
-export async function completeMaintenance(id: number, body: MaintenanceCompleteRequestDto) {
-  const res = await api.POST("/api/v1/maintenance/{id}/complete", { params: { path: { id } }, body });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
+export function cancelMaintenance(id: number) {
+  return request<MaintenanceResponseDto>(api.POST("/api/v1/maintenance/{id}/cancel", { params: { path: { id } } }));
 }
 
-export async function cancelMaintenance(id: number) {
-  const res = await api.POST("/api/v1/maintenance/{id}/cancel", { params: { path: { id } } });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as MaintenanceResponseDto;
-}
-
-export async function listCarsDueForService(withinDays = 14) {
-  const res = await api.GET("/api/v1/maintenance/due-cars", { params: { query: { withinDays } } });
-  if (!res.response.ok) throw maintenanceError(res);
-  return res.data as CarResponseDto[];
+export function listCarsDueForService(withinDays = 14) {
+  return request<CarResponseDto[]>(api.GET("/api/v1/maintenance/due-cars", { params: { query: { withinDays } } }));
 }
 
 // Application settings
@@ -289,15 +225,10 @@ export type SettingsResponseDto = components["schemas"]["SettingsResponseDto"];
 export type SettingsRequestDto = components["schemas"]["SettingsRequestDto"];
 export type MileageUnit = NonNullable<SettingsResponseDto["mileageUnit"]>;
 
-export async function getSettings() {
-  const res = await api.GET("/api/v1/settings");
-  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
-  return res.data as SettingsResponseDto;
+export function getSettings() {
+  return request<SettingsResponseDto>(api.GET("/api/v1/settings"));
 }
 
-export async function updateSettings(settings: SettingsRequestDto) {
-  const res = await api.PUT("/api/v1/settings", { body: settings });
-  // A 403 from the security chain has no body, so check the status rather than res.error
-  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
-  return res.data as SettingsResponseDto;
+export function updateSettings(settings: SettingsRequestDto) {
+  return request<SettingsResponseDto>(api.PUT("/api/v1/settings", { body: settings }));
 }

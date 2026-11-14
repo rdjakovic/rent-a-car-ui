@@ -2,11 +2,35 @@
  * Error normalization utilities for consistent API error handling
  */
 
-export interface ApiError {
+/** A field error from the backend's validation problem details ({ field, message }). */
+export interface FieldError {
+  field: string;
   message: string;
-  code?: string;
-  status?: number;
-  details?: Record<string, any>;
+}
+
+/**
+ * Every failed API call throws an ApiError (see request() in queries.ts). `message` is ready to show:
+ * the backend's own reason (problem detail) where it has one, a friendly text otherwise.
+ */
+export class ApiError extends Error {
+  /** HTTP status; 0 for network errors and timeouts */
+  readonly status?: number;
+  readonly code?: string;
+  /** Problem detail title and detail as sent by the backend */
+  readonly title?: string;
+  readonly detail?: string;
+  /** Field errors for validation failures */
+  readonly details?: FieldError[] | Record<string, any>;
+
+  constructor(init: { message: string; status?: number; code?: string; title?: string; detail?: string; details?: FieldError[] | Record<string, any> }) {
+    super(init.message);
+    this.name = "ApiError";
+    this.status = init.status;
+    this.code = init.code;
+    this.title = init.title;
+    this.detail = init.detail;
+    this.details = init.details;
+  }
 }
 
 export interface ValidationError extends ApiError {
@@ -67,132 +91,119 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.SERVER_ERROR]: 'A server error occurred. Please try again later.',
 } as const;
 
+/** Error code for an HTTP status. */
+function codeForStatus(status: number): string {
+  if (status === 401) return ERROR_CODES.UNAUTHORIZED;
+  if (status === 403) return ERROR_CODES.FORBIDDEN;
+  if (status === 404) return ERROR_CODES.RESOURCE_NOT_FOUND;
+  if (status === 409) return ERROR_CODES.RESOURCE_CONFLICT;
+  if (status === 422) return ERROR_CODES.BUSINESS_RULE_VIOLATION;
+  if (status === 400) return ERROR_CODES.VALIDATION_ERROR;
+  if (status >= 500) return ERROR_CODES.SERVER_ERROR;
+  return ERROR_CODES.UNKNOWN_ERROR;
+}
+
 /**
- * Normalizes various error types into a consistent ApiError format
+ * Builds the ApiError for a failed response. `body` is what openapi-fetch returns as `error`:
+ * the problem details ({ title, status, detail, errors? }) or an empty string when there is no body
+ * (e.g. a 403 from the security chain).
+ */
+export function apiErrorFromResponse(status: number, body: unknown): ApiError {
+  const problem = (body && typeof body === "object" ? body : {}) as {
+    title?: string; detail?: string; message?: string; errors?: FieldError[];
+  };
+  const fieldErrors = Array.isArray(problem.errors)
+    ? problem.errors.filter((e) => e && typeof e.message === "string")
+    : undefined;
+  const code = codeForStatus(status);
+
+  let message: string;
+  if (status === 401 || status === 403) {
+    message = ERROR_MESSAGES[code as keyof typeof ERROR_MESSAGES];
+  } else if (status >= 500) {
+    message = ERROR_MESSAGES[ERROR_CODES.SERVER_ERROR];
+  } else if (fieldErrors?.length) {
+    message = fieldErrors.map((e) => (e.field ? `${e.field}: ${e.message}` : e.message)).join("; ");
+  } else {
+    // The backend's own reason, e.g. "Car is not available for the selected dates"
+    message = problem.detail || problem.message || problem.title
+      || ERROR_MESSAGES[code as keyof typeof ERROR_MESSAGES] || ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR];
+  }
+
+  return new ApiError({
+    message,
+    status,
+    code,
+    title: problem.title,
+    detail: problem.detail,
+    details: fieldErrors?.length ? fieldErrors : undefined,
+  });
+}
+
+/**
+ * Normalizes anything thrown into an ApiError: ApiErrors pass through, problem details
+ * ({ status, title/detail }) become ApiErrors, fetch failures become network errors (status 0).
  */
 export function normalizeError(error: any): ApiError {
-  // Handle network errors
-  if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
-    return {
+  if (error instanceof ApiError) {
+    return error;
+  }
+
+  // Network errors (fetch rejects with a TypeError)
+  if (error?.name === 'TypeError' && /fetch|network/i.test(error?.message ?? '')) {
+    return new ApiError({
       message: ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
       code: ERROR_CODES.NETWORK_ERROR,
       status: 0,
-    };
+    });
   }
 
-  // Handle timeout errors
+  // Timeouts
   if (error?.name === 'AbortError' || error?.message?.includes('timeout')) {
-    return {
+    return new ApiError({
       message: ERROR_MESSAGES[ERROR_CODES.TIMEOUT],
       code: ERROR_CODES.TIMEOUT,
       status: 0,
-    };
+    });
   }
 
-  // Handle openapi-fetch errors (from our API client)
-  if (error?.response) {
-    const status = error.response.status;
-    const responseData = error.response.data || error.data;
-
-    // Extract message from various response formats
-    let message = 'An error occurred';
-    let code: (typeof ERROR_CODES)[keyof typeof ERROR_CODES] = ERROR_CODES.UNKNOWN_ERROR;
-    let details = {};
-
-    if (responseData) {
-      // Spring Boot validation errors typically have this structure
-      if (responseData.message) {
-        message = responseData.message;
-      } else if (responseData.error) {
-        message = responseData.error;
-      } else if (responseData.title) {
-        message = responseData.title;
-      }
-
-      // Extract validation details if present
-      if (responseData.violations || responseData.fieldErrors) {
-        details = responseData.violations || responseData.fieldErrors;
-        code = ERROR_CODES.VALIDATION_ERROR;
-      }
-
-      // Extract error code if present
-      if (responseData.code) {
-        code = responseData.code;
-      }
-    }
-
-    // Map HTTP status codes to error codes
-    switch (status) {
-      case 400:
-        code = code === ERROR_CODES.UNKNOWN_ERROR ? ERROR_CODES.VALIDATION_ERROR : code;
-        break;
-      case 401:
-        code = ERROR_CODES.UNAUTHORIZED;
-        message = ERROR_MESSAGES[ERROR_CODES.UNAUTHORIZED];
-        break;
-      case 403:
-        code = ERROR_CODES.FORBIDDEN;
-        message = ERROR_MESSAGES[ERROR_CODES.FORBIDDEN];
-        break;
-      case 404:
-        code = ERROR_CODES.RESOURCE_NOT_FOUND;
-        message = ERROR_MESSAGES[ERROR_CODES.RESOURCE_NOT_FOUND];
-        break;
-      case 409:
-        code = ERROR_CODES.RESOURCE_CONFLICT;
-        // Keep the original message for conflicts as it's usually specific
-        break;
-      case 422:
-        code = ERROR_CODES.BUSINESS_RULE_VIOLATION;
-        break;
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        code = ERROR_CODES.SERVER_ERROR;
-        message = ERROR_MESSAGES[ERROR_CODES.SERVER_ERROR];
-        break;
-    }
-
-    return {
-      message,
-      code,
-      status,
-      details: Object.keys(details).length > 0 ? details : undefined,
-    };
+  // Problem details or { status, ... } objects
+  if (error && typeof error === 'object' && typeof error.status === 'number' && !(error instanceof Error)) {
+    return apiErrorFromResponse(error.status, error);
   }
 
-  // Handle JavaScript Error objects
+  // JavaScript Error objects
   if (error instanceof Error) {
-    return {
+    return new ApiError({
       message: error.message || ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
       code: ERROR_CODES.UNKNOWN_ERROR,
-    };
+    });
   }
 
-  // Handle string errors
-  if (typeof error === 'string') {
-    return {
-      message: error,
-      code: ERROR_CODES.UNKNOWN_ERROR,
-    };
+  // String errors
+  if (typeof error === 'string' && error) {
+    return new ApiError({ message: error, code: ERROR_CODES.UNKNOWN_ERROR });
   }
 
-  // Handle objects with message property
+  // Objects with a message property
   if (error?.message) {
-    return {
+    return new ApiError({
       message: error.message,
       code: error.code || ERROR_CODES.UNKNOWN_ERROR,
       status: error.status,
       details: error.details,
-    };
+    });
   }
 
-  // Fallback for unknown error types
-  return {
+  return new ApiError({
     message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
     code: ERROR_CODES.UNKNOWN_ERROR,
-  };
+  });
+}
+
+/** Message to show for anything thrown by an API call. */
+export function errorMessage(error: unknown): string {
+  return normalizeError(error).message;
 }
 
 /**
@@ -241,12 +252,13 @@ export function isNetworkError(error: ApiError): boolean {
 }
 
 /**
- * Gets a user-friendly error message, falling back to the original message
- * if no mapping exists
+ * Gets a user-friendly error message: the error's own message (already the backend's reason or a
+ * friendly text), falling back to the generic text for its code
  */
 export function getErrorMessage(error: ApiError): string {
-  if (error.code && error.code in ERROR_MESSAGES) {
-    return ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES];
+  if (error.message) {
+    return error.message;
   }
-  return error.message;
+  return ERROR_MESSAGES[(error.code ?? ERROR_CODES.UNKNOWN_ERROR) as keyof typeof ERROR_MESSAGES]
+    ?? ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR];
 }

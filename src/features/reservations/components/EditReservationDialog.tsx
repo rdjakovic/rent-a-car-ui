@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { errorMessage } from "@/lib/api/errors";
 import { todayString } from "@/lib/dates";
 
 type Props = {
@@ -83,10 +84,7 @@ export function EditReservationDialog({ reservation, open, onOpenChange, onSaved
       onOpenChange(false);
       onSaved?.(updated);
     },
-    onError: (error: any) => setSubmitError(
-      error?.status === 403
-        ? "You don't have permission to do this."
-        : error?.detail ?? error?.message ?? "Something went wrong. Please try again."),
+    onError: (error) => setSubmitError(errorMessage(error)),
   });
 
   const money = (amount: number) =>

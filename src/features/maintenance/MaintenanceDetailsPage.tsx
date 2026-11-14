@@ -18,13 +18,13 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
+import { errorMessage } from "@/lib/api/errors";
 import { MaintenanceFormDialog } from "./MaintenanceFormDialog";
 import { CompleteMaintenanceDialog } from "./CompleteMaintenanceDialog";
 import {
   formatCost,
   isOpenRecall,
   isOverdue,
-  maintenanceErrorMessage,
   statusBadgeVariant,
   statusLabel,
   typeLabel,
@@ -73,7 +73,7 @@ export default function MaintenanceDetailsPage() {
     toast({ title });
   };
   const onFailed = (error: unknown) =>
-    toast({ title: "Action failed", description: maintenanceErrorMessage(error), variant: "destructive" });
+    toast({ title: "Action failed", description: errorMessage(error), variant: "destructive" });
 
   const start = useMutation({
     mutationFn: () => startMaintenance(jobId),
