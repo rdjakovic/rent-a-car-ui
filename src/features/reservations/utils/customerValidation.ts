@@ -1,4 +1,5 @@
 import type { CustomerResponseDto } from "@/lib/api/queries";
+import { todayString } from "@/lib/dates";
 
 export interface CustomerValidationResult {
   isValid: boolean;
@@ -53,11 +54,10 @@ export function validateCustomerForBooking(
       if (isNaN(new Date(customer.licenseExpiryDate).getTime())) {
         errors.push("Customer's driver license has expired");
       } else {
-        // Compare as date-only strings to avoid UTC-parse/local-timezone
-        // mismatches that a Date-object comparison would introduce.
-        const todayString = new Date().toISOString().split('T')[0];
+        // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
+        const today = todayString();
 
-        if (customer.licenseExpiryDate < todayString) {
+        if (customer.licenseExpiryDate < today) {
           errors.push("Customer's driver license has expired");
         }
       }
@@ -89,10 +89,9 @@ export function hasValidDriverLicense(customer: CustomerResponseDto | null): boo
     if (isNaN(new Date(customer.licenseExpiryDate).getTime())) {
       return false;
     }
-    // Compare as date-only strings to avoid UTC-parse/local-timezone
-    // mismatches that a Date-object comparison would introduce.
-    const todayString = new Date().toISOString().split('T')[0];
-    return customer.licenseExpiryDate >= todayString;
+    // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
+    const today = todayString();
+    return customer.licenseExpiryDate >= today;
   }
 
   // If no expiry date is provided, assume license is valid

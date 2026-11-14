@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Calendar, Car, User, MapPin, DollarSign, RefreshCw, AlertTriangle } from "lucide-react";
+import { todayString } from "@/lib/dates";
 
 interface BookingReviewProps {
   onBack: () => void;
@@ -77,11 +78,10 @@ export default function BookingReview({ onBack, onSubmit }: BookingReviewProps) 
     // Validate dates
     if (bookingFlow.bookingDetails) {
       const { startDate, endDate } = bookingFlow.bookingDetails;
-      // Compare as date-only strings to avoid UTC-parse/local-timezone
-      // mismatches that a Date-object comparison would introduce.
-      const todayString = new Date().toISOString().split('T')[0];
+      // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
+      const today = todayString();
 
-      if (startDate < todayString) {
+      if (startDate < today) {
         errors.push('Pickup date cannot be in the past');
       }
 

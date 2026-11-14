@@ -1,4 +1,5 @@
 import type { CustomerResponseDto } from "@/lib/api/queries";
+import { todayString } from "@/lib/dates";
 
 /**
  * Error types for customer selection
@@ -141,12 +142,9 @@ export function validateCustomerForErrors(customer: CustomerResponseDto | null):
   if (!customer.driverLicenseNo?.trim()) {
     errors.push(createLicenseError("Driver license number is required"));
   } else if (customer.licenseExpiryDate) {
-    const expiryDate = new Date(customer.licenseExpiryDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    expiryDate.setHours(0, 0, 0, 0);
-    
-    if (expiryDate < today) {
+    // Compare yyyy-mm-dd strings: new Date("yyyy-mm-dd") is UTC midnight, which can land on the
+    // previous local day and flag a license that expires today as already expired
+    if (customer.licenseExpiryDate < todayString()) {
       errors.push(createLicenseError("Driver license has expired"));
     }
   }

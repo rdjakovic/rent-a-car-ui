@@ -8,6 +8,7 @@ import CustomerSelection from "./CustomerSelection";
 import BookingReview from "./BookingReview";
 import BookingConfirmation from "./BookingConfirmation";
 import BookingBreadcrumbs from "../components/BookingBreadcrumbs";
+import { todayString } from "@/lib/dates";
 
 export default function BookingWizard() {
   const [searchParams] = useSearchParams();
@@ -63,11 +64,10 @@ export default function BookingWizard() {
             return;
           }
 
-          // Compare as date-only strings to avoid UTC-parse/local-timezone
-          // mismatches that a Date-object comparison would introduce.
-          const todayString = new Date().toISOString().split('T')[0];
+          // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
+          const today = todayString();
 
-          if (startDate < todayString) {
+          if (startDate < today) {
             setInitializationError('Start date cannot be in the past. Please start from the availability search.');
             return;
           }
