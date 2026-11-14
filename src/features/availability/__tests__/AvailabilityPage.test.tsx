@@ -57,7 +57,7 @@ describe('AvailabilityPage', () => {
     expect(screen.getByText(/NextStep/)).toBeInTheDocument()
     expect(screen.getByText(/RentACar/)).toBeInTheDocument()
     expect(screen.getByText(/Your journey starts here/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /rent now/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /rent now/i })).not.toBeInTheDocument()
   })
 
   it('renders availability search form', () => {

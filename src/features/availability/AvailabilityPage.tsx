@@ -118,12 +118,9 @@ export default function AvailabilityPage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               NextStep <span className="text-brand-emerald">RentACar</span>
             </h1>
-            <p className="text-lg md:text-xl mb-6 text-brand-silver max-w-xl mx-auto">
+            <p className="text-lg md:text-xl text-brand-silver max-w-xl mx-auto">
               Your journey starts here. Premium car rentals with unmatched service and competitive rates.
             </p>
-            <button className="bg-brand-orange hover:bg-brand-orange/90 text-white px-6 py-3 rounded-lg text-base font-semibold transition-colors shadow-lg hover:shadow-xl">
-              Rent Now
-            </button>
           </div>
         </div>
       </section>
