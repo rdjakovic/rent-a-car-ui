@@ -201,3 +201,21 @@ export async function completeReservation(id: number) {
   if ((res as any).error) throw (res as any).error;
   return res.data as ReservationResponseDto;
 }
+
+// Application settings
+export type SettingsResponseDto = components["schemas"]["SettingsResponseDto"];
+export type SettingsRequestDto = components["schemas"]["SettingsRequestDto"];
+export type MileageUnit = NonNullable<SettingsResponseDto["mileageUnit"]>;
+
+export async function getSettings() {
+  const res = await api.GET("/api/v1/settings");
+  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
+  return res.data as SettingsResponseDto;
+}
+
+export async function updateSettings(settings: SettingsRequestDto) {
+  const res = await api.PUT("/api/v1/settings", { body: settings });
+  // A 403 from the security chain has no body, so check the status rather than res.error
+  if (!res.response.ok) throw { status: res.response.status, ...(res as any).error };
+  return res.data as SettingsResponseDto;
+}

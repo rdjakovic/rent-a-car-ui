@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get application settings */
+        get: operations["get"];
+        /** Update application settings (admin only outside local/docker) */
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reservations/{id}": {
         parameters: {
             query?: never;
@@ -20,7 +38,7 @@ export interface paths {
          * Update an existing reservation
          * @description Updates a reservation. Only PENDING reservations can be modified.
          */
-        put: operations["update"];
+        put: operations["update_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -36,7 +54,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getById_1"];
-        put: operations["update_1"];
+        put: operations["update_2"];
         post?: never;
         delete: operations["delete"];
         options?: never;
@@ -53,7 +71,7 @@ export interface paths {
         };
         /** Get a car by ID */
         get: operations["getById_2"];
-        put: operations["update_2"];
+        put: operations["update_3"];
         post?: never;
         delete: operations["delete_1"];
         options?: never;
@@ -69,7 +87,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getById_3"];
-        put: operations["update_3"];
+        put: operations["update_4"];
         post?: never;
         delete: operations["delete_2"];
         options?: never;
@@ -594,6 +612,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SettingsRequestDto: {
+            /** @enum {string} */
+            mileageUnit: "KILOMETERS" | "MILES";
+        };
+        SettingsResponseDto: {
+            /** @enum {string} */
+            mileageUnit?: "KILOMETERS" | "MILES";
+        };
         ReservationRequestDto: {
             /** Format: int64 */
             customerId: number;
@@ -608,7 +634,7 @@ export interface components {
             /** Format: int64 */
             dropoffBranchId: number;
             notes?: string;
-            endDateAfterStartDate?: boolean;
+            endDateOnOrAfterStartDate?: boolean;
         };
         BranchResponseDto: {
             /** Format: int64 */
@@ -979,6 +1005,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
     getById: {
         parameters: {
             query?: never;
@@ -1014,7 +1084,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1093,7 +1163,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1170,7 +1240,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1238,7 +1308,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;

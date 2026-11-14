@@ -3,15 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import CarDetailsPage from '../CarDetailsPage'
-import { getCarById, findAvailableCars } from '@/lib/api/queries'
+import { getCarById, findAvailableCars, getSettings } from '@/lib/api/queries'
 
 vi.mock('@/lib/api/queries', () => ({
   getCarById: vi.fn(),
   findAvailableCars: vi.fn(),
+  getSettings: vi.fn(),
 }))
 
 const mockGetCarById = getCarById as any
 const mockFindAvailableCars = findAvailableCars as any
+const mockGetSettings = getSettings as any
 
 const car = {
   id: 7,
@@ -60,6 +62,7 @@ describe('CarDetailsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetCarById.mockResolvedValue(car)
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'MILES' })
   })
 
   it('shows the car details and its branch', async () => {
@@ -71,6 +74,7 @@ describe('CarDetailsPage', () => {
     expect(screen.getByText('NY-1234')).toBeInTheDocument()
     expect(screen.getByText('$45.00')).toBeInTheDocument()
     expect(screen.getByText('123 Main Street')).toBeInTheDocument()
+    expect(await screen.findByText(`${(12000).toLocaleString()} mi`)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Back to catalog/ })).toHaveAttribute('href', '/cars')
   })
 

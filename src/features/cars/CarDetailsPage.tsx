@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Car, MapPin } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { formatMileage } from "@/lib/units";
 
 /** Today as yyyy-mm-dd in local time (the date inputs work in local dates). */
 function todayString() {
@@ -30,6 +32,7 @@ export default function CarDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const carId = Number(id);
   const navigate = useNavigate();
+  const settings = useSettings();
 
   const carQuery = useQuery({
     queryKey: ["car", carId],
@@ -115,7 +118,7 @@ export default function CarDetailsPage() {
                   <DetailRow label="Fuel type" value={car.fuelType} />
                   <DetailRow label="Seats" value={car.seats} />
                   <DetailRow label="Color" value={car.color} />
-                  <DetailRow label="Mileage" value={car.mileage?.toLocaleString()} />
+                  <DetailRow label="Mileage" value={formatMileage(car.mileage, settings.data?.mileageUnit)} />
                 </dl>
               </CardContent>
             </Card>

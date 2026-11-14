@@ -19,6 +19,8 @@ let cars = [...mockCars];
 let customers = [...mockCustomers];
 let reservations = [...mockReservations];
 
+let mockSettings: components['schemas']['SettingsResponseDto'] = { mileageUnit: 'KILOMETERS' };
+
 export const handlers = [
   // Branch endpoints
   http.get('/api/v1/branches', async ({ request }) => {
@@ -105,6 +107,22 @@ export const handlers = [
     }
 
     return HttpResponse.json(car);
+  }),
+
+  // Settings endpoints
+  http.get('/api/v1/settings', async () => {
+    await delay();
+    return HttpResponse.json(mockSettings);
+  }),
+
+  http.put('/api/v1/settings', async ({ request }) => {
+    await delay();
+    const body = await request.json() as components['schemas']['SettingsRequestDto'];
+    if (body?.mileageUnit !== 'KILOMETERS' && body?.mileageUnit !== 'MILES') {
+      return HttpResponse.json({ title: 'Validation Failed', status: 400 }, { status: 400 });
+    }
+    mockSettings = { mileageUnit: body.mileageUnit };
+    return HttpResponse.json(mockSettings);
   }),
 
   // Customer endpoints
