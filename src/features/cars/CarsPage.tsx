@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { listCars, type CarFilterParams } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -283,8 +284,8 @@ export default function CarsPage() {
                             </span>
                             <span className="text-sm text-muted-foreground">/day</span>
                           </div>
-                          <Button className="bg-brand-emerald hover:bg-brand-emerald/90 text-white">
-                            View Details
+                          <Button asChild className="bg-brand-emerald hover:bg-brand-emerald/90 text-white">
+                            <Link to={`/cars/${car.id}`}>View Details</Link>
                           </Button>
                         </div>
                       </div>
