@@ -6,6 +6,7 @@ import {
   checkCustomerEligibility,
 } from '../customerValidation';
 import type { CustomerResponseDto } from '@/lib/api/queries';
+import { daysFromToday } from '@/lib/dates';
 
 // Mock customer data for testing
 const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => ({
@@ -183,11 +184,8 @@ describe('customerValidation', () => {
     });
 
     it('should handle edge case of license expiring today', () => {
-      const today = new Date();
-      const todayString = today.toISOString().split('T')[0];
-      
       const customer = createMockCustomer({
-        licenseExpiryDate: todayString,
+        licenseExpiryDate: daysFromToday(0),
       });
       
       expect(hasValidDriverLicense(customer)).toBe(true);
@@ -265,12 +263,8 @@ describe('customerValidation', () => {
   describe('date handling', () => {
     it('should correctly compare dates at start of day', () => {
       // Test that time of day doesn't affect date comparison
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(23, 59, 59, 999); // End of day
-      
       const customer = createMockCustomer({
-        licenseExpiryDate: tomorrow.toISOString().split('T')[0],
+        licenseExpiryDate: daysFromToday(1),
       });
       
       expect(hasValidDriverLicense(customer)).toBe(true);

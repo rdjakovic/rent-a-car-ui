@@ -585,8 +585,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search branches by name with pagination and sorting */
-        get: operations["searchByName"];
+        /** Search branches by name and/or city (partial, case-insensitive) with pagination and sorting */
+        get: operations["search_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2497,10 +2497,11 @@ export interface operations {
             };
         };
     };
-    searchByName: {
+    search_1: {
         parameters: {
-            query: {
-                name: string;
+            query?: {
+                name?: string;
+                city?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

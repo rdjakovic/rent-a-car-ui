@@ -11,6 +11,7 @@ import {
 import type { components } from '@/lib/api/schema';
 
 type CustomerRequestDto = components['schemas']['CustomerRequestDto'];
+type BranchResponseDto = components['schemas']['BranchResponseDto'];
 type ReservationRequestDto = components['schemas']['ReservationRequestDto'];
 
 // In-memory storage for mocked data (resets on page refresh)
@@ -63,6 +64,55 @@ export const handlers = [
 
     const response = generatePaginatedResponse(branches, page, size);
     return HttpResponse.json(response);
+  }),
+
+  // Like the backend: partial, case-insensitive match on name and/or city; blank filters are ignored
+  http.get('/api/v1/branches/search', async ({ request }) => {
+    await delay();
+
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '0');
+    const size = parseInt(url.searchParams.get('size') || '10');
+    const name = (url.searchParams.get('name') || '').trim().toLowerCase();
+    const city = (url.searchParams.get('city') || '').trim().toLowerCase();
+
+    const matches = branches
+      .filter(b => !name || (b.name ?? '').toLowerCase().includes(name))
+      .filter(b => !city || (b.city ?? '').toLowerCase().includes(city));
+    return HttpResponse.json(generatePaginatedResponse(matches, page, size));
+  }),
+
+  http.post('/api/v1/branches', async ({ request }) => {
+    await delay();
+
+    const body = await request.json() as components['schemas']['BranchRequestDto'];
+    if (branches.some(b => b.name === body.name && b.city === body.city)) {
+      return HttpResponse.json(
+        { title: 'Bad Request', status: 400, detail: 'Branch with the same name already exists in this city' },
+        { status: 400 }
+      );
+    }
+    const now = new Date().toISOString();
+    const created: BranchResponseDto = { ...body, id: generateId(), active: body.active ?? true, createdAt: now, updatedAt: now };
+    branches = [...branches, created];
+    return HttpResponse.json(created);
+  }),
+
+  http.put('/api/v1/branches/:id', async ({ params, request }) => {
+    await delay();
+
+    const id = parseInt(params.id as string);
+    const body = await request.json() as components['schemas']['BranchRequestDto'];
+    const existing = branches.find(b => b.id === id);
+    if (!existing) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: `Branch not found: ${id}` }, { status: 404 });
+    }
+    // Leaving `active` out keeps the status, like the backend
+    const updated: BranchResponseDto = {
+      ...existing, ...body, id, active: body.active ?? existing.active, updatedAt: new Date().toISOString(),
+    };
+    branches = branches.map(b => (b.id === id ? updated : b));
+    return HttpResponse.json(updated);
   }),
 
   // Car endpoints

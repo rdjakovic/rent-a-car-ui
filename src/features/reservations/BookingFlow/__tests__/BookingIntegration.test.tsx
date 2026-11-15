@@ -5,15 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import BookingWizard from '../BookingWizard'
 import type { CarListResponseDto, CustomerResponseDto, ReservationResponseDto } from '@/lib/api/queries'
 import type { BookingDetails } from '@/stores/useBookingFlowStore'
+import { daysFromToday } from '@/lib/dates';
 
 // Generate future dates for testing
-const tomorrow = new Date()
-tomorrow.setDate(tomorrow.getDate() + 1)
-const dayAfterTomorrow = new Date()
-dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 5)
-
-const startDate = tomorrow.toISOString().split('T')[0]
-const endDate = dayAfterTomorrow.toISOString().split('T')[0]
+const startDate = daysFromToday(1)
+const endDate = daysFromToday(5)
 
 // Mock the useBookingFlow hook with working state
 const mockBookingFlow: {

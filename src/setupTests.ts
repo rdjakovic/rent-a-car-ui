@@ -4,6 +4,13 @@ import { server } from '@/lib/mocks/server';
 // jsdom does not implement scrollIntoView; Radix UI's Select calls it internally.
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 
+// jsdom does not implement ResizeObserver; Radix UI's Checkbox uses it to measure itself.
+globalThis.ResizeObserver = globalThis.ResizeObserver || class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Establish API mocking before all tests
 beforeAll(() => server.listen());
 

@@ -5,6 +5,7 @@ import BookingReview from '../BookingReview';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
 import { createReservation } from '@/lib/api/queries';
 import type { CustomerResponseDto, CarListResponseDto, ReservationResponseDto } from '@/lib/api/queries';
+import { daysFromToday } from '@/lib/dates';
 
 // Mock the hooks and API
 vi.mock('@/hooks/useBookingFlow');
@@ -222,8 +223,6 @@ describe('BookingReview', () => {
 
     it('validates date ranges', async () => {
       // Mock past date
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 1);
       
       const queryClient = new QueryClient({
         defaultOptions: {
@@ -236,7 +235,7 @@ describe('BookingReview', () => {
         ...defaultBookingFlowState,
         bookingDetails: {
           ...mockBookingDetails,
-          startDate: pastDate.toISOString().split('T')[0],
+          startDate: daysFromToday(-1),
         },
       });
 
