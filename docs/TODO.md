@@ -69,7 +69,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Cars: details page (specifications, next booking, maintenance history, booking card), search, Make/Model/Year/VIN filters, Add car dialog, current or next booking on each card
 - Branches: search by name and city, create and edit, Active status (inactive branches aren't bookable)
 - Maintenance overview and details pages (schedule, edit, start, complete, cancel, due for service, recalls)
-- Settings page (mileage unit)
+- Settings page (mileage unit, default branch); Availability pre-selects the default branch and today as the start date
 - Navigation bar with a hamburger menu; no horizontal overflow from 360px up
 - Saved filters on Availability, Cars, Customers and Reservations
 - One error style for all API calls (`request()` / `ApiError`); global error boundary and retry policies

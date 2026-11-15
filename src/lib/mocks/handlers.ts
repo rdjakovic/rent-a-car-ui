@@ -234,7 +234,7 @@ export const handlers = [
     if (body?.mileageUnit !== 'KILOMETERS' && body?.mileageUnit !== 'MILES') {
       return HttpResponse.json({ title: 'Validation Failed', status: 400 }, { status: 400 });
     }
-    mockSettings = { mileageUnit: body.mileageUnit };
+    mockSettings = { mileageUnit: body.mileageUnit, defaultBranchId: body.defaultBranchId };
     return HttpResponse.json(mockSettings);
   }),
 

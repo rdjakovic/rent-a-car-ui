@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
+import { todayString } from "@/lib/dates";
 
 /**
  * Filters a list page keeps while you move between pages (in memory: a reload starts fresh).
@@ -7,9 +8,11 @@ import { create, type StoreApi, type UseBoundStore } from "zustand";
  */
 const resets: Array<() => void> = [];
 
-export function createFilterStore<T extends object>(initial: T) {
-  const useStore = create<T>(() => ({ ...initial }));
-  const reset = () => useStore.setState({ ...initial }, true);
+export function createFilterStore<T extends object>(initial: T | (() => T)) {
+  // A function is evaluated on every reset, for defaults that change (like "today")
+  const initialState = () => (typeof initial === "function" ? (initial as () => T)() : { ...initial });
+  const useStore = create<T>(() => initialState());
+  const reset = () => useStore.setState(initialState(), true);
   resets.push(reset);
   return Object.assign(useStore, { reset });
 }
@@ -34,9 +37,10 @@ export function useFilterField<T extends object, K extends keyof T>(useStore: Us
 
 // --- The saved filters of each page ---
 
-export const useAvailabilityFilters = createFilterStore({
+// The start date is pre-selected as today; the default branch is filled in by the page (it comes from the settings)
+export const useAvailabilityFilters = createFilterStore(() => ({
   branchId: "",
-  startDate: "",
+  startDate: todayString(),
   endDate: "",
   category: "",
   transmission: "",
@@ -45,7 +49,7 @@ export const useAvailabilityFilters = createFilterStore({
   maxPrice: "",
   page: 0,
   submitted: false,
-});
+}));
 
 export const useCarsFilters = createFilterStore({
   search: "",

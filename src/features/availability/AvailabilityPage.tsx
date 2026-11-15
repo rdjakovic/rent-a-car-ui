@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAvailabilityFilters, useFilterField } from "@/stores/filterStore";
 import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
+import { useSettings } from "@/hooks/useSettings";
 import { todayString } from "@/lib/dates";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
@@ -43,6 +44,9 @@ export default function AvailabilityPage() {
   });
 
   const branchOptions = branchesQuery.data?.content;
+
+  // The branch chosen in Settings is pre-selected whenever none is chosen (first visit, after Reset)
+  const defaultBranchId = useSettings().data?.defaultBranchId;
 
   // A saved search is only run once it is known to still make sense: its dates haven't passed and
   // its branch is still open. Otherwise it is dropped below (instead of sending a request first).
@@ -76,10 +80,10 @@ export default function AvailabilityPage() {
   // Reset to the first page when filters change
   useResetPageOnChange([branchId, startDate, endDate, category, transmission, fuelType, minSeats, maxPrice], setPage);
 
-  // A saved search for dates that have since passed is dropped
+  // A saved search for dates that have since passed is dropped (the start date goes back to today)
   useEffect(() => {
     if (savedDatesPassed) {
-      setStartDate("");
+      setStartDate(todayString());
       setEndDate("");
       setSubmitted(false);
       setSavedDatesPassed(false);
@@ -93,6 +97,12 @@ export default function AvailabilityPage() {
       setSubmitted(false);
     }
   }, [branchOptions, branchId, setBranchId, setSubmitted]);
+
+  useEffect(() => {
+    if (!branchId && defaultBranchId && branchOptions?.some((b) => b.active && b.id === defaultBranchId)) {
+      setBranchId(String(defaultBranchId));
+    }
+  }, [branchId, defaultBranchId, branchOptions, setBranchId]);
 
   const availQuery = useQuery({
     queryKey: [

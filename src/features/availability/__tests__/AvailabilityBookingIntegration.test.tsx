@@ -3,12 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
-import { listBranches, findAvailableCars } from '@/lib/api/queries'
+import { listBranches, findAvailableCars, getSettings } from '@/lib/api/queries'
 
 // Mock the API functions
 vi.mock('@/lib/api/queries', () => ({
   listBranches: vi.fn(),
   findAvailableCars: vi.fn(),
+  getSettings: vi.fn(),
 }))
 
 // Mock react-router-dom navigate
@@ -78,6 +79,7 @@ describe('AvailabilityPage - Booking Integration', () => {
     vi.clearAllMocks()
     
     // Mock API responses
+    ;(getSettings as any).mockResolvedValue({ mileageUnit: 'KILOMETERS' })
     mockListBranches.mockResolvedValue(mockBranches)
     mockFindAvailableCars.mockResolvedValue(mockAvailableCars)
   })

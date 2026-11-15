@@ -674,10 +674,14 @@ export interface components {
         SettingsRequestDto: {
             /** @enum {string} */
             mileageUnit: "KILOMETERS" | "MILES";
+            /** Format: int64 */
+            defaultBranchId?: number;
         };
         SettingsResponseDto: {
             /** @enum {string} */
             mileageUnit?: "KILOMETERS" | "MILES";
+            /** Format: int64 */
+            defaultBranchId?: number;
         };
         ReservationRequestDto: {
             /** Format: int64 */

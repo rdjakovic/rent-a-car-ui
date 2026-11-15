@@ -1,18 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
-import { listBranches, findAvailableCars } from '@/lib/api/queries'
+import { listBranches, findAvailableCars, getSettings } from '@/lib/api/queries'
+import { todayString } from '@/lib/dates'
 
 // Mock the API functions
 vi.mock('@/lib/api/queries', () => ({
   listBranches: vi.fn(),
   findAvailableCars: vi.fn(),
+  getSettings: vi.fn(),
 }))
 
 const mockListBranches = listBranches as any
 const mockFindAvailableCars = findAvailableCars as any
+const mockGetSettings = getSettings as any
 
 describe('AvailabilityPage', () => {
   let queryClient: QueryClient
@@ -28,6 +31,7 @@ describe('AvailabilityPage', () => {
     vi.clearAllMocks()
     
     // Mock API responses
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'KILOMETERS' })
     mockListBranches.mockResolvedValue({
       content: [
         { id: 1, name: 'Main Branch', city: 'New York', active: true },
@@ -73,6 +77,43 @@ describe('AvailabilityPage', () => {
     expect(screen.queryByText(/Closed Branch/)).not.toBeInTheDocument()
   })
 
+  it('pre-selects today as the start date', () => {
+    renderWithQueryClient(<AvailabilityPage />)
+
+    expect(screen.getByLabelText('Start date')).toHaveValue(todayString())
+    expect(screen.getByLabelText('End date')).toHaveValue('')
+  })
+
+  it('pre-selects the default branch from the settings', async () => {
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'KILOMETERS', defaultBranchId: 1 })
+    renderWithQueryClient(<AvailabilityPage />)
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Branch' })).toHaveTextContent('Main Branch (New York)'))
+  })
+
+  it('pre-selects nothing when there is no default branch or it has been closed', async () => {
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'KILOMETERS', defaultBranchId: 2 })
+    renderWithQueryClient(<AvailabilityPage />)
+
+    await waitFor(() => expect(mockGetSettings).toHaveBeenCalled())
+    await screen.findByRole('combobox', { name: 'Branch' })
+    expect(screen.getByRole('combobox', { name: 'Branch' })).toHaveTextContent('Select branch')
+  })
+
+  it('Reset brings back the default branch and today', async () => {
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'KILOMETERS', defaultBranchId: 1 })
+    renderWithQueryClient(<AvailabilityPage />)
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Branch' })).toHaveTextContent('Main Branch'))
+
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2030-01-01' } })
+    fireEvent.change(screen.getByLabelText('End date'), { target: { value: '2030-01-05' } })
+    fireEvent.click(screen.getByRole('button', { name: /reset/i }))
+
+    expect(screen.getByLabelText('Start date')).toHaveValue(todayString())
+    expect(screen.getByLabelText('End date')).toHaveValue('')
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Branch' })).toHaveTextContent('Main Branch'))
+  })
+
   it('renders availability search form', () => {
     renderWithQueryClient(<AvailabilityPage />)
     
@@ -116,10 +157,10 @@ describe('AvailabilityPage', () => {
   it('has form inputs for all search criteria', () => {
     renderWithQueryClient(<AvailabilityPage />)
     
-    // Check for date inputs
+    // Check for date inputs (the start date is pre-selected as today, the end date is empty)
     const dateInputs = screen.getAllByDisplayValue('')
     const dateInputsWithType = dateInputs.filter(input => input.getAttribute('type') === 'date')
-    expect(dateInputsWithType).toHaveLength(2)
+    expect(dateInputsWithType).toHaveLength(1)
     
     // Check for number inputs
     const numberInputs = dateInputs.filter(input => input.getAttribute('type') === 'number')

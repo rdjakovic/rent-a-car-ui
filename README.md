@@ -16,7 +16,7 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
 
 ## Features
 - **Navigation**: one header on every page. The seven links sit in a row from 1280px wide; below that they move behind a hamburger menu
-- **Availability search** (`/`): branch (active branches only), dates, category, transmission, fuel, seats, max price; "Book" starts the booking wizard. Same-day rentals are allowed (charged as one day). Reset clears the whole search
+- **Availability search** (`/`): branch (active branches only), dates, category, transmission, fuel, seats, max price; "Book" starts the booking wizard. Same-day rentals are allowed (charged as one day). The start date is pre-selected as today and the branch chosen in Settings is pre-selected (when it is open). Reset clears the search and brings both defaults back
 - **Booking wizard** (`/book`): choose or create a customer, review the price, confirm; cached availability and car lists refresh after booking. The link's parameters are checked in one place (`validateBookingParams`) and a problem is explained ("Start date cannot be in the past")
 - **Branches** (`/branches`): search by name and city (partial, case-insensitive), **New branch** and **Edit** (name, address, city, country, phone, email, opening hours, **Active**). An inactive branch is closed: its cars aren't offered for booking and it can't be a pick-up or return location. Changing branches needs ADMIN with the real backend security
 - **Car catalog** (`/cars`): free-text search (make, model or "2023 Toyota Camry") plus separate Make, Model, Year and VIN filters (year and VIN apply once complete: 4 digits, 17 characters) and the category, transmission, fuel, seats and price filters. **Add car** opens a form (VIN, make, model, year, category, transmission, fuel, seats, mileage, daily price, branch, status Available or Out of service, color, plate, insurance). Each card shows the car's status and its current or next booking ("Next booking: Nov 20 – 22", "Booked today", "On rent until …"), linked to the reservation
@@ -32,8 +32,8 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
   - Overview: in progress, overdue, due in 7 days, open recalls (click to filter), cars due for service with one-click scheduling, and a filterable job list
   - Details: start, edit, complete (final cost, odometer, next service date, notes) and cancel; safety recall warning
   - Scheduling is refused on days the car is booked, and scheduled jobs block bookings on their date
-- **Settings** (`/settings`): mileage unit (km or mi), used wherever mileage is shown. Changing it needs ADMIN with the real backend security; the `local` and `docker` backend profiles allow everyone
-- **Saved filters**: Availability, Cars, Customers and Reservations keep their filters and page while you move between pages (in memory, so a reload starts fresh). A saved branch that has since been closed, or saved dates that have passed, are dropped
+- **Settings** (`/settings`): mileage unit (km or mi), used wherever mileage is shown, and the default branch (an open branch or none) that the Availability page pre-selects. Changing it needs ADMIN with the real backend security; the `local` and `docker` backend profiles allow everyone
+- **Saved filters**: Availability, Cars, Customers and Reservations keep their filters and page while you move between pages (in memory, so a reload starts fresh). A saved branch that has since been closed is dropped, and saved dates that have passed are replaced (the start date goes back to today)
 - **Responsive**: no horizontal page overflow from 360px wide up; wide tables scroll inside their card
 - Global toast system and Tailwind‑based theme with brand palette
 

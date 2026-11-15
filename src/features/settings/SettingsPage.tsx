@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateSettings, type MileageUnit } from "@/lib/api/queries";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listBranches, updateSettings, type MileageUnit, type SettingsRequestDto } from "@/lib/api/queries";
 import { SETTINGS_QUERY_KEY, useSettings } from "@/hooks/useSettings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,6 +16,9 @@ const MILEAGE_UNIT_OPTIONS: { value: MileageUnit; label: string }[] = [
   { value: "MILES", label: "Miles (mi)" },
 ];
 
+// Radix Select can't hold an empty value, so "no default branch" has its own
+const NO_BRANCH = "none";
+
 /**
  * Application settings. Changing them requires the ADMIN role on the real security chain
  * (the backend enforces it); local and docker profiles allow everyone.
@@ -23,14 +27,24 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const settings = useSettings();
   const [mileageUnit, setMileageUnit] = useState<MileageUnit | undefined>();
+  const [defaultBranch, setDefaultBranch] = useState<string | undefined>();
 
-  // Start from the saved value once it's loaded
+  const branches = useQuery({
+    queryKey: ["branches", "for-select"],
+    queryFn: () => listBranches({ page: 0, size: 100 }),
+    staleTime: 60_000,
+  });
+
+  // Start from the saved values once they're loaded
   useEffect(() => {
     if (settings.data?.mileageUnit) setMileageUnit(settings.data.mileageUnit);
   }, [settings.data?.mileageUnit]);
+  useEffect(() => {
+    if (settings.data) setDefaultBranch(settings.data.defaultBranchId ? String(settings.data.defaultBranchId) : NO_BRANCH);
+  }, [settings.data]);
 
   const save = useMutation({
-    mutationFn: (unit: MileageUnit) => updateSettings({ mileageUnit: unit }),
+    mutationFn: (request: SettingsRequestDto) => updateSettings(request),
     onSuccess: (saved) => {
       queryClient.setQueryData(SETTINGS_QUERY_KEY, saved);
       toast({ title: "Settings saved" });
@@ -44,7 +58,15 @@ export default function SettingsPage() {
     }),
   });
 
-  const changed = !!mileageUnit && mileageUnit !== settings.data?.mileageUnit;
+  const savedBranch = settings.data?.defaultBranchId ? String(settings.data.defaultBranchId) : NO_BRANCH;
+  const changed = (!!mileageUnit && mileageUnit !== settings.data?.mileageUnit)
+    || (!!defaultBranch && defaultBranch !== savedBranch);
+
+  const onSave = () => {
+    if (!mileageUnit || !defaultBranch) return;
+    // Leaving the branch out clears the default
+    save.mutate({ mileageUnit, defaultBranchId: defaultBranch === NO_BRANCH ? undefined : Number(defaultBranch) });
+  };
 
   return (
     <div className="container mx-auto py-6 px-4 grid gap-6 max-w-3xl">
@@ -86,18 +108,52 @@ export default function SettingsPage() {
                 </RadioGroup>
               </fieldset>
 
-              <div>
-                <Button
-                  onClick={() => mileageUnit && save.mutate(mileageUnit)}
-                  disabled={!changed || save.isPending}
-                >
-                  {save.isPending ? "Saving…" : "Save"}
-                </Button>
-              </div>
             </>
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Availability search</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {settings.isLoading ? (
+            <Skeleton className="h-10 w-64" />
+          ) : settings.isError ? null : (
+            <div className="grid gap-2 max-w-sm">
+              <label htmlFor="default-branch" className="text-sm font-medium">Default branch</label>
+              <p className="text-sm text-muted-foreground">
+                Pre-selected on the Availability page. Only open branches can be chosen.
+              </p>
+              <Select value={defaultBranch ?? NO_BRANCH} onValueChange={setDefaultBranch}>
+                <SelectTrigger id="default-branch">
+                  <SelectValue placeholder={branches.isPending ? "Loading..." : "No default branch"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_BRANCH}>No default branch</SelectItem>
+                  {(branches.data?.content ?? []).filter((b) => b.active).map((b) => (
+                    <SelectItem key={b.id} value={String(b.id!)}>
+                      {b.name} ({b.city})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {branches.isError && (
+                <p className="text-sm text-destructive">Could not load the branches.</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {!settings.isLoading && !settings.isError && (
+        <div>
+          <Button onClick={onSave} disabled={!changed || save.isPending}>
+            {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

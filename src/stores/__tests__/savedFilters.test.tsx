@@ -107,6 +107,7 @@ describe('Availability page keeps its search', () => {
       ],
     } as any)
     vi.mocked(queries.findAvailableCars).mockResolvedValue({ ...empty } as any)
+    vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' } as any)
   })
 
   it('shows the saved search again and runs it', async () => {
@@ -141,12 +142,12 @@ describe('Availability page keeps its search', () => {
     expect(queries.findAvailableCars).not.toHaveBeenCalled()
   })
 
-  it('drops saved dates that have passed', async () => {
+  it('drops saved dates that have passed (the start date goes back to today)', async () => {
     useAvailabilityFilters.setState({ branchId: '1', startDate: daysFromToday(-2), endDate: daysFromToday(1), submitted: true })
 
     renderPage(<AvailabilityPage />)
 
-    await waitFor(() => expect(useAvailabilityFilters.getState().startDate).toBe(''))
+    await waitFor(() => expect(useAvailabilityFilters.getState().startDate).toBe(daysFromToday(0)))
     expect(useAvailabilityFilters.getState()).toMatchObject({ endDate: '', submitted: false, branchId: '1' })
     expect(queries.findAvailableCars).not.toHaveBeenCalled()
   })
@@ -157,7 +158,7 @@ describe('Availability page keeps its search', () => {
     renderPage(<AvailabilityPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
-    expect(useAvailabilityFilters.getState()).toMatchObject({ branchId: '', startDate: '', endDate: '', category: '', submitted: false })
+    expect(useAvailabilityFilters.getState()).toMatchObject({ branchId: '', startDate: daysFromToday(0), endDate: '', category: '', submitted: false })
   })
 })
 
