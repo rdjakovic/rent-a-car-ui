@@ -25,8 +25,33 @@ export type BranchResponseDto = components["schemas"]["BranchResponseDto"];
 export type PageCarListResponseDto = components["schemas"]["PageCarListResponseDto"];
 export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
 
+export type BranchRequestDto = components["schemas"]["BranchRequestDto"];
+
 export function listBranches(params?: { page?: number; size?: number; sort?: string[] }) {
   return request<PageBranchResponseDto>(api.GET("/api/v1/branches", { params: { query: params } }));
+}
+
+export type BranchSearchParams = {
+  page?: number;
+  size?: number;
+  /** Partial, case-insensitive; blank is ignored */
+  name?: string;
+  city?: string;
+  sort?: string[];
+};
+
+export function searchBranches(params: BranchSearchParams = {}) {
+  return request<PageBranchResponseDto>(api.GET("/api/v1/branches/search", { params: { query: params } }));
+}
+
+/** ADMIN only with the real security rules. */
+export function createBranch(branch: BranchRequestDto) {
+  return request<BranchResponseDto>(api.POST("/api/v1/branches", { body: branch }));
+}
+
+/** ADMIN only with the real security rules. Leaving `active` out keeps the branch's status. */
+export function updateBranch(id: number, branch: BranchRequestDto) {
+  return request<BranchResponseDto>(api.PUT("/api/v1/branches/{id}", { params: { path: { id } }, body: branch }));
 }
 
 export type AvailabilityParams = {

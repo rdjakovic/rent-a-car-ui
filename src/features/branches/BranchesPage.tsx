@@ -1,19 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { listBranches } from "@/lib/api/queries";
+import { searchBranches, type BranchResponseDto } from "@/lib/api/queries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SearchInput } from "@/components/ui/search-input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus } from "lucide-react";
+import BranchFormDialog from "./BranchFormDialog";
 
 export default function BranchesPage() {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  // The dialog creates a branch (null) or edits one
+  const [dialog, setDialog] = useState<{ branch: BranchResponseDto | null } | null>(null);
+
+  // Back to the first page when the search changes
+  useEffect(() => {
+    setPage(0);
+  }, [name, city]);
 
   const query = useQuery({
-    queryKey: ["branches", page, size],
-    queryFn: () => listBranches({ page, size }),
+    queryKey: ["branches", "list", page, size, name.trim(), city.trim()],
+    queryFn: () => searchBranches({ page, size, name: name.trim() || undefined, city: city.trim() || undefined }),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
@@ -25,14 +38,31 @@ export default function BranchesPage() {
   const totalPages = data?.totalPages ?? 0;
   const hasPrev = current > 0;
   const hasNext = totalPages ? current < totalPages - 1 : false;
+  const searching = name.trim() !== "" || city.trim() !== "";
 
   return (
     <div className="container mx-auto py-6 px-4">
       <Card>
       <CardHeader>
-        <CardTitle>Branches</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle>Branches</CardTitle>
+          <Button onClick={() => setDialog({ branch: null })}>
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> New branch
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Name</label>
+            <SearchInput value={name} onChange={setName} placeholder="Search branches by name..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">City</label>
+            <SearchInput value={city} onChange={setCity} placeholder="Search branches by city..." />
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-6 w-48" />
@@ -40,6 +70,11 @@ export default function BranchesPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : query.isError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Could not load branches</AlertTitle>
+            <AlertDescription>{query.error.message}</AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-4">
             <Table>
@@ -53,6 +88,7 @@ export default function BranchesPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Hours</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -72,12 +108,17 @@ export default function BranchesPage() {
                         <Badge variant="secondary">Inactive</Badge>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => setDialog({ branch: b })} aria-label={`Edit ${b.name}`}>
+                        Edit
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
-                      No branches found.
+                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                      {searching ? "No branches match your search." : "No branches found."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -101,6 +142,12 @@ export default function BranchesPage() {
         )}
       </CardContent>
     </Card>
+
+    <BranchFormDialog
+      open={dialog !== null}
+      onOpenChange={(open) => !open && setDialog(null)}
+      branch={dialog?.branch}
+    />
     </div>
   );
 }
