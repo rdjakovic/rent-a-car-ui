@@ -51,6 +51,10 @@ maintenance need ADMIN or EMPLOYEE, and changing settings needs ADMIN.
 - Reservations: PENDING → CONFIRMED → ACTIVE (picked up) → COMPLETED (returned); only PENDING can be edited, only PENDING/CONFIRMED cancelled
 - Same-day rentals are allowed and charged as one day
 - Scheduled maintenance blocks bookings on its date; a car can't go into the shop while rented
+- A branch can be inactive (closed): its cars aren't offered for booking and it can't be a pick-up or return location (409). The UI only lists active branches in its pickers; switch a branch with `PUT /api/v1/branches/{id}` (leaving `active` out keeps it)
+- `GET /api/v1/branches/search?name=&city=` matches partially and case-insensitively; both are optional
+- On `GET /api/v1/cars`, `vin` and `year` match exactly (the VIN is case-sensitive), `make` and `model` partially, and `search` is free text over make, model and "year make model"
+- Failures are problem details; show the `detail` (a duplicate VIN is a 409, a duplicate branch name in a city a 400)
 - The mileage unit setting is a label only; values are never converted
 
 See the backend README for the details.
