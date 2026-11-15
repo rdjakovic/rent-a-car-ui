@@ -5,6 +5,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 ## Authentication & Authorization
 - Signing out in one tab doesn't sign out the others until their access token (15 minutes) runs out
 - If the server can't be reached while the app starts, a "Try again" screen is shown (a signed-in user who loses the connection later just sees failing requests)
+- Editing a user in the dialog replaces the whole account from the list row (cached up to 30 seconds), so another administrator's change made in between is overwritten; Enable/Disable reads the account fresh first, Edit doesn't
 - Limit staff to their own branch: rights apply to all branches for now, though the user's `branchId` and `employees.branch_id` are already available
 - Record who made each change (e.g. `created_by` on reservations and maintenance)
 - Forgot-password by email (there is no mail setup); an administrator can reset a password today

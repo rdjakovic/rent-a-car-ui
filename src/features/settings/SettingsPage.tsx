@@ -100,6 +100,7 @@ export default function SettingsPage() {
                   value={mileageUnit ?? ""}
                   onValueChange={(value) => setMileageUnit(value as MileageUnit)}
                   aria-label="Mileage unit"
+                  disabled={!canSave}
                 >
                   {MILEAGE_UNIT_OPTIONS.map((option) => (
                     <div key={option.value} className="flex items-center gap-2">
@@ -128,7 +129,7 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 Pre-selected on the Availability page. Only open branches can be chosen.
               </p>
-              <Select value={defaultBranch ?? NO_BRANCH} onValueChange={setDefaultBranch}>
+              <Select value={defaultBranch ?? NO_BRANCH} onValueChange={setDefaultBranch} disabled={!canSave}>
                 <SelectTrigger id="default-branch">
                   <SelectValue placeholder={branches.isPending ? "Loading..." : "No default branch"} />
                 </SelectTrigger>

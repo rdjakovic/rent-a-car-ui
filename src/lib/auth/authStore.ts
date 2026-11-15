@@ -31,6 +31,11 @@ export function setSignedOut(byUser = false) {
   useAuthStore.setState({ status: "anonymous", accessToken: null, user: null, signedOutByUser: byUser });
 }
 
+/** Updates the signed-in user's details (e.g. after they edited their own account); the token stays. */
+export function setAuthUser(user: AuthUser) {
+  useAuthStore.setState({ user });
+}
+
 /** Back to the state of a fresh page load (tests, and "try again" after the server was unreachable) */
 export function resetAuth() {
   useAuthStore.setState({ status: "loading", accessToken: null, user: null, signedOutByUser: false });

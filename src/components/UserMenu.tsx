@@ -9,13 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "@/lib/auth/session";
+import { ROLE_LABELS, highestRole } from "@/lib/auth/roles";
 import { useAuthStore, type AuthUser } from "@/lib/auth/authStore";
 
-const ROLE_LABELS: Record<string, string> = { STAFF: "Staff", MANAGER: "Manager", ADMIN: "Administrator" };
-
 export function roleLabel(user: AuthUser) {
-  const role = user.roles?.[0];
-  return role ? (ROLE_LABELS[role] ?? role) : "";
+  const role = highestRole(user);
+  return role ? ROLE_LABELS[role] : "";
 }
 
 export function fullName(user: AuthUser) {

@@ -80,6 +80,9 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('combobox', { name: 'Default branch' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
     expect(screen.getByText('Only administrators can change settings.', { selector: 'p' })).toBeInTheDocument()
+    // Nothing looks editable that can't be saved
+    expect(screen.getByRole('radio', { name: 'Miles (mi)' })).toBeDisabled()
+    expect(screen.getByRole('combobox', { name: 'Default branch' })).toBeDisabled()
   })
 
   it('shows the saved default branch and offers only open branches', async () => {

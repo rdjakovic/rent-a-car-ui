@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -12,16 +12,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { errorMessage } from "@/lib/api/errors";
-import { listUsers, updateUser, type UserResponseDto, type UserRole } from "@/lib/api/queries";
+import { getUser, listUsers, updateUser, type UserResponseDto, type UserRole } from "@/lib/api/queries";
+import { ROLE_LABELS, highestRole } from "@/lib/auth/roles";
+import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 import { useAuthStore, useCan } from "@/lib/auth/authStore";
 import UserFormDialog from "./UserFormDialog";
 import ResetPasswordDialog from "./ResetPasswordDialog";
 
 const PAGE_SIZE = 10;
 
-const ROLE_LABELS: Record<UserRole, string> = { STAFF: "Staff", MANAGER: "Manager", ADMIN: "Administrator" };
-
-const roleOf = (user: UserResponseDto): UserRole => (user.roles?.[0] as UserRole | undefined) ?? "STAFF";
+/** Accounts left without a role or (for staff and managers) a branch, e.g. former customers, need the edit dialog first */
+const needsDetails = (user: UserResponseDto) => {
+  const role = highestRole(user);
+  return !role || (role !== "ADMIN" && user.branchId == null);
+};
 
 const fullName = (user: UserResponseDto) =>
   [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "";
@@ -42,10 +46,7 @@ export default function UsersPage() {
   const [resetFor, setResetFor] = useState<UserResponseDto | null>(null);
   const [toggle, setToggle] = useState<UserResponseDto | null>(null);
 
-  // Back to the first page when the filters change
-  useEffect(() => {
-    setPage(0);
-  }, [search, role]);
+  useResetPageOnChange([search, role], setPage);
 
   const query = useQuery({
     queryKey: ["users", "list", page, PAGE_SIZE, search.trim(), role],
@@ -67,15 +68,22 @@ export default function UsersPage() {
   const searching = search.trim() !== "" || role !== "ALL";
 
   const toggleEnabled = useMutation({
-    mutationFn: (user: UserResponseDto) => updateUser(user.id!, {
-      email: user.email ?? "",
-      firstName: user.firstName ?? "",
-      lastName: user.lastName ?? "",
-      phone: user.phone,
-      role: roleOf(user),
-      branchId: user.branchId,
-      enabled: !user.enabled,
-    }),
+    mutationFn: async (user: UserResponseDto) => {
+      // Built from the account as it is now, not from the (up to 30 seconds old) list row, so a change another
+      // administrator just made isn't undone. The target state is what this administrator saw and chose.
+      const current = await getUser(user.id!);
+      const role = highestRole(current);
+      if (!role) throw new Error("This account has no role. Edit it to choose one.");
+      return updateUser(current.id!, {
+        email: current.email ?? "",
+        firstName: current.firstName ?? "",
+        lastName: current.lastName ?? "",
+        phone: current.phone,
+        role,
+        branchId: current.branchId,
+        enabled: !user.enabled,
+      });
+    },
     onSuccess: (updated) => {
       toast({
         title: updated.enabled ? "Account enabled" : "Account disabled",
@@ -160,7 +168,7 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{fullName(u)}</TableCell>
                       <TableCell>{u.username}</TableCell>
                       <TableCell>{u.email}</TableCell>
-                      <TableCell>{ROLE_LABELS[roleOf(u)]}</TableCell>
+                      <TableCell>{highestRole(u) ? ROLE_LABELS[highestRole(u)!] : "—"}</TableCell>
                       <TableCell>{u.branchName ?? "—"}</TableCell>
                       <TableCell>
                         {u.enabled === false
@@ -174,16 +182,19 @@ export default function UsersPage() {
                                     aria-label={`Edit ${u.username}`}>
                               Edit
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => setResetFor(u)}
-                                    aria-label={`Reset password for ${u.username}`}>
-                              Reset password
-                            </Button>
+                            {/* Your own password is changed from the account menu, which keeps this session */}
+                            {u.id !== me?.id && (
+                              <Button variant="outline" size="sm" onClick={() => setResetFor(u)}
+                                      aria-label={`Reset password for ${u.username}`}>
+                                Reset password
+                              </Button>
+                            )}
                             {u.id !== me?.id && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className={u.enabled === false ? undefined : "text-destructive"}
-                                onClick={() => setToggle(u)}
+                                onClick={() => (needsDetails(u) ? setForm({ user: u }) : setToggle(u))}
                                 aria-label={`${u.enabled === false ? "Enable" : "Disable"} ${u.username}`}
                               >
                                 {u.enabled === false ? "Enable" : "Disable"}
