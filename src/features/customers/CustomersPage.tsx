@@ -38,7 +38,7 @@ export default function CustomersPage() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-charcoal">Customers</h1>
@@ -99,7 +99,7 @@ export default function CustomersPage() {
                       <TableRow key={c.id} data-testid="customer-row">
                         <TableCell>{c.fullName ?? `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}</TableCell>
                         <TableCell>{c.email}</TableCell>
-                        <TableCell>{c.phone}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.phone}</TableCell>
                         <TableCell>{c.driverLicenseNo}</TableCell>
                         <TableCell>{c.city}</TableCell>
                         <TableCell>{c.country}</TableCell>

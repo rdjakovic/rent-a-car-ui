@@ -97,7 +97,7 @@ export default function MaintenanceDetailsPage() {
 
   if (jobQuery.isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6" aria-busy="true">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6" aria-busy="true">
         {backLink}
         <Skeleton className="h-10 w-80" />
         <div className="grid gap-6 lg:grid-cols-3">
@@ -110,7 +110,7 @@ export default function MaintenanceDetailsPage() {
 
   if (jobQuery.isError || !job) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
         {backLink}
         <Alert variant="destructive">
           <AlertTitle>Maintenance job not found</AlertTitle>
@@ -126,7 +126,7 @@ export default function MaintenanceDetailsPage() {
   const busy = start.isPending || cancel.isPending;
 
   return (
-    <div className="container mx-auto py-6 px-4 grid gap-6">
+    <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
       {backLink}
 
       {/* Header */}
@@ -152,7 +152,7 @@ export default function MaintenanceDetailsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="grid gap-6 lg:col-span-2 content-start">
+        <div className="grid grid-cols-1 gap-6 lg:col-span-2 content-start">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Job</CardTitle>
@@ -183,7 +183,7 @@ export default function MaintenanceDetailsPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 content-start">
+        <div className="grid grid-cols-1 gap-6 content-start">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Actions</CardTitle>

@@ -30,7 +30,7 @@ export default function ReservationDetailsPage() {
 
   if (reservationQuery.isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6" aria-busy="true">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6" aria-busy="true">
         {backLink}
         <Skeleton className="h-10 w-72" />
         <div className="grid gap-6 lg:grid-cols-2">
@@ -43,7 +43,7 @@ export default function ReservationDetailsPage() {
 
   if (reservationQuery.isError || !reservationQuery.data) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
         {backLink}
         <Alert variant="destructive">
           <AlertTitle>Reservation not found</AlertTitle>
@@ -56,7 +56,7 @@ export default function ReservationDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 grid gap-6">
+    <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
       {backLink}
       <ReservationDetails
         reservation={reservationQuery.data}
