@@ -17,5 +17,21 @@ export default defineConfig({
     globals: true,
     // Form dialogs with Radix selects take a few seconds when the whole suite runs in parallel
     testTimeout: 10000,
+    // Node's fetch needs an absolute URL. This is jsdom's origin, which is what the MSW handlers' relative paths match.
+    env: { VITE_API_BASE_URL: 'http://localhost:3000' },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.d.ts',
+        'src/lib/mocks/**',
+        'src/lib/api/schema.d.ts',
+        'src/setupTests.ts',
+        'src/main.tsx',
+      ],
+    },
   },
 })
