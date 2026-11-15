@@ -32,7 +32,10 @@ After switching branches, start with a clean build (`./mvnw clean spring-boot:ru
 Every profile needs a sign-in, so the UI shows its login page first. Roles are STAFF, MANAGER and ADMIN
 (each includes the rights of the one before): staff handle customers and reservations and schedule maintenance;
 managers add cars, run maintenance and create staff accounts; administrators also manage branches, settings and users.
-The backend's `/auth/me` sends the user's `permissions`; see the backend README.
+The backend's `/auth/me` (and login and refresh) sends the user's `permissions`; the UI checks them with `useCan`
+and guards routes with `RequirePermission`, so it never duplicates the rules. The backend remains the source of truth
+and answers **401** without a valid token or **403** when the user is signed in but not allowed. See the backend README
+for the permission names and the user-account rules.
 
 ## Seed data
 
@@ -58,6 +61,8 @@ The backend's `/auth/me` sends the user's `permissions`; see the backend README.
 - On `GET /api/v1/cars`, `vin` and `year` match exactly (the VIN is case-sensitive), `make` and `model` partially, and `search` is free text over make, model and "year make model"
 - Failures are problem details; show the `detail` (a duplicate VIN is a 409, a duplicate branch name in a city a 400)
 - The mileage unit setting is a label only; values are never converted
-- `PUT /api/v1/settings` replaces all settings: `defaultBranchId` (an active branch; leave it out to clear it) is what the Availability page pre-selects. `GET` reports no default if that branch has since been closed
+- `PUT /api/v1/settings` replaces all settings: `defaultBranchId` (an active branch; leave it out to clear it) is what the Availability page pre-selects when the user has no open branch of their own. `GET` reports no default if that branch has since been closed
+- User accounts: managers can list users and create STAFF; administrators also set roles, branches and `enabled`, and reset passwords. `PUT /api/v1/users/{id}` is a full replacement, and disabling an account ends its sessions at once. An administrator can't disable or demote themselves, so at least one administrator remains
+- `POST /api/v1/auth/change-password` needs the current password and ends the user's other sessions; the one making the change stays signed in
 
 See the backend README for the details.

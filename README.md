@@ -15,13 +15,14 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
 - Vitest + Testing Library (unit/integration), MSW for API mocks
 
 ## Features
-- **Sign-in** (`/login`): username or email (any letter case) and password. Every page needs a signed-in user: without a session you land on the login page and come back to the page you asked for after signing in. The header shows an initials button with name, role and branch and **Log out** (inside the hamburger menu on small screens). A session lasts 12 hours; the short-lived access token behind it is renewed automatically, also after a reload. Logging out clears the cached data and saved filters
-- **Navigation**: one header on every page (once signed in). The seven links sit in a row from 1280px wide; below that they move behind a hamburger menu
-- **Availability search** (`/`): branch (active branches only), dates, category, transmission, fuel, seats, max price; "Book" starts the booking wizard. Same-day rentals are allowed (charged as one day). The start date is pre-selected as today and the branch chosen in Settings is pre-selected (when it is open). Reset clears the search and brings both defaults back
+- **Sign-in** (`/login`): username or email (any letter case) and password. Every page needs a signed-in user: without a session you land on the login page and come back to the page you asked for after signing in. The header shows an initials button with name, role and branch and **Log out** (inside the hamburger menu on small screens). A session lasts 12 hours; the short-lived access token behind it is renewed automatically, also after a reload. Logging out clears the cached data and saved filters. **Change password** in the account menu needs the current password and ends the user's other sessions
+- **Roles and permissions**: the backend sends the signed-in user's permissions and the UI shows only what they allow. Staff handle customers, reservations and maintenance scheduling; managers also add cars, run maintenance jobs and create staff accounts; administrators also change branches and settings and manage users. Actions that would be refused are hidden (Add car, New/Edit branch, Save settings, the manager-only maintenance actions), the Users page is behind a permission guard, and the backend still enforces every rule
+- **Navigation**: one header on every page (once signed in). The seven links — plus **Users** for managers and administrators — sit in a row from 1280px wide; below that they move behind a hamburger menu
+- **Availability search** (`/`): branch (active branches only), dates, category, transmission, fuel, seats, max price; "Book" starts the booking wizard. Same-day rentals are allowed (charged as one day). The start date is pre-selected as today. The branch is pre-selected from the signed-in user's own branch when it is open, then from the branch chosen in Settings. Reset clears the search and brings both defaults back
 - **Booking wizard** (`/book`): choose or create a customer, review the price, confirm; cached availability and car lists refresh after booking. The link's parameters are checked in one place (`validateBookingParams`) and a problem is explained ("Start date cannot be in the past")
-- **Branches** (`/branches`): search by name and city (partial, case-insensitive), **New branch** and **Edit** (name, address, city, country, phone, email, opening hours, **Active**). An inactive branch is closed: its cars aren't offered for booking and it can't be a pick-up or return location. Changing branches needs ADMIN with the real backend security
-- **Car catalog** (`/cars`): free-text search (make, model or "2023 Toyota Camry") plus separate Make, Model, Year and VIN filters (year and VIN apply once complete: 4 digits, 17 characters) and the category, transmission, fuel, seats and price filters. **Add car** opens a form (VIN, make, model, year, category, transmission, fuel, seats, mileage, daily price, branch, status Available or Out of service, color, plate, insurance). Each card shows the car's status and its current or next booking ("Next booking: Nov 20 – 22", "Booked today", "On rent until …"), linked to the reservation
-- **Car details** (`/cars/:id`): specifications, registration and service dates, pick-up branch, next booking, maintenance history (with "Schedule maintenance"), and a booking card that checks availability for chosen dates
+- **Branches** (`/branches`): search by name and city (partial, case-insensitive), **New branch** and **Edit** (name, address, city, country, phone, email, opening hours, **Active**). An inactive branch is closed: its cars aren't offered for booking and it can't be a pick-up or return location. Both actions are shown to administrators only
+- **Car catalog** (`/cars`): free-text search (make, model or "2023 Toyota Camry") plus separate Make, Model, Year and VIN filters (year and VIN apply once complete: 4 digits, 17 characters) and the category, transmission, fuel, seats and price filters. **Add car** (managers and administrators) opens a form (VIN, make, model, year, category, transmission, fuel, seats, mileage, daily price, branch, status Available or Out of service, color, plate, insurance). Each card shows the car's status and its current or next booking ("Next booking: Nov 20 – 22", "Booked today", "On rent until …"), linked to the reservation
+- **Car details** (`/cars/:id`): specifications, registration and service dates, pick-up branch, next booking, maintenance history (with "Schedule maintenance", for every signed-in user), and a booking card that checks availability for chosen dates
 - **Customers** (`/customers`): search, create and edit
 - **Reservations** (`/reservations`):
   - Filter by status (Pending, Confirmed, Active, Cancelled, Completed), dates and search; **Reservation #** looks one up by number (it works for single digits, which the 2-character search can't); **New Reservation** goes to the availability search
@@ -30,15 +31,14 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
   - **Pick up** (confirmed reservations within their dates) and **Return** (active rentals), both recording the odometer
   - "Overdue return" badge for rentals past their end date
 - **Maintenance** (`/maintenance`, `/maintenance/:id`):
-  - Overview: in progress, overdue, due in 7 days, open recalls (click to filter), cars due for service with one-click scheduling, and a filterable job list
-  - Details: start, edit, complete (final cost, odometer, next service date, notes) and cancel; safety recall warning
+  - Overview: in progress, overdue, due in 7 days, open recalls (click to filter), cars due for service with one-click scheduling, and a filterable job list. Everyone signed in can see jobs and schedule one
+  - Details: start, edit, complete (final cost, odometer, next service date, notes) and cancel; safety recall warning. These actions are for managers and administrators; staff see the job and its history read-only
   - Scheduling is refused on days the car is booked, and scheduled jobs block bookings on their date
-- **Settings** (`/settings`): mileage unit (km or mi), used wherever mileage is shown, and the default branch (an open branch or none) that the Availability page pre-selects. Changing it needs ADMIN with the real backend security; the `local` and `docker` backend profiles allow everyone
+- **Settings** (`/settings`): mileage unit (km or mi), used wherever mileage is shown, and the default branch (an open branch or none) that the Availability page pre-selects. Everyone can read the page; only administrators see **Save**
+- **Users** (`/users`): managers and administrators see the accounts with search, role filter and pagination. Managers can create **staff** accounts (username, email, initial password, name, phone and branch); administrators can also edit role, branch and details, disable or enable an account, and reset a password. Disabling ends that user's sessions at once. The page is behind a permission guard, and an administrator can't disable or demote their own account
 - **Saved filters**: Availability, Cars, Customers and Reservations keep their filters and page while you move between pages (in memory, so a reload starts fresh). A saved branch that has since been closed is dropped, and saved dates that have passed are replaced (the start date goes back to today)
 - **Responsive**: no horizontal page overflow from 360px wide up; wide tables scroll inside their card
 - Global toast system and Tailwind‑based theme with brand palette
-
-Not implemented yet: hiding actions the signed-in user's role may not use (the backend refuses them with a 403), a user management page and changing one's own password.
 
 ## Getting started
 ### Prerequisites
@@ -89,14 +89,14 @@ To regenerate types after backend changes:
 ## Project structure
 - src/main.tsx – app bootstrap, QueryClient, BrowserRouter
 - src/App.tsx – routes and header navigation
-- src/features/* – feature pages: availability, branches, cars, customers, reservations (incl. BookingFlow), maintenance, settings
+- src/features/* – feature pages: availability, branches, cars, customers, reservations (incl. BookingFlow), maintenance, settings, users
 - src/components – NavigationBar and ErrorBoundary; src/components/ui holds small, reusable UI primitives
 - src/hooks – shared hooks (e.g. useSettings, useBookingFlow, useResetPageOnChange)
 - src/lib/api – openapi client, generated schema, and query wrappers
 - src/lib/dates.ts – local-date helpers (`todayString`, `daysFromToday`); use them instead of `toISOString()`, which gives the UTC date
 - src/lib/units.ts – mileage formatting with the configured unit
 - src/lib/mocks – MSW handlers and data
-- src/lib/auth – sign-in session: `authStore.ts` (status, access token in memory, user), `session.ts` (login, logout, refresh; `authFetch` adds the token and renews it once after a 401; refreshes take turns across tabs and share one request within a tab). src/features/auth – `LoginPage`, `RequireAuth` (the route guard)
+- src/lib/auth – sign-in session: `authStore.ts` (status, access token in memory, user; `useCan(permission)` for components), `session.ts` (login, logout, refresh; `authFetch` adds the token and renews it once after a 401; refreshes take turns across tabs and share one request within a tab), `permissions.ts` (the permission names the backend sends). src/features/auth – `LoginPage`, `RequireAuth` (sign-in guard), `RequirePermission` (permission guard), `ChangePasswordPage`. src/test/authUsers.ts – `signInAs('STAFF' | 'MANAGER' | 'ADMIN')` for role-gated tests
 - src/stores – Zustand stores: `filterStore.ts` (each list page's saved filters; use `useFilterField` like `useState`), `useBookingFlowStore`, and `bookingParams.ts` (validation of the booking link)
 - src/index.css + tailwind.config.js – theme and brand colors
 
@@ -112,6 +112,8 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - `/reservations`, `/reservations/:id` – ReservationsPage, ReservationDetailsPage
 - `/maintenance`, `/maintenance/:id` – MaintenancePage, MaintenanceDetailsPage
 - `/settings` – SettingsPage
+- `/users` – UsersPage (managers and administrators)
+- `/change-password` – ChangePasswordPage
 
 ## Theming & UI
 - Tailwind configured with brand colors: navy, steel, emerald, orange, silver, light, charcoal
@@ -128,7 +130,7 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - Vitest + jsdom + @testing-library/react configured in vite.config.ts
 - Setup file: src/setupTests.ts
 - Run: `pnpm test` (once), `pnpm test:watch`, `pnpm test:coverage`
-- Tests are self-contained: each file mocks what it needs and has its own small render helper (no shared factories or scenario builders; an earlier branch had ~1,850 lines of them for five tests, and they weren't needed). Tests don't depend on each other: the suite passes with shuffled order (`pnpm exec vitest run --sequence.shuffle.tests`). Saved page filters are reset after every test (setupTests)
+- Tests are self-contained: each file mocks what it needs and has its own small render helper (no shared factories or scenario builders; an earlier branch had ~1,850 lines of them for five tests, and they weren't needed). The one shared helper is `src/test/authUsers.ts` (`signInAs('MANAGER')`), so every role-gated test starts from the same permission set. Tests don't depend on each other: the suite passes with shuffled order (`pnpm exec vitest run --sequence.shuffle.tests`). Saved page filters are reset after every test (setupTests)
 - Build test dates with `daysFromToday()` from `src/lib/dates.ts`, never `toISOString()` (UTC): tests built that way failed between local midnight and 02:00
 
 ## Development notes
@@ -141,6 +143,6 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - Path alias @ for imports
 
 ## Roadmap (high level)
-- Show only the actions the user's role allows (the backend sends the permissions); user management and change-password pages
 - Pricing for late and early returns; damage/fuel notes at return
+- Limit staff to their own branch; record who made each change
 - Broader test coverage
