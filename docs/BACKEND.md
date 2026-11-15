@@ -56,5 +56,6 @@ maintenance need ADMIN or EMPLOYEE, and changing settings needs ADMIN.
 - On `GET /api/v1/cars`, `vin` and `year` match exactly (the VIN is case-sensitive), `make` and `model` partially, and `search` is free text over make, model and "year make model"
 - Failures are problem details; show the `detail` (a duplicate VIN is a 409, a duplicate branch name in a city a 400)
 - The mileage unit setting is a label only; values are never converted
+- `PUT /api/v1/settings` replaces all settings: `defaultBranchId` (an active branch; leave it out to clear it) is what the Availability page pre-selects. `GET` reports no default if that branch has since been closed
 
 See the backend README for the details.
