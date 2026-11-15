@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { errorMessage } from "@/lib/api/errors";
+import { useCan } from "@/lib/auth/authStore";
 
 const MILEAGE_UNIT_OPTIONS: { value: MileageUnit; label: string }[] = [
   { value: "KILOMETERS", label: "Kilometers (km)" },
@@ -25,6 +26,7 @@ const NO_BRANCH = "none";
  */
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const canSave = useCan()("SETTINGS_MANAGE");
   const settings = useSettings();
   const [mileageUnit, setMileageUnit] = useState<MileageUnit | undefined>();
   const [defaultBranch, setDefaultBranch] = useState<string | undefined>();
@@ -148,11 +150,15 @@ export default function SettingsPage() {
       </Card>
 
       {!settings.isLoading && !settings.isError && (
-        <div>
-          <Button onClick={onSave} disabled={!changed || save.isPending}>
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-        </div>
+        canSave ? (
+          <div>
+            <Button onClick={onSave} disabled={!changed || save.isPending}>
+              {save.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Only administrators can change settings.</p>
+        )
       )}
     </div>
   );

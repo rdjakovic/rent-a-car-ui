@@ -3,9 +3,12 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UserMenu, { fullName, roleLabel, useLogout } from "@/components/UserMenu";
-import { useAuthStore } from "@/lib/auth/authStore";
+import { useAuthStore, useCan } from "@/lib/auth/authStore";
+import type { Permission } from "@/lib/auth/permissions";
 
-export const NAV_ITEMS = [
+export type NavItem = { to: string; label: string; permission?: Permission };
+
+export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Availability" },
   { to: "/branches", label: "Branches" },
   { to: "/cars", label: "Cars" },
@@ -13,7 +16,8 @@ export const NAV_ITEMS = [
   { to: "/reservations", label: "Reservations" },
   { to: "/maintenance", label: "Maintenance" },
   { to: "/settings", label: "Settings" },
-] as const;
+  { to: "/users", label: "Users", permission: "USER_VIEW" },
+];
 
 const linkClass = (isActive: boolean) =>
   cn(
@@ -29,7 +33,9 @@ export default function NavigationBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const can = useCan();
   const signOut = useLogout();
+  const items = NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
 
   // Close the menu after navigating (also covers the browser's back/forward buttons)
   useEffect(() => {
@@ -49,7 +55,7 @@ export default function NavigationBar() {
             </NavLink>
 
             <nav aria-label="Main" className="ml-auto hidden xl:flex gap-1 2xl:gap-6">
-              {NAV_ITEMS.map((item) => (
+              {items.map((item) => (
                 <NavLink key={item.to} to={item.to} className={({ isActive }) => cn(linkClass(isActive), "px-3 2xl:px-6")}>
                   {item.label}
                 </NavLink>
@@ -74,7 +80,7 @@ export default function NavigationBar() {
           {menuOpen && (
             <nav id="mobile-menu" aria-label="Mobile" className="xl:hidden border-t border-white/10 px-4 py-2">
               <ul className="flex flex-col gap-1">
-                {NAV_ITEMS.map((item) => (
+                {items.map((item) => (
                   <li key={item.to}>
                     <NavLink to={item.to} className={({ isActive }) => cn(linkClass(isActive), "block px-4")}>
                       {item.label}
@@ -83,20 +89,25 @@ export default function NavigationBar() {
                 ))}
               </ul>
               {user && (
-                <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+                <div className="mt-2 grid gap-3 border-t border-white/10 px-4 py-3">
                   <div className="min-w-0 text-sm">
                     <div className="truncate font-medium">{fullName(user)}</div>
                     <div className="truncate text-xs text-white/70">
                       {[roleLabel(user), user.branchName].filter(Boolean).join(" · ")}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void signOut()}
-                    className="shrink-0 rounded-lg px-3 py-2 text-sm hover:bg-white/10 transition-colors"
-                  >
-                    Log out
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <NavLink to="/change-password" className="rounded-lg px-3 py-2 text-sm hover:bg-white/10 transition-colors">
+                      Change password
+                    </NavLink>
+                    <button
+                      type="button"
+                      onClick={() => void signOut()}
+                      className="rounded-lg px-3 py-2 text-sm hover:bg-white/10 transition-colors"
+                    >
+                      Log out
+                    </button>
+                  </div>
                 </div>
               )}
             </nav>

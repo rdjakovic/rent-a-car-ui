@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
 import { errorMessage } from "@/lib/api/errors";
+import { useCan } from "@/lib/auth/authStore";
 import { MaintenanceFormDialog } from "./MaintenanceFormDialog";
 import { CompleteMaintenanceDialog } from "./CompleteMaintenanceDialog";
 import {
@@ -44,6 +45,7 @@ export default function MaintenanceDetailsPage() {
   const jobId = Number(id);
   const validId = Number.isInteger(jobId) && jobId > 0;
   const queryClient = useQueryClient();
+  const canManage = useCan()("MAINTENANCE_MANAGE");
   const settings = useSettings();
   const [dialog, setDialog] = useState<"edit" | "complete" | "cancel" | null>(null);
 
@@ -189,24 +191,34 @@ export default function MaintenanceDetailsPage() {
               <CardTitle className="text-lg">Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-2">
-              {job.status === "SCHEDULED" && (
-                <>
-                  <Button onClick={() => start.mutate()} disabled={busy}>
-                    {start.isPending ? "Starting…" : "Start job"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Starting marks the car as in maintenance.</p>
-                  <Button variant="outline" onClick={() => setDialog("edit")} disabled={busy}>Edit</Button>
-                </>
-              )}
-              {job.status === "IN_PROGRESS" && (
-                <Button onClick={() => setDialog("complete")} disabled={busy}>Complete job</Button>
-              )}
-              {(job.status === "SCHEDULED" || job.status === "IN_PROGRESS") ? (
-                <Button variant="outline" className="text-destructive" onClick={() => setDialog("cancel")} disabled={busy}>
-                  Cancel job
-                </Button>
+              {!canManage ? (
+                <p className="text-sm text-muted-foreground">
+                  {job.status === "SCHEDULED" || job.status === "IN_PROGRESS"
+                    ? "Starting, editing, completing and cancelling jobs is for managers."
+                    : `This job is ${statusLabel(job.status).toLowerCase()}.`}
+                </p>
               ) : (
-                <p className="text-sm text-muted-foreground">This job is {statusLabel(job.status).toLowerCase()}.</p>
+                <>
+                  {job.status === "SCHEDULED" && (
+                    <>
+                      <Button onClick={() => start.mutate()} disabled={busy}>
+                        {start.isPending ? "Starting…" : "Start job"}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">Starting marks the car as in maintenance.</p>
+                      <Button variant="outline" onClick={() => setDialog("edit")} disabled={busy}>Edit</Button>
+                    </>
+                  )}
+                  {job.status === "IN_PROGRESS" && (
+                    <Button onClick={() => setDialog("complete")} disabled={busy}>Complete job</Button>
+                  )}
+                  {(job.status === "SCHEDULED" || job.status === "IN_PROGRESS") ? (
+                    <Button variant="outline" className="text-destructive" onClick={() => setDialog("cancel")} disabled={busy}>
+                      Cancel job
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">This job is {statusLabel(job.status).toLowerCase()}.</p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

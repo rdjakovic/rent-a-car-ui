@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import MaintenanceDetailsPage from '../MaintenanceDetailsPage'
 import { daysFromToday } from '@/lib/dates'
+import { signInAs, type TestRole } from '@/test/authUsers'
 import {
   cancelMaintenance,
   completeMaintenance,
@@ -43,7 +44,8 @@ function resolveAfterAction(updated: object) {
   return updated
 }
 
-function renderAt(path: string) {
+function renderAt(path: string, role: TestRole = 'MANAGER') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -123,6 +125,16 @@ describe('MaintenanceDetailsPage', () => {
 
     await waitFor(() => expect(cancelMaintenance).toHaveBeenCalledWith(5))
     expect(await screen.findByText('This job is cancelled.')).toBeInTheDocument()
+  })
+
+  it('shows the job to staff, without the actions only managers may use', async () => {
+    renderAt('/maintenance/5', 'STAFF')
+
+    expect(await screen.findByRole('heading', { name: 'Airbag inflator replacement' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start job' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancel job' })).not.toBeInTheDocument()
+    expect(screen.getByText(/is for managers/)).toBeInTheDocument()
   })
 
   it('shows a not-found message', async () => {

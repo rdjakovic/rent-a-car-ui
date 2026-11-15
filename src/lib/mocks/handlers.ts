@@ -9,10 +9,15 @@ import {
   delay,
 } from './data';
 import type { components } from '@/lib/api/schema';
+import { ALL_PERMISSIONS } from '@/lib/auth/permissions';
 
 type CustomerRequestDto = components['schemas']['CustomerRequestDto'];
 type BranchResponseDto = components['schemas']['BranchResponseDto'];
 type ReservationRequestDto = components['schemas']['ReservationRequestDto'];
+type UserResponseDto = components['schemas']['UserResponseDto'];
+type UserCreateRequestDto = components['schemas']['UserCreateRequestDto'];
+type UserUpdateRequestDto = components['schemas']['UserUpdateRequestDto'];
+type UserRole = NonNullable<UserCreateRequestDto['role']>;
 
 // In-memory storage for mocked data (resets on page refresh)
 let branches = [...mockBranches];
@@ -20,22 +25,50 @@ let cars = [...mockCars];
 let customers = [...mockCustomers];
 let reservations = [...mockReservations];
 
-// Sign-in mock: one account, and "a session" is just a flag (the real refresh cookie is httpOnly)
-export const MOCK_USER: components['schemas']['UserResponseDto'] = {
+// Sign-in mock: the three seeded accounts, and "a session" is just a flag (the real refresh cookie is httpOnly)
+const STAFF_PERMISSIONS = ['CUSTOMER_MANAGE', 'RESERVATION_MANAGE', 'MAINTENANCE_SCHEDULE'];
+const MANAGER_PERMISSIONS = [...STAFF_PERMISSIONS, 'CUSTOMER_DELETE', 'CAR_MANAGE', 'MAINTENANCE_MANAGE',
+  'USER_VIEW', 'USER_CREATE_STAFF'];
+const permissionsForRole = (role: UserRole) => role === 'ADMIN' ? [...ALL_PERMISSIONS]
+  : role === 'MANAGER' ? [...MANAGER_PERMISSIONS]
+    : [...STAFF_PERMISSIONS];
+
+export const MOCK_ADMIN: UserResponseDto = {
   id: 1, username: 'admin', email: 'admin@rentacar.com', firstName: 'System', lastName: 'Administrator',
-  enabled: true, roles: ['ADMIN'],
-  permissions: ['CUSTOMER_MANAGE', 'CUSTOMER_DELETE', 'RESERVATION_MANAGE', 'MAINTENANCE_SCHEDULE', 'MAINTENANCE_MANAGE',
-    'CAR_MANAGE', 'CAR_DELETE', 'BRANCH_MANAGE', 'SETTINGS_MANAGE', 'USER_VIEW', 'USER_CREATE_STAFF', 'USER_MANAGE'],
+  enabled: true, roles: ['ADMIN'], permissions: [...ALL_PERMISSIONS],
 };
+export const MOCK_MANAGER: UserResponseDto = {
+  id: 2, username: 'maria.manager', email: 'maria.manager@rentacar.com', firstName: 'Maria', lastName: 'Manager',
+  enabled: true, roles: ['MANAGER'], permissions: [...MANAGER_PERMISSIONS],
+  branchId: 1, branchName: 'Downtown Branch',
+};
+export const MOCK_STAFF: UserResponseDto = {
+  id: 3, username: 'john.doe', email: 'john.doe@rentacar.com', firstName: 'John', lastName: 'Doe',
+  enabled: true, roles: ['STAFF'], permissions: [...STAFF_PERMISSIONS],
+  branchId: 1, branchName: 'Downtown Branch',
+};
+export const MOCK_USERS = [MOCK_ADMIN, MOCK_MANAGER, MOCK_STAFF];
+
+/** The administrator, for tests that just need a signed-in user with every right */
+export const MOCK_USER = MOCK_ADMIN;
+
 let mockSession = false;
+let mockCurrentUser: UserResponseDto | null = null;
+let mockUsers: UserResponseDto[] = MOCK_USERS.map((u) => ({ ...u }));
+
 /** Tests start without a session */
 export function resetMockAuth() {
   mockSession = false;
+  mockCurrentUser = null;
+  mockUsers = MOCK_USERS.map((u) => ({ ...u }));
 }
-const loginResponse = () => ({
+const loginResponse = (user: UserResponseDto) => ({
   access_token: 'mock-access-token', token_type: 'Bearer', expires_in: 900,
-  expires_at: new Date(Date.now() + 900_000).toISOString(), user: MOCK_USER,
+  expires_at: new Date(Date.now() + 900_000).toISOString(), user,
 });
+const unauthorized = () => HttpResponse.json(
+  { title: 'Unauthorized', status: 401, detail: 'Your session has ended. Please sign in again.' }, { status: 401 });
+const forbidden = (detail: string) => HttpResponse.json({ title: 'Forbidden', status: 403, detail }, { status: 403 });
 
 let mockSettings: components['schemas']['SettingsResponseDto'] = { mileageUnit: 'KILOMETERS' };
 
@@ -239,26 +272,139 @@ export const handlers = [
     return HttpResponse.json(car);
   }),
 
-  // Auth endpoints (sign in as admin / admin123)
+  // Auth endpoints (every seeded account uses admin123)
   http.post('/api/v1/auth/login', async ({ request }) => {
     const body = await request.json() as { username?: string; password?: string };
-    const who = body?.username?.toLowerCase();
-    if ((who === 'admin' || who === 'admin@rentacar.com') && body?.password === 'admin123') {
+    const who = body?.username?.trim().toLowerCase();
+    const user = mockUsers.find((u) => u.enabled !== false
+      && (u.username?.toLowerCase() === who || u.email?.toLowerCase() === who));
+    if (user && body?.password === 'admin123') {
       mockSession = true;
-      return HttpResponse.json(loginResponse());
+      mockCurrentUser = user;
+      return HttpResponse.json(loginResponse(user));
     }
     return HttpResponse.json({ title: 'Unauthorized', status: 401, detail: 'Invalid username or password' }, { status: 401 });
   }),
 
   http.post('/api/v1/auth/refresh', () => {
-    if (!mockSession) {
-      return HttpResponse.json({ title: 'Unauthorized', status: 401, detail: 'Your session has ended. Please sign in again.' }, { status: 401 });
+    if (!mockSession || !mockCurrentUser) {
+      return unauthorized();
     }
-    return HttpResponse.json(loginResponse());
+    return HttpResponse.json(loginResponse(mockCurrentUser));
   }),
 
   http.post('/api/v1/auth/logout', () => {
     mockSession = false;
+    mockCurrentUser = null;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post('/api/v1/auth/change-password', async ({ request }) => {
+    if (!mockSession) return unauthorized();
+    const body = await request.json() as { currentPassword?: string; newPassword?: string };
+    if (body?.currentPassword !== 'admin123') {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Current password is incorrect' }, { status: 400 });
+    }
+    if (!body?.newPassword || body.newPassword.length < 8) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'New password must have at least 8 characters' }, { status: 400 });
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // User accounts: managers can look and create staff; the rest is administrator-only
+  http.get('/api/v1/users', async ({ request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('USER_VIEW')) return forbidden('You do not have permission to view users');
+
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '0');
+    const size = parseInt(url.searchParams.get('size') || '20');
+    const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+    const role = url.searchParams.get('role');
+
+    const matches = mockUsers
+      .filter((u) => !role || u.roles?.[0] === role)
+      .filter((u) => !search
+        || (u.username ?? '').toLowerCase().includes(search)
+        || (u.email ?? '').toLowerCase().includes(search)
+        || `${u.firstName ?? ''} ${u.lastName ?? ''}`.toLowerCase().includes(search));
+    return HttpResponse.json(generatePaginatedResponse(matches, page, size));
+  }),
+
+  http.post('/api/v1/users', async ({ request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('USER_CREATE_STAFF')) return forbidden('You do not have permission to create users');
+
+    const body = await request.json() as UserCreateRequestDto;
+    if (body.role !== 'STAFF' && !mockCurrentUser.permissions?.includes('USER_MANAGE')) {
+      return forbidden('Managers can only create staff accounts');
+    }
+    const branch = body.branchId != null ? branches.find((b) => b.id === body.branchId) : undefined;
+    if (body.role !== 'ADMIN' && !branch) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Staff and managers need a branch' }, { status: 400 });
+    }
+    if (body.branchId != null && !branch) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'Branch not found' }, { status: 404 });
+    }
+    if (mockUsers.some((u) => u.username === body.username || u.email === body.email)) {
+      return HttpResponse.json({ title: 'Conflict', status: 409, detail: 'Username or email already in use' }, { status: 409 });
+    }
+
+    const { password: _password, ...rest } = body;
+    const now = new Date().toISOString();
+    const created: UserResponseDto = {
+      ...rest, id: generateId(), enabled: true, roles: [body.role], permissions: permissionsForRole(body.role),
+      branchName: branch?.name, createdAt: now, updatedAt: now,
+    };
+    mockUsers.push(created);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put('/api/v1/users/:id', async ({ params, request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('USER_MANAGE')) return forbidden('You do not have permission to change users');
+
+    const id = Number(params.id);
+    const existing = mockUsers.find((u) => u.id === id);
+    if (!existing) return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'User not found' }, { status: 404 });
+
+    const body = await request.json() as UserUpdateRequestDto;
+    if (body.role !== 'ADMIN' && body.branchId == null) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Staff and managers need a branch' }, { status: 400 });
+    }
+    if (id === mockCurrentUser.id && (body.enabled === false || body.role !== 'ADMIN')) {
+      return HttpResponse.json({ title: 'Conflict', status: 409, detail: 'You cannot disable or demote yourself' }, { status: 409 });
+    }
+    const branch = body.branchId != null ? branches.find((b) => b.id === body.branchId) : undefined;
+    if (body.branchId != null && !branch) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'Branch not found' }, { status: 404 });
+    }
+
+    const updated: UserResponseDto = {
+      ...existing, ...body, updatedAt: new Date().toISOString(),
+      roles: [body.role], permissions: permissionsForRole(body.role), branchName: branch?.name,
+    };
+    mockUsers = mockUsers.map((u) => (u.id === id ? updated : u));
+    if (id === mockCurrentUser.id) mockCurrentUser = updated;
+    return HttpResponse.json(updated);
+  }),
+
+  http.post('/api/v1/users/:id/reset-password', async ({ params, request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('USER_MANAGE')) return forbidden('You do not have permission to reset passwords');
+
+    const id = Number(params.id);
+    if (!mockUsers.some((u) => u.id === id)) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'User not found' }, { status: 404 });
+    }
+    const body = await request.json() as { newPassword?: string };
+    if (!body?.newPassword || body.newPassword.length < 8) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'New password must have at least 8 characters' }, { status: 400 });
+    }
     return new HttpResponse(null, { status: 204 });
   }),
 

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import AvailabilityPage from '../AvailabilityPage'
 import { listBranches, findAvailableCars, getSettings } from '@/lib/api/queries'
 import { todayString } from '@/lib/dates'
+import { signInAs } from '@/test/authUsers'
 
 // Mock the API functions
 vi.mock('@/lib/api/queries', () => ({
@@ -36,6 +37,7 @@ describe('AvailabilityPage', () => {
       content: [
         { id: 1, name: 'Main Branch', city: 'New York', active: true },
         { id: 2, name: 'Closed Branch', city: 'Boston', active: false },
+        { id: 3, name: 'Airport Branch', city: 'New York', active: true },
       ],
       totalPages: 1,
       number: 0,
@@ -89,6 +91,15 @@ describe('AvailabilityPage', () => {
     renderWithQueryClient(<AvailabilityPage />)
 
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Branch' })).toHaveTextContent('Main Branch (New York)'))
+  })
+
+  it("pre-selects the signed-in user's own branch before the settings default", async () => {
+    mockGetSettings.mockResolvedValue({ mileageUnit: 'KILOMETERS', defaultBranchId: 1 })
+    signInAs('STAFF', { branchId: 3, branchName: 'Airport Branch' })
+    renderWithQueryClient(<AvailabilityPage />)
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Branch' }))
+      .toHaveTextContent('Airport Branch (New York)'))
   })
 
   it('pre-selects nothing when there is no default branch or it has been closed', async () => {

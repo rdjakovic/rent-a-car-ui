@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import CarsPage from '../CarsPage'
 import { getSettings, listBranches, listCars } from '@/lib/api/queries'
+import { signInAs, type TestRole } from '@/test/authUsers'
 
 vi.mock('@/lib/api/queries', () => ({
   listCars: vi.fn(),
@@ -12,7 +13,8 @@ vi.mock('@/lib/api/queries', () => ({
   listBranches: vi.fn(),
 }))
 
-function renderPage() {
+function renderPage(role: TestRole = 'MANAGER') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -80,6 +82,13 @@ describe('CarsPage', () => {
     fireEvent.change(screen.getByPlaceholderText('Full 17-character VIN'), { target: { value: '1hgbh41jxmn109186' } })
     await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ vin: '1HGBH41JXMN109186' })))
     expect(screen.queryByText('Enter all 17 characters to search by VIN')).not.toBeInTheDocument()
+  })
+
+  it('hides Add car from staff', async () => {
+    renderPage('STAFF')
+
+    expect(await screen.findByText('2023 Toyota Camry')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Add car/ })).not.toBeInTheDocument()
   })
 
   it('keeps only digits in the year and clears every filter', async () => {

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import CarDetailsPage from '../CarDetailsPage'
 import { getCarById, findAvailableCars, getSettings, listMaintenance } from '@/lib/api/queries'
+import { signInAs } from '@/test/authUsers'
 
 vi.mock('@/lib/api/queries', () => ({
   getCarById: vi.fn(),
@@ -43,6 +44,7 @@ function BookingTarget() {
 }
 
 function renderAt(path: string) {
+  signInAs('STAFF')
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>

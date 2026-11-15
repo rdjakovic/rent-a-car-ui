@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import SettingsPage from '../SettingsPage'
 import { getSettings, listBranches, updateSettings } from '@/lib/api/queries'
+import { signInAs, type TestRole } from '@/test/authUsers'
 
 vi.mock('@/lib/api/queries', () => ({
   getSettings: vi.fn(),
@@ -15,7 +16,8 @@ const mockGetSettings = getSettings as any
 const mockUpdateSettings = updateSettings as any
 const mockListBranches = listBranches as any
 
-function renderPage() {
+function renderPage(role: TestRole = 'ADMIN') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -69,6 +71,15 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('Only administrators can change settings.')).toBeInTheDocument()
+  })
+
+  it('stays readable for staff, without the Save action', async () => {
+    renderPage('STAFF')
+
+    expect(await screen.findByRole('radio', { name: 'Kilometers (km)' })).toBeChecked()
+    expect(screen.getByRole('combobox', { name: 'Default branch' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+    expect(screen.getByText('Only administrators can change settings.', { selector: 'p' })).toBeInTheDocument()
   })
 
   it('shows the saved default branch and offers only open branches', async () => {
