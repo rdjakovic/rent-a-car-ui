@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listReservations,
+  getReservationById,
   confirmReservation,
   cancelReservation,
   type ReservationSearchParams,
@@ -31,6 +32,8 @@ export default function ReservationsPage() {
   const [status, setStatus] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  // Exact lookup by reservation number; the general search needs 2 characters, so #5 couldn't be found with it
+  const [reservationId, setReservationId] = useState("");
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   
@@ -59,17 +62,36 @@ export default function ReservationsPage() {
     setPage(0);
   }, [search, status, startDate, endDate]);
 
+  // A valid reservation number replaces the list with that one reservation (other filters are ignored)
+  const idDigits = reservationId.trim();
+  const searchedId = /^[1-9]\d{0,14}$/.test(idDigits) ? Number(idDigits) : undefined;
+  const isSearchingById = searchedId !== undefined;
+
   const reservationsQuery = useQuery({
     queryKey: ["reservations", filterParams],
     queryFn: () => listReservations(filterParams),
+    enabled: !isSearchingById,
     staleTime: 30_000,
     placeholderData: (previousData) => previousData,
   });
 
-  const isLoading = reservationsQuery.isLoading || (reservationsQuery.isFetching && !reservationsQuery.data);
-  const reservations = reservationsQuery.data?.content ?? [];
-  const current = reservationsQuery.data?.number ?? page;
-  const totalPages = reservationsQuery.data?.totalPages ?? 0;
+  // Same key as the reservation details page, so both share the cached reservation
+  const byIdQuery = useQuery({
+    queryKey: ["reservations", "detail", searchedId],
+    queryFn: () => getReservationById(searchedId!),
+    enabled: isSearchingById,
+    retry: false,
+    staleTime: 30_000,
+  });
+
+  const isLoading = isSearchingById
+    ? byIdQuery.isLoading
+    : reservationsQuery.isLoading || (reservationsQuery.isFetching && !reservationsQuery.data);
+  const reservations = useMemo<ReservationResponseDto[]>(
+    () => (isSearchingById ? (byIdQuery.data ? [byIdQuery.data] : []) : reservationsQuery.data?.content ?? []),
+    [isSearchingById, byIdQuery.data, reservationsQuery.data?.content]);
+  const current = isSearchingById ? 0 : reservationsQuery.data?.number ?? page;
+  const totalPages = isSearchingById ? 1 : reservationsQuery.data?.totalPages ?? 0;
   const hasPrev = current > 0;
   const hasNext = totalPages ? current < totalPages - 1 : false;
 
@@ -116,10 +138,11 @@ export default function ReservationsPage() {
     setStatus("");
     setStartDate("");
     setEndDate("");
+    setReservationId("");
     setPage(0);
   };
 
-  const hasActiveFilters = search || (status && status !== "ALL") || startDate || endDate;
+  const hasActiveFilters = search || reservationId || (status && status !== "ALL") || startDate || endDate;
 
 
   const handleConfirmReservation = (reservationId: number) => {
@@ -162,8 +185,9 @@ export default function ReservationsPage() {
                 Clear Filters
               </Button>
             )}
-            <Button>
-              New Reservation
+            {/* A booking starts from an availability search for the dates */}
+            <Button asChild>
+              <Link to="/">New Reservation</Link>
             </Button>
           </div>
         </div>
@@ -177,7 +201,7 @@ export default function ReservationsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium mb-1">Search</label>
@@ -190,6 +214,21 @@ export default function ReservationsPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Type at least 2 characters to search
                   </p>
+                )}
+              </div>
+
+              {/* Reservation number */}
+              <div>
+                <label htmlFor="reservation-id" className="block text-sm font-medium mb-1">Reservation #</label>
+                <Input
+                  id="reservation-id"
+                  inputMode="numeric"
+                  placeholder="e.g. 12"
+                  value={reservationId}
+                  onChange={(e) => setReservationId(e.target.value.replace(/\D/g, ""))}
+                />
+                {isSearchingById && (
+                  <p className="text-xs text-muted-foreground mt-1">Showing only this reservation; other filters are ignored</p>
                 )}
               </div>
 
@@ -244,6 +283,8 @@ export default function ReservationsPage() {
               <p className="text-sm text-muted-foreground">
                 {isLoading ? (
                   "Loading reservations..."
+                ) : isSearchingById ? (
+                  `Reservation #${searchedId}`
                 ) : (
                   `Showing ${reservations.length} reservations (Page ${current + 1} of ${Math.max(totalPages, 1)})`
                 )}
@@ -266,11 +307,15 @@ export default function ReservationsPage() {
             ) : reservations.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No reservations found</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  {isSearchingById ? `No reservation #${searchedId}` : "No reservations found"}
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  {hasActiveFilters
-                    ? "Try adjusting your search criteria"
-                    : "No reservations have been created yet"}
+                  {isSearchingById
+                    ? (byIdQuery.error?.message ?? "Check the number and try again")
+                    : hasActiveFilters
+                      ? "Try adjusting your search criteria"
+                      : "No reservations have been created yet"}
                 </p>
                 {hasActiveFilters && (
                   <Button variant="outline" onClick={clearFilters}>
