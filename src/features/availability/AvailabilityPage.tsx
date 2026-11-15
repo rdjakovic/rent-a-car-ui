@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAvailabilityFilters, useFilterField } from "@/stores/filterStore";
+import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
+import { todayString } from "@/lib/dates";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
@@ -19,17 +22,18 @@ export default function AvailabilityPage() {
   const navigate = useNavigate();
   
   // Form state
-  const [branchId, setBranchId] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [transmission, setTransmission] = useState<string>("");
-  const [fuelType, setFuelType] = useState<string>("");
-  const [minSeats, setMinSeats] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [page, setPage] = useState(0);
+  // Kept while you move between pages (e.g. back from a booking)
+  const [branchId, setBranchId] = useFilterField(useAvailabilityFilters, "branchId");
+  const [startDate, setStartDate] = useFilterField(useAvailabilityFilters, "startDate");
+  const [endDate, setEndDate] = useFilterField(useAvailabilityFilters, "endDate");
+  const [category, setCategory] = useFilterField(useAvailabilityFilters, "category");
+  const [transmission, setTransmission] = useFilterField(useAvailabilityFilters, "transmission");
+  const [fuelType, setFuelType] = useFilterField(useAvailabilityFilters, "fuelType");
+  const [minSeats, setMinSeats] = useFilterField(useAvailabilityFilters, "minSeats");
+  const [maxPrice, setMaxPrice] = useFilterField(useAvailabilityFilters, "maxPrice");
+  const [page, setPage] = useFilterField(useAvailabilityFilters, "page");
   const [size] = useState(10);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useFilterField(useAvailabilityFilters, "submitted");
 
   // Branch options
   const branchesQuery = useQuery({
@@ -38,6 +42,13 @@ export default function AvailabilityPage() {
     staleTime: 60_000,
   });
 
+  const branchOptions = branchesQuery.data?.content;
+
+  // A saved search is only run once it is known to still make sense: its dates haven't passed and
+  // its branch is still open. Otherwise it is dropped below (instead of sending a request first).
+  const [savedDatesPassed, setSavedDatesPassed] = useState(() => !!startDate && startDate < todayString());
+  const savedBranchOpen = !!branchOptions?.some((b) => b.active && String(b.id) === branchId);
+
   // Derived validation
   const dateError = useMemo(() => {
     if (!startDate || !endDate) return "";
@@ -45,7 +56,7 @@ export default function AvailabilityPage() {
     return "";
   }, [startDate, endDate]);
 
-  const enabled = submitted && !!branchId && !!startDate && !!endDate && !dateError;
+  const enabled = submitted && !!branchId && !!startDate && !!endDate && !dateError && !savedDatesPassed && savedBranchOpen;
 
   const availParams: AvailabilityParams | undefined = enabled
     ? {
@@ -62,9 +73,26 @@ export default function AvailabilityPage() {
       }
     : undefined;
 
+  // Reset to the first page when filters change
+  useResetPageOnChange([branchId, startDate, endDate, category, transmission, fuelType, minSeats, maxPrice], setPage);
+
+  // A saved search for dates that have since passed is dropped
   useEffect(() => {
-    setPage(0); // reset to first page when filters change
-  }, [branchId, startDate, endDate, category, transmission, fuelType, minSeats, maxPrice]);
+    if (savedDatesPassed) {
+      setStartDate("");
+      setEndDate("");
+      setSubmitted(false);
+      setSavedDatesPassed(false);
+    }
+  }, [savedDatesPassed, setStartDate, setEndDate, setSubmitted]);
+
+  // A saved branch that has since been closed or removed is dropped
+  useEffect(() => {
+    if (branchOptions && branchId && !branchOptions.some((b) => b.active && String(b.id) === branchId)) {
+      setBranchId("");
+      setSubmitted(false);
+    }
+  }, [branchOptions, branchId, setBranchId, setSubmitted]);
 
   const availQuery = useQuery({
     queryKey: [
@@ -221,7 +249,7 @@ export default function AvailabilityPage() {
             <Button onClick={() => setSubmitted(true)} disabled={!branchId || !startDate || !endDate || !!dateError}>
               Search
             </Button>
-            <Button variant="outline" onClick={() => { setSubmitted(false); setPage(0); }}>
+            <Button variant="outline" onClick={() => useAvailabilityFilters.reset()}>
               Reset
             </Button>
           </div>

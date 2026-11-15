@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -23,18 +23,21 @@ import { toast } from "@/hooks/use-toast";
 import { RentalHandoverDialog } from "./components/RentalHandoverDialog";
 import { ReservationStatusBadge } from "./components/ReservationStatusBadge";
 import { canPickUp, isOverdueReturn } from "./utils/rentalStatus";
+import { useReservationsFilters, useFilterField } from "@/stores/filterStore";
+import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 
 const RESERVATION_STATUSES = ["PENDING", "CONFIRMED", "ACTIVE", "CANCELLED", "COMPLETED"] as const;
 
 export default function ReservationsPage() {
   // Filter state
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  // Kept while you move between pages
+  const [search, setSearch] = useFilterField(useReservationsFilters, "search");
+  const [status, setStatus] = useFilterField(useReservationsFilters, "status");
+  const [startDate, setStartDate] = useFilterField(useReservationsFilters, "startDate");
+  const [endDate, setEndDate] = useFilterField(useReservationsFilters, "endDate");
   // Exact lookup by reservation number; the general search needs 2 characters, so #5 couldn't be found with it
-  const [reservationId, setReservationId] = useState("");
-  const [page, setPage] = useState(0);
+  const [reservationId, setReservationId] = useFilterField(useReservationsFilters, "reservationId");
+  const [page, setPage] = useFilterField(useReservationsFilters, "page");
   const [size] = useState(10);
   
   // Pick-up/return dialog state
@@ -58,9 +61,7 @@ export default function ReservationsPage() {
   }, [search, status, startDate, endDate, page, size]);
 
   // Reset page when filters change
-  useEffect(() => {
-    setPage(0);
-  }, [search, status, startDate, endDate]);
+  useResetPageOnChange([search, status, startDate, endDate], setPage);
 
   // A valid reservation number replaces the list with that one reservation (other filters are ignored)
   const idDigits = reservationId.trim();
