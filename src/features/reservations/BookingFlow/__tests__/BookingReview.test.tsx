@@ -362,7 +362,7 @@ describe('BookingReview', () => {
           pickupBranchId: 1,
           dropoffBranchId: 1,
           notes: '',
-        });
+        }, expect.anything()); // TanStack Query adds a mutation context as the 2nd argument
       });
 
       expect(defaultBookingFlowState.setReservation).toHaveBeenCalledWith(mockReservation);

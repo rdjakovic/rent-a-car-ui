@@ -12,8 +12,9 @@ globalThis.ResizeObserver = globalThis.ResizeObserver || class {
   disconnect() {}
 };
 
-// Establish API mocking before all tests
-beforeAll(() => server.listen());
+// Establish API mocking before all tests. This runs before the test file is imported on purpose: the API client
+// captures globalThis.fetch when it is created, so listening later (e.g. in beforeAll) would leave it unpatched.
+server.listen();
 
 // Reset any request handlers that we may add during the tests,
 // so they don't affect other tests
