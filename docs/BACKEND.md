@@ -24,17 +24,19 @@ After switching branches, start with a clean build (`./mvnw clean spring-boot:ru
 
 | Profile | Database | Security |
 |---|---|---|
-| `local` (default) | H2 in memory | open: the UI works without login |
-| `docker` | PostgreSQL from `compose.yaml` | open: the UI works without login |
-| `dev` | your own PostgreSQL | real rules: most calls need a JWT |
-| `prod` | PostgreSQL, needs `JWT_SECRET` etc. | real rules |
+| `local` (default) | H2 in memory | real rules: sign in |
+| `docker` | PostgreSQL from `compose.yaml` | real rules: sign in |
+| `dev` | your own PostgreSQL | real rules: sign in |
+| `prod` | PostgreSQL, needs `JWT_SECRET` etc. | real rules: sign in |
 
-The UI has no login yet, so use `local` or `docker`. With the real rules, customers, reservations and
-maintenance need ADMIN or EMPLOYEE, and changing settings needs ADMIN.
+Every profile needs a sign-in, so the UI shows its login page first. Roles are STAFF, MANAGER and ADMIN
+(each includes the rights of the one before): staff handle customers and reservations and schedule maintenance;
+managers add cars, run maintenance and create staff accounts; administrators also manage branches, settings and users.
+The backend's `/auth/me` sends the user's `permissions`; see the backend README.
 
 ## Seed data
 
-- Users: `admin`/`admin123` and `john.doe`/`admin123` (local, dev and docker only)
+- Users (local, dev and docker only), all with password `admin123`: `admin` (administrator), `maria.manager` (manager) and `john.doe` (staff). Sign in with the username or the email address
 - Branches, 13 cars, customers and reservations, with dates relative to the day the database was created
 - Local, dev and docker also get sample maintenance jobs in every state, cars due for service, one car out on rental and one overdue return
 

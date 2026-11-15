@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
+import { baseUrl, credentials } from "./base";
+import { authFetch } from "@/lib/auth/session";
 
-// Fallback to relative paths in tests/dev if env var is not set
-const baseUrl = (import.meta.env.VITE_API_BASE_URL as string) || "";
-export const api = createClient<paths>({ baseUrl });
+/** The API client: every call carries the access token and renews it once after a 401 (see authFetch). */
+export const api = createClient<paths>({ baseUrl, credentials, fetch: authFetch });

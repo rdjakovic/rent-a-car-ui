@@ -3,12 +3,11 @@
 This document tracks unfinished features and improvements. Items are grouped by feature area and prioritized roughly top‑to‑bottom within each section. Finished work is listed at the end.
 
 ## Authentication & Authorization
-- Add login page (JWT) and store tokens securely (memory + refresh, or localStorage with care)
-- Inject Authorization header via openapi-fetch middleware when logged in
-- Protect routes using a guard; hide navigation and actions the user's role can't use (e.g. Settings, branch and car changes for non-admins)
-- Persist minimal user profile and roles; logout flow
-- Until then the UI only works with the backend's open `local`/`docker` security; with `dev`/`prod` most calls return 403 (the error text says so)
-- Tests: protected route behavior, token refresh handling (if implemented)
+- Hide the actions the user's role can't use (Add car, branch and settings changes, manager maintenance actions, the Users link); the backend sends `permissions` with the user. Today they show and fail with a 403
+- Users page for administrators (and managers creating staff), change-password page
+- Availability: pre-select the user's own branch before the Settings default
+- Signing out in one tab doesn't sign out the others until their access token (15 minutes) runs out
+- If the server can't be reached while the app starts, a "Try again" screen is shown (a signed-in user who loses the connection later just sees failing requests)
 
 ## Reservations
 - Edit the car or pick-up branch of a pending reservation (the backend allows changing the car; the edit dialog doesn't)
@@ -59,7 +58,6 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Add basic Playwright smoke tests (optional). Layout can't be checked in jsdom; overflow was verified in a real browser by hand
 
 ## Known gaps
-- No auth yet – API endpoints that require roles fail until implemented
 - Car images are placeholders; performance/image loading strategy TBD
 
 ## Done
@@ -69,6 +67,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Cars: details page (specifications, next booking, maintenance history, booking card), search, Make/Model/Year/VIN filters, Add car dialog, current or next booking on each card
 - Branches: search by name and city, create and edit, Active status (inactive branches aren't bookable)
 - Maintenance overview and details pages (schedule, edit, start, complete, cancel, due for service, recalls)
+- Sign-in: login page, access token in memory and refresh cookie (renewed on a 401 and on reload), route guard, user menu with Log out; session data is cleared on sign-out
 - Settings page (mileage unit, default branch); Availability pre-selects the default branch and today as the start date
 - Navigation bar with a hamburger menu; no horizontal overflow from 360px up
 - Saved filters on Availability, Cars, Customers and Reservations

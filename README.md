@@ -15,7 +15,8 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
 - Vitest + Testing Library (unit/integration), MSW for API mocks
 
 ## Features
-- **Navigation**: one header on every page. The seven links sit in a row from 1280px wide; below that they move behind a hamburger menu
+- **Sign-in** (`/login`): username or email (any letter case) and password. Every page needs a signed-in user: without a session you land on the login page and come back to the page you asked for after signing in. The header shows an initials button with name, role and branch and **Log out** (inside the hamburger menu on small screens). A session lasts 12 hours; the short-lived access token behind it is renewed automatically, also after a reload. Logging out clears the cached data and saved filters
+- **Navigation**: one header on every page (once signed in). The seven links sit in a row from 1280px wide; below that they move behind a hamburger menu
 - **Availability search** (`/`): branch (active branches only), dates, category, transmission, fuel, seats, max price; "Book" starts the booking wizard. Same-day rentals are allowed (charged as one day). The start date is pre-selected as today and the branch chosen in Settings is pre-selected (when it is open). Reset clears the search and brings both defaults back
 - **Booking wizard** (`/book`): choose or create a customer, review the price, confirm; cached availability and car lists refresh after booking. The link's parameters are checked in one place (`validateBookingParams`) and a problem is explained ("Start date cannot be in the past")
 - **Branches** (`/branches`): search by name and city (partial, case-insensitive), **New branch** and **Edit** (name, address, city, country, phone, email, opening hours, **Active**). An inactive branch is closed: its cars aren't offered for booking and it can't be a pick-up or return location. Changing branches needs ADMIN with the real backend security
@@ -37,7 +38,7 @@ For backend details, see the backend README (rent-a-car-be) and docs/BACKEND.md.
 - **Responsive**: no horizontal page overflow from 360px wide up; wide tables scroll inside their card
 - Global toast system and Tailwind‑based theme with brand palette
 
-Not implemented yet: login (the UI relies on the backend's open `local`/`docker` security).
+Not implemented yet: hiding actions the signed-in user's role may not use (the backend refuses them with a 403), a user management page and changing one's own password.
 
 ## Getting started
 ### Prerequisites
@@ -45,7 +46,7 @@ Not implemented yet: login (the UI relies on the backend's open `local`/`docker`
 - A running backend, e.g. `./mvnw spring-boot:run -Dspring-boot.run.profiles=docker` (PostgreSQL in Docker) or the default `local` profile (H2)
 
 ### 1) Configure environment
-Nothing is needed for a backend on http://localhost:8080: `pnpm dev` (and `pnpm preview`) forward `/api` to it, so the browser only talks to http://localhost:3000. One origin means no CORS and, later, a first-party login cookie. To use a backend elsewhere, set `API_PROXY_TARGET` (e.g. `API_PROXY_TARGET=http://localhost:8081 pnpm dev`).
+Nothing is needed for a backend on http://localhost:8080: `pnpm dev` (and `pnpm preview`) forward `/api` to it, so the browser only talks to http://localhost:3000. One origin means no CORS and a first-party login cookie (the proxy also drops the `Origin` header that browsers add to same-origin POSTs, which the backend would otherwise take for a cross-origin call). To use a backend elsewhere, set `API_PROXY_TARGET` (e.g. `API_PROXY_TARGET=http://localhost:8081 pnpm dev`).
 
 Leave `VITE_API_BASE_URL` empty (or unset). Set it only to call an API on another host directly; the backend must then allow that origin (CORS). In production, serve the app and the API behind one host.
 
@@ -95,12 +96,14 @@ To regenerate types after backend changes:
 - src/lib/dates.ts – local-date helpers (`todayString`, `daysFromToday`); use them instead of `toISOString()`, which gives the UTC date
 - src/lib/units.ts – mileage formatting with the configured unit
 - src/lib/mocks – MSW handlers and data
+- src/lib/auth – sign-in session: `authStore.ts` (status, access token in memory, user), `session.ts` (login, logout, refresh; `authFetch` adds the token and renews it once after a 401; refreshes take turns across tabs and share one request within a tab). src/features/auth – `LoginPage`, `RequireAuth` (the route guard)
 - src/stores – Zustand stores: `filterStore.ts` (each list page's saved filters; use `useFilterField` like `useState`), `useBookingFlowStore`, and `bookingParams.ts` (validation of the booking link)
 - src/index.css + tailwind.config.js – theme and brand colors
 
 Path alias: @ resolves to src/ (see vite.config.ts).
 
 ## Routing
+- `/login` – LoginPage (the only page without a sign-in)
 - `/` – AvailabilityPage
 - `/book` – BookingWizard
 - `/branches` – BranchesPage
@@ -138,6 +141,6 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - Path alias @ for imports
 
 ## Roadmap (high level)
-- Authentication (JWT login, token storage, auth guard) so the UI works with the real backend security
+- Show only the actions the user's role allows (the backend sends the permissions); user management and change-password pages
 - Pricing for late and early returns; damage/fuel notes at return
 - Broader test coverage
