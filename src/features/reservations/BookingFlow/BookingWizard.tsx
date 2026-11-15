@@ -8,7 +8,7 @@ import CustomerSelection from "./CustomerSelection";
 import BookingReview from "./BookingReview";
 import BookingConfirmation from "./BookingConfirmation";
 import BookingBreadcrumbs from "../components/BookingBreadcrumbs";
-import { todayString } from "@/lib/dates";
+import { validateBookingParams } from "@/stores/bookingParams";
 
 export default function BookingWizard() {
   const [searchParams] = useSearchParams();
@@ -21,61 +21,11 @@ export default function BookingWizard() {
     // Only initialize if we don't already have booking details
     if (!bookingFlow.bookingDetails) {
       try {
-        // Validate required parameters before attempting initialization
-        const requiredParams = ['carId', 'branchId', 'startDate', 'endDate', 'dailyPrice'];
-        const missingParams = requiredParams.filter(param => !searchParams.get(param));
-        
-        if (missingParams.length > 0) {
-          setInitializationError(
-            `Missing required booking parameters: ${missingParams.join(', ')}. Please start from the availability search.`
-          );
+        // Check the link's parameters first, so the reason can be shown
+        const validation = validateBookingParams(searchParams);
+        if (!validation.isValid) {
+          setInitializationError(validation.error);
           return;
-        }
-
-        // Validate parameter formats
-        const carId = searchParams.get('carId');
-        const branchId = searchParams.get('branchId');
-        const dailyPrice = searchParams.get('dailyPrice');
-        const startDate = searchParams.get('startDate');
-        const endDate = searchParams.get('endDate');
-
-        if (carId && (isNaN(parseInt(carId)) || parseInt(carId) <= 0)) {
-          setInitializationError('Invalid car ID. Please start from the availability search.');
-          return;
-        }
-
-        if (branchId && (isNaN(parseInt(branchId)) || parseInt(branchId) <= 0)) {
-          setInitializationError('Invalid branch ID. Please start from the availability search.');
-          return;
-        }
-
-        if (dailyPrice && (isNaN(parseFloat(dailyPrice)) || parseFloat(dailyPrice) <= 0)) {
-          setInitializationError('Invalid daily price. Please start from the availability search.');
-          return;
-        }
-
-        // Validate dates
-        if (startDate && endDate) {
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-
-          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            setInitializationError('Invalid date format. Please start from the availability search.');
-            return;
-          }
-
-          // Compare yyyy-mm-dd strings with today's *local* date (toISOString() would give the UTC date)
-          const today = todayString();
-
-          if (startDate < today) {
-            setInitializationError('Start date cannot be in the past. Please start from the availability search.');
-            return;
-          }
-
-          if (end < start) {
-            setInitializationError('End date cannot be before start date. Please start from the availability search.');
-            return;
-          }
         }
 
         // Try to initialize from URL parameters

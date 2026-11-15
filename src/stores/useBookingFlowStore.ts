@@ -50,14 +50,16 @@ export interface BookingFlowState {
   reset: () => void;
 }
 
+/** Charged days like the backend: a same-day rental is 1 day, otherwise the days between the dates. */
 const calculateDaysBetween = (startDate: string, endDate: string): number => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  // Ensure minimum of 1 day for same-day bookings
-  return Math.max(1, diffDays);
+  // yyyy-mm-dd read as UTC dates, so daylight-saving changes can't make a day 23 or 25 hours long
+  const days = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000);
+  return Number.isFinite(days) ? Math.max(1, days) : 1;
 };
+
+/** Daily price times days, rounded to cents (45.99 x 3 would otherwise give 137.97000000000003). */
+const calculateTotalCost = (dailyPrice: number, days: number): number =>
+  Math.round(dailyPrice * days * 100) / 100;
 
 export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   currentStep: 'customer',
@@ -73,7 +75,7 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
   initializeBooking: (params) => {
     const { carDetails, bookingDetails } = params;
     const totalDays = calculateDaysBetween(bookingDetails.startDate, bookingDetails.endDate);
-    const totalCost = totalDays * bookingDetails.dailyPrice;
+    const totalCost = calculateTotalCost(bookingDetails.dailyPrice, totalDays);
     
     set({
       carDetails,
@@ -94,7 +96,7 @@ export const useBookingFlowStore = create<BookingFlowState>((set, get) => ({
     const { bookingDetails } = get();
     if (bookingDetails) {
       const totalDays = calculateDaysBetween(bookingDetails.startDate, bookingDetails.endDate);
-      const totalCost = totalDays * bookingDetails.dailyPrice;
+      const totalCost = calculateTotalCost(bookingDetails.dailyPrice, totalDays);
       set({ totalDays, totalCost });
     }
   },

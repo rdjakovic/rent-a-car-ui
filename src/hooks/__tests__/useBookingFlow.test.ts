@@ -3,6 +3,11 @@ import { renderHook, act } from '@testing-library/react';
 import { useBookingFlow } from '../useBookingFlow';
 import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
 import type { CarListResponseDto, CustomerResponseDto } from '@/lib/api/queries';
+import { daysFromToday } from '@/lib/dates'
+
+// A future rental of 4 days (the booking link's start date can't be in the past)
+const START = daysFromToday(1)
+const END = daysFromToday(5)
 
 // Mock data
 const mockCarDetails: CarListResponseDto = {
@@ -70,8 +75,8 @@ describe('useBookingFlow', () => {
           bookingDetails: {
             carId: 1,
             branchId: 1,
-            startDate: '2024-01-01',
-            endDate: '2024-01-05',
+            startDate: START,
+            endDate: END,
             dailyPrice: 50,
           },
         });
@@ -109,8 +114,8 @@ describe('useBookingFlow', () => {
           bookingDetails: {
             carId: 1,
             branchId: 1,
-            startDate: '2024-01-01',
-            endDate: '2024-01-05',
+            startDate: START,
+            endDate: END,
             dailyPrice: 50,
           },
         });
@@ -131,8 +136,8 @@ describe('useBookingFlow', () => {
           bookingDetails: {
             carId: 1,
             branchId: 1,
-            startDate: '2024-01-01',
-            endDate: '2024-01-05',
+            startDate: START,
+            endDate: END,
             dailyPrice: 50,
           },
         });
@@ -161,8 +166,8 @@ describe('useBookingFlow', () => {
           bookingDetails: {
             carId: 1,
             branchId: 1,
-            startDate: '2024-01-01',
-            endDate: '2024-01-05',
+            startDate: START,
+            endDate: END,
             dailyPrice: 50,
           },
         });
@@ -202,8 +207,8 @@ describe('useBookingFlow', () => {
       
       const mockReservation = {
         id: 1,
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         status: 'CONFIRMED' as const,
         totalPrice: 200,
         currency: 'USD',
@@ -223,8 +228,8 @@ describe('useBookingFlow', () => {
       
       const mockReservation = {
         id: 1,
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         status: 'CONFIRMED' as const,
         totalPrice: 200,
         currency: 'USD',
@@ -268,7 +273,7 @@ describe('useBookingFlow', () => {
       const searchParams = new URLSearchParams({
         carId: '1',
         branchId: '1',
-        startDate: '2024-01-01',
+        startDate: START,
         // Missing endDate and dailyPrice
       });
       
@@ -284,8 +289,8 @@ describe('useBookingFlow', () => {
       const searchParams = new URLSearchParams({
         carId: '1',
         branchId: '2',
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: '75.50',
       });
       
@@ -305,8 +310,8 @@ describe('useBookingFlow', () => {
       expect(result.current.bookingDetails).toEqual({
         carId: 1,
         branchId: 2,
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: 75.50,
       });
       
@@ -320,8 +325,8 @@ describe('useBookingFlow', () => {
       const searchParams = new URLSearchParams({
         carId: '1',
         branchId: '2',
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: '75.50',
         carDisplayName: 'Honda Accord',
         carCategory: 'MIDSIZE',
@@ -348,8 +353,8 @@ describe('useBookingFlow', () => {
       const searchParams = new URLSearchParams({
         carId: 'invalid',
         branchId: '2',
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: '75.50',
       });
 
@@ -406,8 +411,8 @@ describe('useBookingFlow', () => {
       
       const mockReservation = {
         id: 1,
-        startDate: '2024-01-01',
-        endDate: '2024-01-05',
+        startDate: START,
+        endDate: END,
         status: 'CONFIRMED' as const,
         totalPrice: 200,
         currency: 'USD',
@@ -479,8 +484,8 @@ describe('useBookingFlow', () => {
           bookingDetails: {
             carId: 1,
             branchId: 1,
-            startDate: '2024-01-01',
-            endDate: '2024-01-05',
+            startDate: START,
+            endDate: END,
             dailyPrice: 50,
           },
         });

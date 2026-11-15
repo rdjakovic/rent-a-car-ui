@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useBookingFlow } from '../useBookingFlow'
+import { daysFromToday } from '@/lib/dates'
+
+// A future rental of 4 days (the booking link's start date can't be in the past)
+const START = daysFromToday(1)
+const END = daysFromToday(5)
 
 // Mock the store
 const mockStore = {
@@ -45,8 +50,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
       carDisplayName: 'Toyota Camry',
       carCategory: 'INTERMEDIATE',
@@ -67,8 +72,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       bookingDetails: {
         carId: 101,
         branchId: 1,
-        startDate: '2024-12-01',
-        endDate: '2024-12-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: 45.99,
       },
     })
@@ -87,7 +92,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Missing required URL parameters for booking initialization')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Missing required booking parameters: startDate, endDate, dailyPrice'))
   })
 
   it('fails when carId is invalid', () => {
@@ -96,8 +101,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: 'invalid',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -105,7 +110,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid carId parameter:', 'invalid')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid car ID'))
   })
 
   it('fails when carId is zero or negative', () => {
@@ -114,8 +119,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '0',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -123,7 +128,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid carId parameter:', '0')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid car ID'))
   })
 
   it('fails when branchId is invalid', () => {
@@ -132,8 +137,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: 'invalid',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -141,7 +146,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid branchId parameter:', 'invalid')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid branch ID'))
   })
 
   it('fails when branchId is zero or negative', () => {
@@ -150,8 +155,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '-1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -159,7 +164,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid branchId parameter:', '-1')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid branch ID'))
   })
 
   it('fails when dailyPrice is invalid', () => {
@@ -168,8 +173,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: 'invalid',
     })
 
@@ -177,7 +182,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid dailyPrice parameter:', 'invalid')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid daily price'))
   })
 
   it('fails when dailyPrice is zero or negative', () => {
@@ -186,8 +191,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '0',
     })
 
@@ -195,7 +200,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid dailyPrice parameter:', '0')
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid daily price'))
   })
 
   it('fails when date format is invalid', () => {
@@ -205,7 +210,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       carId: '101',
       branchId: '1',
       startDate: 'invalid-date',
-      endDate: '2024-12-05',
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -213,10 +218,7 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
 
     expect(success).toBe(false)
     expect(mockStore.initializeBooking).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Invalid date format:', { 
-      startDate: 'invalid-date', 
-      endDate: '2024-12-05' 
-    })
+    expect(console.error).toHaveBeenCalledWith('Invalid booking parameters:', expect.stringContaining('Invalid date format'))
   })
 
   it('uses fallback values for optional parameters', () => {
@@ -225,8 +227,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
       // No optional parameters provided
     })
@@ -245,8 +247,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
       bookingDetails: {
         carId: 101,
         branchId: 1,
-        startDate: '2024-12-01',
-        endDate: '2024-12-05',
+        startDate: START,
+        endDate: END,
         dailyPrice: 45.99,
       },
     })
@@ -264,8 +266,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -285,8 +287,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '101',
       branchId: '1',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
@@ -309,8 +311,8 @@ describe('useBookingFlow - URL Parameter Parsing', () => {
     const searchParams = new URLSearchParams({
       carId: '999999',
       branchId: '888888',
-      startDate: '2024-12-01',
-      endDate: '2024-12-05',
+      startDate: START,
+      endDate: END,
       dailyPrice: '45.99',
     })
 
