@@ -45,11 +45,9 @@ Not implemented yet: login (the UI relies on the backend's open `local`/`docker`
 - A running backend, e.g. `./mvnw spring-boot:run -Dspring-boot.run.profiles=docker` (PostgreSQL in Docker) or the default `local` profile (H2)
 
 ### 1) Configure environment
-Create a .env.local file in the project root with the API base URL:
+Nothing is needed for a backend on http://localhost:8080: `pnpm dev` (and `pnpm preview`) forward `/api` to it, so the browser only talks to http://localhost:3000. One origin means no CORS and, later, a first-party login cookie. To use a backend elsewhere, set `API_PROXY_TARGET` (e.g. `API_PROXY_TARGET=http://localhost:8081 pnpm dev`).
 
-```
-VITE_API_BASE_URL=http://localhost:8080
-```
+Leave `VITE_API_BASE_URL` empty (or unset). Set it only to call an API on another host directly; the backend must then allow that origin (CORS). In production, serve the app and the API behind one host.
 
 Set `VITE_ENABLE_MOCKING=true` to run against MSW mocks instead of a backend (see src/lib/mocks; the mocks are simplified, e.g. no availability or date checks).
 
@@ -78,7 +76,7 @@ Tip: You can start the backend from PowerShell via scripts/start-backend.ps1 (ed
 
 ## API typing and client
 This project uses openapi-typescript to generate types into src/lib/api/schema.d.ts and openapi-fetch for a typed API client:
-- src/lib/api/client.ts configures baseUrl from VITE_API_BASE_URL
+- src/lib/api/client.ts configures baseUrl from VITE_API_BASE_URL (empty by default: relative `/api/...` URLs through the dev proxy)
 - src/lib/api/queries.ts contains domain‑specific query functions used by pages
 - All backend paths are under `/api/v1`
 - Every call goes through `request()`, which throws an `ApiError` (a real `Error`) for any non-2xx response, including a 403 without a body, and for network failures. Its `message` is the backend's reason (e.g. "Car is not available for the selected dates") or a friendly text; show it with `errorMessage(error)` from `src/lib/api/errors.ts`
@@ -131,7 +129,8 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - Build test dates with `daysFromToday()` from `src/lib/dates.ts`, never `toISOString()` (UTC): tests built that way failed between local midnight and 02:00
 
 ## Development notes
-- Env var VITE_API_BASE_URL is required for API calls
+- API calls go through the Vite proxy (`/api` → `API_PROXY_TARGET`, default http://localhost:8080); `VITE_API_BASE_URL` is only for an API on another host
+- Tests use `VITE_API_BASE_URL=http://localhost:3000` (set in vite.config.ts), because Node's fetch needs absolute URLs
 - Backend dev URLs:
   - App: http://localhost:8080
   - Swagger UI: http://localhost:8080/swagger-ui.html

@@ -244,8 +244,9 @@ MSW is automatically enabled in tests via `src/setupTests.ts`.
 ### Environment Variables
 
 ```bash
-# API Configuration
-VITE_API_BASE_URL=http://localhost:8080
+# API Configuration: leave empty; the dev server forwards /api to the backend
+# (API_PROXY_TARGET, default http://localhost:8080). Set it only for an API on another host.
+VITE_API_BASE_URL=
 
 # Development Configuration
 VITE_ENABLE_MOCKING=false  # Set to 'true' to enable MSW

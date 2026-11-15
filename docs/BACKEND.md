@@ -16,7 +16,7 @@ Run these in the backend repository (JDK 25 required):
 ./mvnw spring-boot:run
 ```
 
-Both listen on http://localhost:8080, which is what `VITE_API_BASE_URL` in `.env.local` should point to.
+Both listen on http://localhost:8080, where the UI's dev server forwards `/api` (set `API_PROXY_TARGET` for another address; leave `VITE_API_BASE_URL` empty).
 
 After switching branches, start with a clean build (`./mvnw clean spring-boot:run ...`) so no stale classes are left in `target/`.
 
