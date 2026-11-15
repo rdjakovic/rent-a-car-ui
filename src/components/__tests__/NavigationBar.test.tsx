@@ -22,11 +22,13 @@ describe('NavigationBar', () => {
 
     expect(screen.getByText(/NextStep/)).toBeInTheDocument()
     const main = screen.getByRole('navigation', { name: 'Main' })
-    for (const item of NAV_ITEMS) {
+    // Without a signed-in user the pages that need a permission stay out
+    for (const item of NAV_ITEMS.filter((i) => !i.permission)) {
       expect(within(main).getByRole('link', { name: item.label })).toHaveAttribute('href', item.to)
     }
+    expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument()
     expect(NAV_ITEMS.map((i) => i.label)).toEqual(
-      ['Availability', 'Branches', 'Cars', 'Customers', 'Reservations', 'Maintenance', 'Settings'])
+      ['Availability', 'Branches', 'Cars', 'Customers', 'Reservations', 'Maintenance', 'Settings', 'Users'])
   })
 
   it('opens and closes the menu with the hamburger button', () => {
@@ -35,7 +37,7 @@ describe('NavigationBar', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open menu' }))
     const mobile = screen.getByRole('navigation', { name: 'Mobile' })
-    expect(within(mobile).getAllByRole('link')).toHaveLength(NAV_ITEMS.length)
+    expect(within(mobile).getAllByRole('link')).toHaveLength(NAV_ITEMS.filter((i) => !i.permission).length)
     expect(screen.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true')
 
     fireEvent.click(screen.getByRole('button', { name: 'Close menu' }))
@@ -62,8 +64,19 @@ describe('NavigationBar', () => {
   describe('signed in', () => {
     const user = {
       id: 3, username: 'maria.manager', firstName: 'Maria', lastName: 'Manager', roles: ['MANAGER'],
-      branchName: 'Downtown Branch', permissions: ['CAR_MANAGE'],
-    }
+      branchName: 'Downtown Branch', permissions: ['CAR_MANAGE', 'USER_VIEW'],
+    };
+
+    it('adds the Users link for a user who may view accounts, and Change password in the account menu', async () => {
+      setSignedIn('token', user)
+      renderAt()
+
+      const main = screen.getByRole('navigation', { name: 'Main' })
+      expect(within(main).getByRole('link', { name: 'Users' })).toHaveAttribute('href', '/users')
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Account menu for Maria Manager' }))
+      expect(await screen.findByRole('menuitem', { name: 'Change password' })).toBeInTheDocument()
+    })
 
     it('shows nothing about an account when nobody is signed in', () => {
       renderAt()

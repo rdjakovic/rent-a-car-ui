@@ -9,9 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SearchInput } from "@/components/ui/search-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus } from "lucide-react";
+import { useCan } from "@/lib/auth/authStore";
 import BranchFormDialog from "./BranchFormDialog";
 
 export default function BranchesPage() {
+  const can = useCan();
+  const canManage = can("BRANCH_MANAGE");
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [name, setName] = useState("");
@@ -46,9 +49,11 @@ export default function BranchesPage() {
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Branches</CardTitle>
-          <Button onClick={() => setDialog({ branch: null })}>
-            <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> New branch
-          </Button>
+          {canManage && (
+            <Button onClick={() => setDialog({ branch: null })}>
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> New branch
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -109,9 +114,11 @@ export default function BranchesPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => setDialog({ branch: b })} aria-label={`Edit ${b.name}`}>
-                        Edit
-                      </Button>
+                      {canManage && (
+                        <Button variant="outline" size="sm" onClick={() => setDialog({ branch: b })} aria-label={`Edit ${b.name}`}>
+                          Edit
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -143,11 +150,13 @@ export default function BranchesPage() {
       </CardContent>
     </Card>
 
-    <BranchFormDialog
-      open={dialog !== null}
-      onOpenChange={(open) => !open && setDialog(null)}
-      branch={dialog?.branch}
-    />
+    {canManage && (
+      <BranchFormDialog
+        open={dialog !== null}
+        onOpenChange={(open) => !open && setDialog(null)}
+        branch={dialog?.branch}
+      />
+    )}
     </div>
   );
 }

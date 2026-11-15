@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCan } from "@/lib/auth/authStore";
 import { MaintenanceFormDialog } from "./MaintenanceFormDialog";
 import { formatCost, isOverdue, statusBadgeVariant, statusLabel, typeLabel } from "./maintenance";
 
@@ -13,6 +14,7 @@ const HISTORY_SIZE = 5;
 
 /** The car's latest maintenance jobs (newest scheduled date first) with a shortcut to schedule one. */
 export function CarMaintenanceHistory({ car }: { car: CarResponseDto }) {
+  const canSchedule = useCan()("MAINTENANCE_SCHEDULE");
   const [scheduling, setScheduling] = useState(false);
   const params = { carId: car.id, page: 0, size: HISTORY_SIZE };
 
@@ -29,7 +31,9 @@ export function CarMaintenanceHistory({ car }: { car: CarResponseDto }) {
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-lg">Maintenance history</CardTitle>
-          <Button size="sm" variant="outline" onClick={() => setScheduling(true)}>Schedule maintenance</Button>
+          {canSchedule && (
+            <Button size="sm" variant="outline" onClick={() => setScheduling(true)}>Schedule maintenance</Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -63,11 +67,13 @@ export function CarMaintenanceHistory({ car }: { car: CarResponseDto }) {
         )}
       </CardContent>
 
-      <MaintenanceFormDialog
-        open={scheduling}
-        onOpenChange={setScheduling}
-        car={{ id: car.id!, displayName: car.displayName }}
-      />
+      {canSchedule && (
+        <MaintenanceFormDialog
+          open={scheduling}
+          onOpenChange={setScheduling}
+          car={{ id: car.id!, displayName: car.displayName }}
+        />
+      )}
     </Card>
   );
 }

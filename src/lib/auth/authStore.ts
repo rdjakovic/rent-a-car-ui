@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { components } from "@/lib/api/schema";
+import type { Permission } from "./permissions";
 
 export type AuthUser = components["schemas"]["UserResponseDto"];
 
@@ -43,4 +44,10 @@ export function getAccessToken() {
 /** Whether the signed-in user holds a permission (the backend decides which roles have which). */
 export function hasPermission(permission: string) {
   return !!useAuthStore.getState().user?.permissions?.includes(permission);
+}
+
+/** A `can(permission)` check for components: re-renders when the signed-in user changes. */
+export function useCan() {
+  const permissions = useAuthStore((state) => state.user?.permissions);
+  return (permission: Permission) => permissions?.includes(permission) ?? false;
 }

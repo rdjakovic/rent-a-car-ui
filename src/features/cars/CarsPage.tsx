@@ -14,12 +14,15 @@ import { NextBooking } from "./NextBooking";
 import AddCarDialog from "./AddCarDialog";
 import { useCarsFilters, useFilterField } from "@/stores/filterStore";
 import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
+import { useCan } from "@/lib/auth/authStore";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
 const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 
 export default function CarsPage() {
+  const can = useCan();
+  const canAddCar = can("CAR_MANAGE");
   const [showAddDialog, setShowAddDialog] = useState(false);
   // Filter state
   // Kept while you move between pages
@@ -105,9 +108,11 @@ export default function CarsPage() {
                 Clear All Filters
               </Button>
             )}
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Add car
-            </Button>
+            {canAddCar && (
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Add car
+              </Button>
+            )}
           </div>
         </div>
 
@@ -389,7 +394,7 @@ export default function CarsPage() {
         )}
       </div>
 
-      <AddCarDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      {canAddCar && <AddCarDialog open={showAddDialog} onOpenChange={setShowAddDialog} />}
     </div>
   );
 }

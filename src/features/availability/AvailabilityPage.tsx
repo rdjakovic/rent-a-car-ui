@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAvailabilityFilters, useFilterField } from "@/stores/filterStore";
 import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuthStore } from "@/lib/auth/authStore";
 import { todayString } from "@/lib/dates";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
@@ -45,8 +46,13 @@ export default function AvailabilityPage() {
 
   const branchOptions = branchesQuery.data?.content;
 
-  // The branch chosen in Settings is pre-selected whenever none is chosen (first visit, after Reset)
+  // The user's own branch comes first, then the branch chosen in Settings (first visit, after Reset)
+  const ownBranchId = useAuthStore((state) => state.user?.branchId);
   const defaultBranchId = useSettings().data?.defaultBranchId;
+  const isOpenBranch = (id?: number) => !!id && !!branchOptions?.some((b) => b.active && b.id === id);
+  const preferredBranchId = isOpenBranch(ownBranchId)
+    ? ownBranchId
+    : isOpenBranch(defaultBranchId) ? defaultBranchId : undefined;
 
   // A saved search is only run once it is known to still make sense: its dates haven't passed and
   // its branch is still open. Otherwise it is dropped below (instead of sending a request first).
@@ -99,10 +105,10 @@ export default function AvailabilityPage() {
   }, [branchOptions, branchId, setBranchId, setSubmitted]);
 
   useEffect(() => {
-    if (!branchId && defaultBranchId && branchOptions?.some((b) => b.active && b.id === defaultBranchId)) {
-      setBranchId(String(defaultBranchId));
+    if (!branchId && preferredBranchId) {
+      setBranchId(String(preferredBranchId));
     }
-  }, [branchId, defaultBranchId, branchOptions, setBranchId]);
+  }, [branchId, preferredBranchId, setBranchId]);
 
   const availQuery = useQuery({
     queryKey: [

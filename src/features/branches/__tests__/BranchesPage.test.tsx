@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import BranchesPage from '../BranchesPage'
 import { createBranch, searchBranches, updateBranch } from '@/lib/api/queries'
+import { signInAs, type TestRole } from '@/test/authUsers'
 
 vi.mock('@/lib/api/queries', () => ({
   searchBranches: vi.fn(),
@@ -23,7 +24,8 @@ const closed = { ...downtown, id: 2, name: 'Old Harbor', city: 'Boston', active:
 
 const page = (content: object[]) => ({ content, number: 0, totalPages: 1, totalElements: content.length })
 
-function renderPage() {
+function renderPage(role: TestRole = 'ADMIN') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -143,6 +145,14 @@ describe('BranchesPage', () => {
       name: 'Downtown Branch', city: 'New York', active: false,
     })))
     expect(await screen.findByText('Branch updated')).toBeInTheDocument()
+  })
+
+  it('hides branch changes from a manager', async () => {
+    renderPage('MANAGER')
+    await screen.findByText('Downtown Branch')
+
+    expect(screen.queryByRole('button', { name: /New branch/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit Downtown Branch' })).not.toBeInTheDocument()
   })
 
   it('tells that an inactive branch is not bookable', async () => {

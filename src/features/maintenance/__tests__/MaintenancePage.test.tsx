@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import MaintenancePage from '../MaintenancePage'
 import { daysFromToday } from '@/lib/dates'
+import { signInAs, type TestRole } from '@/test/authUsers'
 import {
   getSettings,
   listBranches,
@@ -49,7 +50,8 @@ function maintenanceResponse(params: any) {
   return { content: jobs, totalElements: jobs.length, totalPages: 1, number: 0 }
 }
 
-function renderPage() {
+function renderPage(role: TestRole = 'STAFF') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>

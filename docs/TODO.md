@@ -3,11 +3,11 @@
 This document tracks unfinished features and improvements. Items are grouped by feature area and prioritized roughly top‑to‑bottom within each section. Finished work is listed at the end.
 
 ## Authentication & Authorization
-- Hide the actions the user's role can't use (Add car, branch and settings changes, manager maintenance actions, the Users link); the backend sends `permissions` with the user. Today they show and fail with a 403
-- Users page for administrators (and managers creating staff), change-password page
-- Availability: pre-select the user's own branch before the Settings default
 - Signing out in one tab doesn't sign out the others until their access token (15 minutes) runs out
 - If the server can't be reached while the app starts, a "Try again" screen is shown (a signed-in user who loses the connection later just sees failing requests)
+- Limit staff to their own branch: rights apply to all branches for now, though the user's `branchId` and `employees.branch_id` are already available
+- Record who made each change (e.g. `created_by` on reservations and maintenance)
+- Forgot-password by email (there is no mail setup); an administrator can reset a password today
 
 ## Reservations
 - Edit the car or pick-up branch of a pending reservation (the backend allows changing the car; the edit dialog doesn't)
@@ -18,13 +18,15 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - The row actions on the list (Confirm, Cancel) show a fixed "Failed to …" toast instead of the backend's reason (the dialogs show it)
 
 ## Cars
+- Edit a car (price, status, out of service) and see deleted cars; the backend supports both, but the catalog only adds cars today
+- Delete and restore cars (ADMIN in the API)
 - Show the full booking schedule (only the current or next booking is shown today)
 - Pick up directly from car details or availability results
 - Search by part of a VIN (the backend matches the `vin` filter exactly and case-sensitively, so the page applies it at 17 characters; partial search needs a backend change)
 - Image handling (placeholder now) – static asset or CDN strategy
 
 ## Maintenance
-- Assign jobs to staff (needs login; the API returns an assigned employee when set)
+- Assign jobs to staff (the API returns an assigned employee when set; there is no UI to choose one)
 - Total maintenance cost per car and fleet reports
 - Searchable car picker when scheduling from the overview (plain dropdown of up to 200 cars now)
 - Sortable job table columns
@@ -61,6 +63,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Car images are placeholders; performance/image loading strategy TBD
 
 ## Done
+- Roles: actions hidden by permission (Add car, branch and settings changes, manager maintenance actions), permission-guarded routes, Users page (managers create staff; administrators manage accounts), Change password page, and the user's own branch pre-selected on Availability
 - Customers: list with search and pagination, create/edit dialog with React Hook Form + Zod
 - Booking: "Book" from availability results and car details, wizard (customer, dates, branch, price preview), confirmation screen; the link's parameters are validated in one place
 - Reservations: list with status/date filters and search, lookup by reservation number, confirm, cancel, edit (PENDING), pick-up and return with odometer, overdue return badge, reservation page (`/reservations/:id`)

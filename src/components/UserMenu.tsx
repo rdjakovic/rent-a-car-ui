@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { KeyRound, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +57,12 @@ export default function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/change-password">
+            <KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />
+            Change password
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
           Log out

@@ -258,6 +258,50 @@ export function listCarsDueForService(withinDays = 14) {
   return request<CarResponseDto[]>(api.GET("/api/v1/maintenance/due-cars", { params: { query: { withinDays } } }));
 }
 
+// User accounts
+export type PageUserResponseDto = components["schemas"]["PageUserResponseDto"];
+export type UserResponseDto = components["schemas"]["UserResponseDto"];
+export type UserCreateRequestDto = components["schemas"]["UserCreateRequestDto"];
+export type UserUpdateRequestDto = components["schemas"]["UserUpdateRequestDto"];
+export type UserRole = NonNullable<UserCreateRequestDto["role"]>;
+
+export type UserSearchParams = {
+  /** Partial, case-insensitive match on username, email or name */
+  search?: string;
+  role?: UserRole;
+  page?: number;
+  size?: number;
+  sort?: string[];
+};
+
+/** The accounts (USER_VIEW: managers and administrators). */
+export function listUsers(params: UserSearchParams = {}) {
+  return request<PageUserResponseDto>(api.GET("/api/v1/users", { params: { query: params } }));
+}
+
+/** USER_CREATE_STAFF; managers may only create STAFF (USER_MANAGE for any role). */
+export function createUser(user: UserCreateRequestDto) {
+  return request<UserResponseDto>(api.POST("/api/v1/users", { body: user }));
+}
+
+/** USER_MANAGE. A full replacement: leave a field out and it is cleared. Disabling ends the user's sessions. */
+export function updateUser(id: number, user: UserUpdateRequestDto) {
+  return request<UserResponseDto>(api.PUT("/api/v1/users/{id}", { params: { path: { id } }, body: user }));
+}
+
+/** USER_MANAGE. Sets a new password and ends all of the user's sessions. */
+export function resetUserPassword(id: number, newPassword: string) {
+  return request<void>(api.POST("/api/v1/users/{id}/reset-password", {
+    params: { path: { id } },
+    body: { newPassword },
+  }));
+}
+
+/** Changes the signed-in user's own password; the backend ends their other sessions. */
+export function changePassword(body: components["schemas"]["ChangePasswordRequestDto"]) {
+  return request<void>(api.POST("/api/v1/auth/change-password", { body }));
+}
+
 // Application settings
 export type SettingsResponseDto = components["schemas"]["SettingsResponseDto"];
 export type SettingsRequestDto = components["schemas"]["SettingsRequestDto"];

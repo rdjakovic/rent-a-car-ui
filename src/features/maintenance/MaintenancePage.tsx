@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle, CalendarClock, Filter, ShieldAlert, Wrench } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
+import { useCan } from "@/lib/auth/authStore";
 import { formatMileage } from "@/lib/units";
 import { daysFromToday, todayString } from "@/lib/dates";
 import { MaintenanceFormDialog } from "./MaintenanceFormDialog";
@@ -58,6 +59,7 @@ function useJobCount(name: string, params: MaintenanceSearchParams) {
 }
 
 export default function MaintenancePage() {
+  const canSchedule = useCan()("MAINTENANCE_SCHEDULE");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [page, setPage] = useState(0);
   const [scheduleFor, setScheduleFor] = useState<{ car?: CarResponseDto } | null>(null);
@@ -123,9 +125,11 @@ export default function MaintenancePage() {
           <h1 className="text-3xl font-bold text-charcoal">Maintenance</h1>
           <p className="text-muted-foreground">Service schedule, repairs and recalls across the fleet</p>
         </div>
-        <Button onClick={() => setScheduleFor({})}>
-          <Wrench className="h-4 w-4 mr-2" aria-hidden="true" /> Schedule maintenance
-        </Button>
+        {canSchedule && (
+          <Button onClick={() => setScheduleFor({})}>
+            <Wrench className="h-4 w-4 mr-2" aria-hidden="true" /> Schedule maintenance
+          </Button>
+        )}
       </div>
 
       {/* Overview */}
@@ -193,7 +197,9 @@ export default function MaintenancePage() {
                         {late ? "Was due" : "Due"} {car.nextServiceDate}
                       </span>
                       {late && <Badge variant="destructive">Overdue</Badge>}
-                      <Button size="sm" variant="outline" onClick={() => setScheduleFor({ car })}>Schedule</Button>
+                      {canSchedule && (
+                        <Button size="sm" variant="outline" onClick={() => setScheduleFor({ car })}>Schedule</Button>
+                      )}
                     </div>
                   </li>
                 );
@@ -288,7 +294,9 @@ export default function MaintenancePage() {
               <Wrench className="mx-auto h-10 w-10 text-muted-foreground mb-3" aria-hidden="true" />
               <p className="font-medium">No maintenance jobs found</p>
               <p className="text-sm text-muted-foreground">
-                {hasActiveFilters ? "Try adjusting the filters." : "Schedule the first one with the button above."}
+                {hasActiveFilters
+                  ? "Try adjusting the filters."
+                  : canSchedule ? "Schedule the first one with the button above." : "There is nothing scheduled yet."}
               </p>
             </div>
           ) : (
@@ -361,12 +369,14 @@ export default function MaintenancePage() {
         </CardContent>
       </Card>
 
-      <MaintenanceFormDialog
-        open={scheduleFor !== null}
-        onOpenChange={(open) => !open && setScheduleFor(null)}
-        car={scheduleFor?.car?.id ? { id: scheduleFor.car.id, displayName: scheduleFor.car.displayName } : undefined}
-        defaultType={scheduleFor?.car ? "ROUTINE" : undefined}
-      />
+      {canSchedule && (
+        <MaintenanceFormDialog
+          open={scheduleFor !== null}
+          onOpenChange={(open) => !open && setScheduleFor(null)}
+          car={scheduleFor?.car?.id ? { id: scheduleFor.car.id, displayName: scheduleFor.car.displayName } : undefined}
+          defaultType={scheduleFor?.car ? "ROUTINE" : undefined}
+        />
+      )}
     </div>
   );
 }

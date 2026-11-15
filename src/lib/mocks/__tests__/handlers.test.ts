@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/lib/api/errors'
+import { login } from '@/lib/auth/session'
 import {
   type BranchResponseDto,
+  changePassword,
   completeReservation,
   confirmReservation,
   createCar,
@@ -10,6 +12,7 @@ import {
   getMaintenance,
   getReservationById,
   listBranches,
+  listUsers,
   listCars,
   pickUpReservation,
   searchBranches,
@@ -135,6 +138,26 @@ describe('mock API handlers', () => {
       await expect(
         createReservation({ ...booking(daysFromToday(1), daysFromToday(2)), customerId: 999_999 }),
       ).rejects.toMatchObject({ status: 400 })
+    })
+  })
+
+  describe('accounts', () => {
+    it('lists the accounts for a manager, but refuses a staff member', async () => {
+      await login('maria.manager', 'admin123')
+
+      expect((await listUsers()).content?.map((u) => u.username)).toEqual(['admin', 'maria.manager', 'john.doe'])
+
+      await login('john.doe', 'admin123')
+      await expect(listUsers()).rejects.toMatchObject({ status: 403 })
+    })
+
+    it('changes the signed-in password only with the current one', async () => {
+      await login('admin', 'admin123')
+
+      await expect(changePassword({ currentPassword: 'wrong', newPassword: 'newpass123' }))
+        .rejects.toMatchObject({ status: 400 })
+      await expect(changePassword({ currentPassword: 'admin123', newPassword: 'newpass123' }))
+        .resolves.toBeUndefined()
     })
   })
 
