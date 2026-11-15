@@ -11,6 +11,7 @@ import { daysFromToday } from '@/lib/dates';
 // Mock the API queries
 vi.mock('@/lib/api/queries', () => ({
   listReservations: vi.fn(),
+  getReservationById: vi.fn(),
   confirmReservation: vi.fn(),
   cancelReservation: vi.fn(),
   completeReservation: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 const mockListReservations = vi.mocked(queries.listReservations);
+const mockGetReservationById = vi.mocked(queries.getReservationById);
 const mockConfirmReservation = vi.mocked(queries.confirmReservation);
 const mockCancelReservation = vi.mocked(queries.cancelReservation);
 const mockPickUpReservation = vi.mocked(queries.pickUpReservation);
@@ -519,6 +521,61 @@ describe('ReservationsPage', () => {
     const viewLinks = screen.getAllByRole('link', { name: /View/ });
     expect(viewLinks[0]).toHaveAttribute('href', '/reservations/1');
     expect(viewLinks[1]).toHaveAttribute('href', '/reservations/2');
+  });
+
+  it('finds a reservation by its number, also a single digit, and ignores other filters', async () => {
+    const user = userEvent.setup();
+    mockGetReservationById.mockResolvedValue(mockReservations[1]);
+    renderWithProviders(<ReservationsPage />);
+    await waitFor(() => expect(screen.getByText('Alice Johnson')).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText('Reservation #'), '2');
+
+    await waitFor(() => expect(mockGetReservationById).toHaveBeenCalledWith(2));
+    expect(await screen.findByText('Bob Smith')).toBeInTheDocument();
+    expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument();
+    expect(screen.getByText('Reservation #2')).toBeInTheDocument();
+    expect(screen.getByText(/other filters are ignored/)).toBeInTheDocument();
+  });
+
+  it('keeps only digits in the reservation number', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReservationsPage />);
+
+    await user.type(screen.getByLabelText('Reservation #'), 'a1b');
+
+    expect(screen.getByLabelText('Reservation #')).toHaveValue('1');
+  });
+
+  it('says when no reservation has that number', async () => {
+    const user = userEvent.setup();
+    mockGetReservationById.mockRejectedValue(new Error('Reservation not found: 99'));
+    renderWithProviders(<ReservationsPage />);
+
+    await user.type(screen.getByLabelText('Reservation #'), '99');
+
+    expect(await screen.findByText('No reservation #99')).toBeInTheDocument();
+    expect(screen.getByText('Reservation not found: 99')).toBeInTheDocument();
+  });
+
+  it('returns to the list when the reservation number is cleared', async () => {
+    const user = userEvent.setup();
+    mockGetReservationById.mockResolvedValue(mockReservations[1]);
+    renderWithProviders(<ReservationsPage />);
+    await waitFor(() => expect(screen.getByText('Alice Johnson')).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText('Reservation #'), '2');
+    await screen.findByText('Reservation #2');
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }));
+
+    await waitFor(() => expect(screen.getByText('Alice Johnson')).toBeInTheDocument());
+    expect(screen.getByLabelText('Reservation #')).toHaveValue('');
+  });
+
+  it('New Reservation goes to the availability search', async () => {
+    renderWithProviders(<ReservationsPage />);
+
+    expect(screen.getByRole('link', { name: 'New Reservation' })).toHaveAttribute('href', '/');
   });
 
   it('displays empty state when no reservations found', async () => {
