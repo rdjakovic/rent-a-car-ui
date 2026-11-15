@@ -1,6 +1,8 @@
 import "@testing-library/jest-dom";
 import { server } from '@/lib/mocks/server';
 import { resetFilterStores } from '@/stores/filterStore';
+import { resetMockAuth } from '@/lib/mocks/handlers';
+import { resetAuth } from '@/lib/auth/authStore';
 
 // jsdom does not implement scrollIntoView; Radix UI's Select calls it internally.
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
@@ -22,6 +24,9 @@ afterEach(() => {
   server.resetHandlers();
   // Saved page filters would otherwise leak from one test into the next
   resetFilterStores();
+  // Nor may a session
+  resetAuth();
+  resetMockAuth();
 });
 
 // Clean up after the tests are finished

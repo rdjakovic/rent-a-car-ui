@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a user */
+        get: operations["getById"];
+        /**
+         * Update a user
+         * @description Replaces email, name, phone, role, branch and enabled. Disabling ends the user's sessions at once
+         */
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings": {
         parameters: {
             query?: never;
@@ -14,7 +35,7 @@ export interface paths {
         /** Get application settings */
         get: operations["get"];
         /** Update application settings (admin only outside local/docker) */
-        put: operations["update"];
+        put: operations["update_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -33,12 +54,12 @@ export interface paths {
          * Get reservation by ID
          * @description Retrieves a specific reservation by its unique identifier
          */
-        get: operations["getById"];
+        get: operations["getById_1"];
         /**
          * Update an existing reservation
          * @description Updates a reservation. Only PENDING reservations can be modified.
          */
-        put: operations["update_1"];
+        put: operations["update_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -54,9 +75,9 @@ export interface paths {
             cookie?: never;
         };
         /** Get a maintenance record */
-        get: operations["getById_1"];
+        get: operations["getById_2"];
         /** Edit a maintenance record that is still SCHEDULED */
-        put: operations["update_2"];
+        put: operations["update_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -71,8 +92,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getById_2"];
-        put: operations["update_3"];
+        get: operations["getById_3"];
+        put: operations["update_4"];
         post?: never;
         delete: operations["delete"];
         options?: never;
@@ -88,8 +109,8 @@ export interface paths {
             cookie?: never;
         };
         /** Get a car by ID */
-        get: operations["getById_3"];
-        put: operations["update_4"];
+        get: operations["getById_4"];
+        put: operations["update_5"];
         post?: never;
         delete: operations["delete_1"];
         options?: never;
@@ -104,10 +125,54 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getById_4"];
-        put: operations["update_5"];
+        get: operations["getById_5"];
+        put: operations["update_6"];
         post?: never;
         delete: operations["delete_2"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List users
+         * @description Optional search (username, email or name; partial, case-insensitive) and role
+         */
+        get: operations["list"];
+        put?: never;
+        /**
+         * Create a user
+         * @description Managers can create STAFF; managers and administrators need an administrator
+         */
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password for a user
+         * @description Ends all of the user's sessions and lifts a sign-in lock
+         */
+        post: operations["resetPassword"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -154,7 +219,7 @@ export interface paths {
          * Create a new reservation
          * @description Creates a new car reservation with automatic price calculation and availability validation
          */
-        post: operations["create"];
+        post: operations["create_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -315,10 +380,10 @@ export interface paths {
             cookie?: never;
         };
         /** List customers with pagination and sorting */
-        get: operations["list"];
+        get: operations["list_1"];
         put?: never;
         /** Create a customer */
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -336,10 +401,10 @@ export interface paths {
          * List cars with pagination, sorting, and filtering
          * @description Returns a paginated, sorted, and filtered list of cars. Filter by any combination of fields (vin, make, model, year, category, transmission, fuelType, minSeats, maxPrice). Sorting and pagination are supported via standard Spring Data parameters.
          */
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         /** Create a car */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -370,30 +435,10 @@ export interface paths {
             cookie?: never;
         };
         /** List branches with pagination and sorting */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /** Create a branch */
-        post: operations["create_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register a new user
-         * @description Register a new customer account
-         */
-        post: operations["register"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -410,10 +455,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Refresh JWT token
-         * @description Generate a new JWT token for authenticated user
+         * Renew the access token
+         * @description Uses the refresh cookie (no access token needed). Returns a new access token and replaces the cookie; the session still ends 12 hours after sign-in
          */
-        post: operations["refreshToken"];
+        post: operations["refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign out
+         * @description Ends the session of the refresh cookie and deletes the cookie
+         */
+        post: operations["logout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -430,10 +495,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * User login
-         * @description Authenticate user and return JWT token
+         * Sign in
+         * @description Sign in with username or email. Returns an access token and sets the refresh cookie
          */
         post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change my password
+         * @description Needs the current password. Ends the user's other sessions; this one stays
+         */
+        post: operations["changePassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -656,7 +741,7 @@ export interface paths {
         };
         /**
          * Get current user
-         * @description Get current authenticated user information
+         * @description The signed-in user with roles, permissions and branch
          */
         get: operations["getCurrentUser"];
         put?: never;
@@ -671,6 +756,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        UserUpdateRequestDto: {
+            /** Format: email */
+            email: string;
+            firstName: string;
+            lastName: string;
+            phone?: string;
+            /** @enum {string} */
+            role: "STAFF" | "MANAGER" | "ADMIN";
+            /** Format: int64 */
+            branchId?: number;
+            enabled: boolean;
+        };
+        UserResponseDto: {
+            /** Format: int64 */
+            id?: number;
+            username?: string;
+            email?: string;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            enabled?: boolean;
+            roles?: string[];
+            permissions?: string[];
+            /** Format: int64 */
+            branchId?: number;
+            branchName?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         SettingsRequestDto: {
             /** @enum {string} */
             mileageUnit: "KILOMETERS" | "MILES";
@@ -937,6 +1053,22 @@ export interface components {
             openingHours?: string;
             active?: boolean;
         };
+        UserCreateRequestDto: {
+            username: string;
+            /** Format: email */
+            email: string;
+            password: string;
+            firstName: string;
+            lastName: string;
+            phone?: string;
+            /** @enum {string} */
+            role: "STAFF" | "MANAGER" | "ADMIN";
+            /** Format: int64 */
+            branchId?: number;
+        };
+        ResetPasswordRequestDto: {
+            newPassword: string;
+        };
         ReservationPickupRequestDto: {
             /** Format: int32 */
             mileageOut?: number;
@@ -964,30 +1096,6 @@ export interface components {
             cost?: number;
             notes?: string;
         };
-        RegisterRequestDto: {
-            username: string;
-            /** Format: email */
-            email: string;
-            password: string;
-            firstName: string;
-            lastName: string;
-            phone?: string;
-        };
-        UserResponseDto: {
-            /** Format: int64 */
-            id?: number;
-            username?: string;
-            email?: string;
-            firstName?: string;
-            lastName?: string;
-            phone?: string;
-            enabled?: boolean;
-            roles?: string[];
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
         LoginResponseDto: {
             user?: components["schemas"]["UserResponseDto"];
             access_token?: string;
@@ -998,18 +1106,21 @@ export interface components {
             expires_at?: string;
         };
         LoginRequestDto: {
-            /** Format: email */
-            email: string;
+            username: string;
             password: string;
         };
-        PageReservationResponseDto: {
+        ChangePasswordRequestDto: {
+            currentPassword: string;
+            newPassword: string;
+        };
+        PageUserResponseDto: {
             /** Format: int32 */
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
             /** Format: int32 */
             size?: number;
-            content?: components["schemas"]["ReservationResponseDto"][];
+            content?: components["schemas"]["UserResponseDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
@@ -1035,6 +1146,24 @@ export interface components {
             empty?: boolean;
             sorted?: boolean;
             unsorted?: boolean;
+        };
+        PageReservationResponseDto: {
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["ReservationResponseDto"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            empty?: boolean;
         };
         PageMaintenanceResponseDto: {
             /** Format: int32 */
@@ -1117,6 +1246,72 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdateRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Invalid data, or no branch for staff or managers */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description User or branch not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description Email already in use, or an administrator tried to disable or demote themselves */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -1137,7 +1332,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1161,7 +1356,7 @@ export interface operations {
             };
         };
     };
-    getById: {
+    getById_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1196,7 +1391,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1253,7 +1448,7 @@ export interface operations {
             };
         };
     };
-    getById_1: {
+    getById_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1275,7 +1470,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1301,7 +1496,7 @@ export interface operations {
             };
         };
     };
-    getById_2: {
+    getById_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1323,7 +1518,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1369,7 +1564,7 @@ export interface operations {
             };
         };
     };
-    getById_3: {
+    getById_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1400,7 +1595,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -1446,7 +1641,7 @@ export interface operations {
             };
         };
     };
-    getById_4: {
+    getById_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -1468,7 +1663,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -1507,6 +1702,119 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: {
+                search?: string;
+                role?: "STAFF" | "MANAGER" | "ADMIN";
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageUserResponseDto"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreateRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description Invalid data, or no branch for staff or managers */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description A manager tried to create a manager or administrator */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description Branch not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description Username or email already in use */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Password set */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1594,7 +1902,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1897,7 +2205,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_1: {
         parameters: {
             query?: {
                 /** @description Zero-based page index (0..N) */
@@ -1924,7 +2232,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1957,7 +2265,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: {
                 search?: string;
@@ -2005,7 +2313,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2069,7 +2377,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 /** @description Zero-based page index (0..N) */
@@ -2096,7 +2404,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2138,58 +2446,18 @@ export interface operations {
             };
         };
     };
-    register: {
+    refresh: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequestDto"];
+            cookie?: {
+                refresh_token?: string;
             };
-        };
-        responses: {
-            /** @description User registered successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponseDto"];
-                };
-            };
-            /** @description Invalid registration data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponseDto"];
-                };
-            };
-            /** @description Username or email already exists */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UserResponseDto"];
-                };
-            };
-        };
-    };
-    refreshToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Token refreshed successfully */
+            /** @description Session renewed */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2198,7 +2466,7 @@ export interface operations {
                     "*/*": components["schemas"]["LoginResponseDto"];
                 };
             };
-            /** @description User not authenticated */
+            /** @description No valid session: sign in again */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -2206,6 +2474,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["LoginResponseDto"];
                 };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed out (also when there was no session) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2222,7 +2510,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Login successful */
+            /** @description Signed in */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2231,7 +2519,7 @@ export interface operations {
                     "*/*": components["schemas"]["LoginResponseDto"];
                 };
             };
-            /** @description Invalid login credentials */
+            /** @description Username or password missing */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2240,7 +2528,7 @@ export interface operations {
                     "*/*": components["schemas"]["LoginResponseDto"];
                 };
             };
-            /** @description Authentication failed */
+            /** @description Invalid username or password */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -2248,6 +2536,53 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["LoginResponseDto"];
                 };
+            };
+            /** @description Too many failed attempts; try again later */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoginResponseDto"];
+                };
+            };
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Password changed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current password incorrect, or new password invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

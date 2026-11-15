@@ -20,6 +20,23 @@ let cars = [...mockCars];
 let customers = [...mockCustomers];
 let reservations = [...mockReservations];
 
+// Sign-in mock: one account, and "a session" is just a flag (the real refresh cookie is httpOnly)
+export const MOCK_USER: components['schemas']['UserResponseDto'] = {
+  id: 1, username: 'admin', email: 'admin@rentacar.com', firstName: 'System', lastName: 'Administrator',
+  enabled: true, roles: ['ADMIN'],
+  permissions: ['CUSTOMER_MANAGE', 'CUSTOMER_DELETE', 'RESERVATION_MANAGE', 'MAINTENANCE_SCHEDULE', 'MAINTENANCE_MANAGE',
+    'CAR_MANAGE', 'CAR_DELETE', 'BRANCH_MANAGE', 'SETTINGS_MANAGE', 'USER_VIEW', 'USER_CREATE_STAFF', 'USER_MANAGE'],
+};
+let mockSession = false;
+/** Tests start without a session */
+export function resetMockAuth() {
+  mockSession = false;
+}
+const loginResponse = () => ({
+  access_token: 'mock-access-token', token_type: 'Bearer', expires_in: 900,
+  expires_at: new Date(Date.now() + 900_000).toISOString(), user: MOCK_USER,
+});
+
 let mockSettings: components['schemas']['SettingsResponseDto'] = { mileageUnit: 'KILOMETERS' };
 
 type MaintenanceResponseDto = components['schemas']['MaintenanceResponseDto'];
@@ -220,6 +237,29 @@ export const handlers = [
     }
 
     return HttpResponse.json(car);
+  }),
+
+  // Auth endpoints (sign in as admin / admin123)
+  http.post('/api/v1/auth/login', async ({ request }) => {
+    const body = await request.json() as { username?: string; password?: string };
+    const who = body?.username?.toLowerCase();
+    if ((who === 'admin' || who === 'admin@rentacar.com') && body?.password === 'admin123') {
+      mockSession = true;
+      return HttpResponse.json(loginResponse());
+    }
+    return HttpResponse.json({ title: 'Unauthorized', status: 401, detail: 'Invalid username or password' }, { status: 401 });
+  }),
+
+  http.post('/api/v1/auth/refresh', () => {
+    if (!mockSession) {
+      return HttpResponse.json({ title: 'Unauthorized', status: 401, detail: 'Your session has ended. Please sign in again.' }, { status: 401 });
+    }
+    return HttpResponse.json(loginResponse());
+  }),
+
+  http.post('/api/v1/auth/logout', () => {
+    mockSession = false;
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // Settings endpoints
