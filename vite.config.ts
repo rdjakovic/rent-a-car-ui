@@ -5,7 +5,16 @@ import path from 'node:path'
 
 // The dev server and `vite preview` forward API calls to the backend, so the app has a single origin
 // (no CORS, and the login cookie is first-party). API_PROXY_TARGET points it at another backend.
-const apiProxy = { '/api': process.env.API_PROXY_TARGET || 'http://localhost:8080' }
+// Browsers add an Origin header to same-origin POSTs too; forwarded, the backend would take them for
+// cross-origin calls and answer 403 unless this port is on its CORS list, so the proxy drops it.
+const apiProxy = {
+  '/api': {
+    target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+    configure: (proxy: { on: (event: 'proxyReq', handler: (proxyReq: { removeHeader: (name: string) => void }) => void) => void }) => {
+      proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'))
+    },
+  },
+}
 
 // https://vite.dev/config/
 export default defineConfig({
