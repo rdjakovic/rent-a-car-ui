@@ -160,6 +160,16 @@ export const handlers = [
       );
     }
 
+    // Like the backend: vin and year match exactly, make and model partially (case-insensitive)
+    const vin = url.searchParams.get('vin');
+    const make = url.searchParams.get('make');
+    const model = url.searchParams.get('model');
+    const year = url.searchParams.get('year');
+    if (vin) filteredCars = filteredCars.filter(car => car.vin === vin);
+    if (make) filteredCars = filteredCars.filter(car => car.make?.toLowerCase().includes(make.toLowerCase()));
+    if (model) filteredCars = filteredCars.filter(car => car.model?.toLowerCase().includes(model.toLowerCase()));
+    if (year) filteredCars = filteredCars.filter(car => car.year === Number(year));
+
     if (category) {
       filteredCars = filteredCars.filter(car => car.category === category);
     }

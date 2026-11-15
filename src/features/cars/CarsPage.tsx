@@ -24,6 +24,10 @@ export default function CarsPage() {
   // Filter state
   // Kept while you move between pages
   const [search, setSearch] = useFilterField(useCarsFilters, "search");
+  const [make, setMake] = useFilterField(useCarsFilters, "make");
+  const [model, setModel] = useFilterField(useCarsFilters, "model");
+  const [year, setYear] = useFilterField(useCarsFilters, "year");
+  const [vin, setVin] = useFilterField(useCarsFilters, "vin");
   const [category, setCategory] = useFilterField(useCarsFilters, "category");
   const [transmission, setTransmission] = useFilterField(useCarsFilters, "transmission");
   const [fuelType, setFuelType] = useFilterField(useCarsFilters, "fuelType");
@@ -32,20 +36,29 @@ export default function CarsPage() {
   const [page, setPage] = useFilterField(useCarsFilters, "page");
   const [size] = useState(12); // Show 12 cars per page for a nice grid
 
+  // The backend matches the year and the VIN exactly, so they are only applied once complete
+  const yearValid = /^\d{4}$/.test(year.trim());
+  const vinValue = vin.trim().toUpperCase();
+  const vinComplete = vinValue.length === 17;
+
   // Build filter params
   const filterParams: CarFilterParams = useMemo(() => {
     const params: CarFilterParams = { page, size };
     if (search.trim()) params.search = search.trim();
+    if (make.trim()) params.make = make.trim();
+    if (model.trim()) params.model = model.trim();
+    if (yearValid) params.year = Number(year);
+    if (vinComplete) params.vin = vinValue;
     if (category) params.category = category as any;
     if (transmission) params.transmission = transmission as any;
     if (fuelType) params.fuelType = fuelType as any;
     if (minSeats) params.minSeats = Number(minSeats);
     if (maxPrice) params.maxPrice = Number(maxPrice);
     return params;
-  }, [search, category, transmission, fuelType, minSeats, maxPrice, page, size]);
+  }, [search, make, model, year, yearValid, vinValue, vinComplete, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
-  useResetPageOnChange([search, category, transmission, fuelType, minSeats, maxPrice], setPage);
+  useResetPageOnChange([search, make, model, yearValid ? year : "", vinComplete ? vinValue : "", category, transmission, fuelType, minSeats, maxPrice], setPage);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
@@ -63,6 +76,10 @@ export default function CarsPage() {
 
   const clearFilters = () => {
     setSearch("");
+    setMake("");
+    setModel("");
+    setYear("");
+    setVin("");
     setCategory("");
     setTransmission("");
     setFuelType("");
@@ -71,7 +88,7 @@ export default function CarsPage() {
     setPage(0);
   };
 
-  const hasActiveFilters = search || category || transmission || fuelType || minSeats || maxPrice;
+  const hasActiveFilters = search || make || model || year || vin || category || transmission || fuelType || minSeats || maxPrice;
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -182,6 +199,47 @@ export default function CarsPage() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                 />
+              </div>
+
+              {/* Make */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Make</label>
+                <SearchInput placeholder="e.g. Toyota" value={make} onChange={setMake} />
+              </div>
+
+              {/* Model */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Model</label>
+                <SearchInput placeholder="e.g. Camry" value={model} onChange={setModel} />
+              </div>
+
+              {/* Year */}
+              <div>
+                <label htmlFor="car-year" className="block text-sm font-medium mb-1">Year</label>
+                <Input
+                  id="car-year"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="e.g. 2023"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+
+              {/* VIN */}
+              <div>
+                <label htmlFor="car-vin" className="block text-sm font-medium mb-1">VIN</label>
+                <Input
+                  id="car-vin"
+                  maxLength={17}
+                  autoComplete="off"
+                  placeholder="Full 17-character VIN"
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value.toUpperCase())}
+                />
+                {vin.trim() !== "" && !vinComplete && (
+                  <p className="text-xs text-muted-foreground mt-1">Enter all 17 characters to search by VIN</p>
+                )}
               </div>
             </div>
           </CardContent>

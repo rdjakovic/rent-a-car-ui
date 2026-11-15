@@ -354,5 +354,34 @@ describe('useBookingFlowStore', () => {
         expect(state.totalCost).toBe(expectedDays * 50);
       });
     });
+
+    it('counts whole days across daylight-saving changes', () => {
+      const { initializeBooking, reset } = useBookingFlowStore.getState();
+      // Clocks change on these dates in Europe and the US; the day count must not
+      for (const [start, end, expectedDays] of [
+        ['2026-03-27', '2026-03-30', 3],
+        ['2026-03-07', '2026-03-10', 3],
+        ['2026-10-24', '2026-10-27', 3],
+        ['2026-10-31', '2026-11-03', 3],
+      ] as const) {
+        reset();
+        initializeBooking({
+          carDetails: mockCarDetails,
+          bookingDetails: { carId: 1, branchId: 1, startDate: start, endDate: end, dailyPrice: 50 },
+        });
+        expect(useBookingFlowStore.getState().totalDays).toBe(expectedDays);
+      }
+    });
+
+    it('rounds the total to cents', () => {
+      const { initializeBooking } = useBookingFlowStore.getState();
+      initializeBooking({
+        carDetails: mockCarDetails,
+        bookingDetails: { carId: 1, branchId: 1, startDate: '2026-06-01', endDate: '2026-06-04', dailyPrice: 45.99 },
+      });
+
+      // 45.99 * 3 is 137.97000000000003 in floating point
+      expect(useBookingFlowStore.getState().totalCost).toBe(137.97);
+    });
   });
 });

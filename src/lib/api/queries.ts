@@ -82,6 +82,12 @@ export type CarFilterParams = {
   minSeats?: number;
   maxPrice?: number;
   search?: string;
+  /** Exact (case-sensitive) 17-character VIN */
+  vin?: string;
+  /** Partial, case-insensitive */
+  make?: string;
+  model?: string;
+  year?: number;
   sort?: string[];
 };
 

@@ -1,6 +1,7 @@
 import { useBookingFlowStore } from "@/stores/useBookingFlowStore";
 import type { CarListResponseDto } from "@/lib/api/queries";
 import type { BookingDetails } from "@/stores/useBookingFlowStore";
+import { validateBookingParams } from "@/stores/bookingParams";
 
 export function useBookingFlow() {
   const store = useBookingFlowStore();
@@ -51,47 +52,22 @@ export function useBookingFlow() {
     const carCategory = searchParams.get('carCategory');
     const branchName = searchParams.get('branchName');
 
-    // Validate all required parameters are present
-    if (!carId || !branchId || !startDate || !endDate || !dailyPrice) {
-      console.error('Missing required URL parameters for booking initialization');
+    const validation = validateBookingParams(searchParams);
+    if (!validation.isValid) {
+      console.error('Invalid booking parameters:', validation.error);
       return false;
     }
 
     try {
-      const parsedCarId = parseInt(carId);
-      const parsedBranchId = parseInt(branchId);
-      const parsedDailyPrice = parseFloat(dailyPrice);
-
-      // Validate parsed values
-      if (isNaN(parsedCarId) || parsedCarId <= 0) {
-        console.error('Invalid carId parameter:', carId);
-        return false;
-      }
-
-      if (isNaN(parsedBranchId) || parsedBranchId <= 0) {
-        console.error('Invalid branchId parameter:', branchId);
-        return false;
-      }
-
-      if (isNaN(parsedDailyPrice) || parsedDailyPrice <= 0) {
-        console.error('Invalid dailyPrice parameter:', dailyPrice);
-        return false;
-      }
-
-      // Validate date format
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        console.error('Invalid date format:', { startDate, endDate });
-        return false;
-      }
+      const parsedCarId = parseInt(carId!);
+      const parsedBranchId = parseInt(branchId!);
+      const parsedDailyPrice = parseFloat(dailyPrice!);
 
       const bookingDetails: BookingDetails = {
         carId: parsedCarId,
         branchId: parsedBranchId,
-        startDate,
-        endDate,
+        startDate: startDate!,
+        endDate: endDate!,
         dailyPrice: parsedDailyPrice,
       };
 

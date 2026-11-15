@@ -49,6 +49,10 @@ export const useAvailabilityFilters = createFilterStore({
 
 export const useCarsFilters = createFilterStore({
   search: "",
+  make: "",
+  model: "",
+  year: "",
+  vin: "",
   category: "",
   transmission: "",
   fuelType: "",
