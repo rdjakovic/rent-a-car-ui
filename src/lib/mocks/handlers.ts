@@ -116,6 +116,28 @@ export const handlers = [
   }),
 
   // Car endpoints
+  http.post('/api/v1/cars', async ({ request }) => {
+    await delay();
+
+    const body = await request.json() as components['schemas']['CarRequestDto'];
+    if (cars.some(c => c.vin === body.vin)) {
+      return HttpResponse.json(
+        { title: 'Conflict', status: 409, detail: `Car with VIN already exists: ${body.vin}` },
+        { status: 409 }
+      );
+    }
+    const branch = branches.find(b => b.id === body.branchId);
+    const created = {
+      ...body,
+      id: generateId(),
+      status: body.status ?? 'AVAILABLE',
+      displayName: `${body.year} ${body.make} ${body.model}`,
+      branchName: branch?.name,
+    };
+    cars = [...cars, created as (typeof cars)[number]];
+    return HttpResponse.json(created);
+  }),
+
   http.get('/api/v1/cars', async ({ request }) => {
     await delay();
 

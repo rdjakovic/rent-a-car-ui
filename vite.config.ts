@@ -15,5 +15,7 @@ export default defineConfig({
     setupFiles: ['./src/setupTests.ts'],
     css: true,
     globals: true,
+    // Form dialogs with Radix selects take a few seconds when the whole suite runs in parallel
+    testTimeout: 10000,
   },
 })

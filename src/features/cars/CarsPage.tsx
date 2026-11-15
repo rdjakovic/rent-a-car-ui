@@ -9,14 +9,16 @@ import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Car, Users, Fuel } from "lucide-react";
+import { Search, Car, Users, Fuel, Plus } from "lucide-react";
 import { NextBooking } from "./NextBooking";
+import AddCarDialog from "./AddCarDialog";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
 const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 
 export default function CarsPage() {
+  const [showAddDialog, setShowAddDialog] = useState(false);
   // Filter state
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("");
@@ -79,11 +81,16 @@ export default function CarsPage() {
             <h1 className="text-3xl font-bold text-charcoal">Car Catalog</h1>
             <p className="text-muted-foreground">Browse our complete fleet of vehicles</p>
           </div>
-          {hasActiveFilters && (
-            <Button variant="outline" onClick={clearFilters}>
-              Clear All Filters
+          <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters}>
+                Clear All Filters
+              </Button>
+            )}
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Add car
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -322,6 +329,8 @@ export default function CarsPage() {
           </>
         )}
       </div>
+
+      <AddCarDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
     </div>
   );
 }
