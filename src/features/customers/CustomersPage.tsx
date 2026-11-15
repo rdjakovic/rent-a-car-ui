@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import CustomerFormDialog from "./CustomerFormDialog";
+import { useCustomersFilters, useFilterField } from "@/stores/filterStore";
 
 export default function CustomersPage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
+  // Kept while you move between pages
+  const [search, setSearch] = useFilterField(useCustomersFilters, "search");
+  const [page, setPage] = useFilterField(useCustomersFilters, "page");
   const [size] = useState(10);
 
   const params: CustomerSearchParams = useMemo(() => ({ search: search || undefined, page, size }), [search, page, size]);

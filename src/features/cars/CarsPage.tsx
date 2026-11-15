@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { listCars, type CarFilterParams } from "@/lib/api/queries";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel, Plus } from "lucide-react";
 import { NextBooking } from "./NextBooking";
 import AddCarDialog from "./AddCarDialog";
+import { useCarsFilters, useFilterField } from "@/stores/filterStore";
+import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 
 const CATEGORIES = ["ECONOMY","COMPACT","INTERMEDIATE","STANDARD","FULL_SIZE","PREMIUM","LUXURY","SUV","VAN"] as const;
 const TRANSMISSIONS = ["MANUAL","AUTOMATIC","CVT"] as const;
@@ -20,13 +22,14 @@ const FUEL_TYPES = ["GASOLINE","DIESEL","HYBRID","ELECTRIC"] as const;
 export default function CarsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   // Filter state
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [transmission, setTransmission] = useState<string>("");
-  const [fuelType, setFuelType] = useState<string>("");
-  const [minSeats, setMinSeats] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [page, setPage] = useState(0);
+  // Kept while you move between pages
+  const [search, setSearch] = useFilterField(useCarsFilters, "search");
+  const [category, setCategory] = useFilterField(useCarsFilters, "category");
+  const [transmission, setTransmission] = useFilterField(useCarsFilters, "transmission");
+  const [fuelType, setFuelType] = useFilterField(useCarsFilters, "fuelType");
+  const [minSeats, setMinSeats] = useFilterField(useCarsFilters, "minSeats");
+  const [maxPrice, setMaxPrice] = useFilterField(useCarsFilters, "maxPrice");
+  const [page, setPage] = useFilterField(useCarsFilters, "page");
   const [size] = useState(12); // Show 12 cars per page for a nice grid
 
   // Build filter params
@@ -42,9 +45,7 @@ export default function CarsPage() {
   }, [search, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
-  useEffect(() => {
-    setPage(0);
-  }, [search, category, transmission, fuelType, minSeats, maxPrice]);
+  useResetPageOnChange([search, category, transmission, fuelType, minSeats, maxPrice], setPage);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
