@@ -91,6 +91,13 @@ export function listCars(params: CarFilterParams = {}) {
 
 export type CarResponseDto = components["schemas"]["CarResponseDto"];
 
+export type CarRequestDto = components["schemas"]["CarRequestDto"];
+
+/** Staff only with the real security rules. A duplicate VIN is a 409 with the reason. */
+export function createCar(car: CarRequestDto) {
+  return request<CarResponseDto>(api.POST("/api/v1/cars", { body: car }));
+}
+
 export function getCarById(id: number) {
   return request<CarResponseDto>(api.GET("/api/v1/cars/{id}", { params: { path: { id } } }));
 }
