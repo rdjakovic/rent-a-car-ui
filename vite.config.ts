@@ -3,10 +3,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
+// The dev server and `vite preview` forward API calls to the backend, so the app has a single origin
+// (no CORS, and the login cookie is first-party). API_PROXY_TARGET points it at another backend.
+const apiProxy = { '/api': process.env.API_PROXY_TARGET || 'http://localhost:8080' }
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: { port: 3000 },
+  server: { port: 3000, proxy: apiProxy },
+  preview: { proxy: apiProxy },
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
