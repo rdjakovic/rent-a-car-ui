@@ -55,6 +55,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Document coding conventions and file naming
 - Pre‑commit hooks (lint-staged, typecheck)
 - Browser mock mode (`VITE_ENABLE_MOCKING=true`) needs `public/mockServiceWorker.js`, which isn't in the repo (`pnpm msw:init` creates it); the unit tests don't need it
+- 14 test files each define their own render-with-providers helper (QueryClient + router); a shared one would remove the copies, but they differ (MemoryRouter or BrowserRouter, toaster, extra providers), so it hasn't been worth the churn yet
 - Add basic Playwright smoke tests (optional). Layout can't be checked in jsdom; overflow was verified in a real browser by hand
 
 ## Known gaps

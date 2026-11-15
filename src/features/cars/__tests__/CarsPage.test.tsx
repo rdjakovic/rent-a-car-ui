@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import CarsPage from '../CarsPage'
-import { listCars } from '@/lib/api/queries'
+import { getSettings, listBranches, listCars } from '@/lib/api/queries'
 
 vi.mock('@/lib/api/queries', () => ({
   listCars: vi.fn(),
@@ -26,6 +26,8 @@ function renderPage() {
 describe('CarsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    ;(getSettings as any).mockResolvedValue({ mileageUnit: 'KILOMETERS' })
+    ;(listBranches as any).mockResolvedValue({ content: [] })
     ;(listCars as any).mockResolvedValue({
       content: [{ id: 1, displayName: '2023 Toyota Camry', category: 'INTERMEDIATE', status: 'AVAILABLE', seats: 5, fuelType: 'GASOLINE', transmission: 'AUTOMATIC', dailyPrice: 45 }],
       number: 0, totalPages: 1,

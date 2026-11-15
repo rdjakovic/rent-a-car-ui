@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBookingFlow } from '../useBookingFlow';
 import { useBookingFlowStore } from '@/stores/useBookingFlowStore';
@@ -256,6 +256,15 @@ describe('useBookingFlow', () => {
   });
 
   describe('initializeFromUrlParams', () => {
+    // The hook logs why an invalid booking link was rejected; these tests pass invalid links on purpose
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('should return false when required parameters are missing', () => {
       const { result } = renderHook(() => useBookingFlow());
       

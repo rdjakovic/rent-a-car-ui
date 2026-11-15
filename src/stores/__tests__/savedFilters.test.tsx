@@ -62,7 +62,7 @@ describe('saved filter stores', () => {
     expect(result.current[0]).toBe(4)
     expect(useStore.getState()).toEqual({ page: 4, search: '' })
 
-    useStore.reset()
+    act(() => useStore.reset())
     expect(useStore.getState().page).toBe(0)
   })
 
@@ -164,6 +164,7 @@ describe('Availability page keeps its search', () => {
 describe('Cars page keeps its filters', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(queries.getSettings).mockResolvedValue({ mileageUnit: 'KILOMETERS' } as any)
     vi.mocked(queries.listCars).mockResolvedValue({ ...empty } as any)
   })
 

@@ -127,7 +127,7 @@ Path alias: @ resolves to src/ (see vite.config.ts).
 - Vitest + jsdom + @testing-library/react configured in vite.config.ts
 - Setup file: src/setupTests.ts
 - Run: `pnpm test` (once), `pnpm test:watch`, `pnpm test:coverage`
-- Saved page filters are reset after every test (setupTests), so tests don't leak into each other
+- Tests are self-contained: each file mocks what it needs and has its own small render helper (no shared factories or scenario builders; an earlier branch had ~1,850 lines of them for five tests, and they weren't needed). Tests don't depend on each other: the suite passes with shuffled order (`pnpm exec vitest run --sequence.shuffle.tests`). Saved page filters are reset after every test (setupTests)
 - Build test dates with `daysFromToday()` from `src/lib/dates.ts`, never `toISOString()` (UTC): tests built that way failed between local midnight and 02:00
 
 ## Development notes
