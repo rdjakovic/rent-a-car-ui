@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import BookingWizard from '../BookingWizard'
 import type { CarListResponseDto, CustomerResponseDto, ReservationResponseDto } from '@/lib/api/queries'
 import type { BookingDetails } from '@/stores/useBookingFlowStore'
+import { daysFromToday } from '@/lib/dates';
 
 // Mock the useBookingFlow hook
 const mockBookingFlow: {
@@ -273,9 +274,7 @@ describe('BookingWizard - Navigation and Deep Linking', () => {
     mockBookingFlow.initializeFromUrlParams.mockReturnValue(false)
 
     // Mock useSearchParams to return past date
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const pastDate = yesterday.toISOString().split('T')[0]
+    const pastDate = daysFromToday(-1)
 
     mockUseSearchParams.mockReturnValue([
       new URLSearchParams(`carId=101&branchId=1&startDate=${pastDate}&endDate=2024-12-05&dailyPrice=45.99`)

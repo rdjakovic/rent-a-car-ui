@@ -9,6 +9,7 @@ import {
   CUSTOMER_VALIDATION_MESSAGES,
 } from '../formValidation';
 import type { CustomerResponseDto } from '@/lib/api/queries';
+import { daysFromToday } from '@/lib/dates';
 
 // Mock customer data for testing
 const createMockCustomer = (overrides: Partial<CustomerResponseDto> = {}): CustomerResponseDto => ({
@@ -58,8 +59,7 @@ describe('formValidation', () => {
     });
 
     it('should accept today\'s date', () => {
-      const today = new Date().toISOString().split('T')[0];
-      const result = driverLicenseExpiryValidation.safeParse(today);
+      const result = driverLicenseExpiryValidation.safeParse(daysFromToday(0));
       expect(result.success).toBe(true);
     });
 
