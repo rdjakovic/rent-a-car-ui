@@ -45,7 +45,7 @@ export default function CarDetailsPage() {
 
   if (carQuery.isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6" aria-busy="true">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6" aria-busy="true">
         {backLink}
         <Skeleton className="h-10 w-72" />
         <div className="grid gap-6 lg:grid-cols-3">
@@ -58,7 +58,7 @@ export default function CarDetailsPage() {
 
   if (carQuery.isError || !carQuery.data) {
     return (
-      <div className="container mx-auto py-6 px-4 grid gap-6">
+      <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
         {backLink}
         <Alert variant="destructive">
           <AlertTitle>Car not found</AlertTitle>
@@ -75,7 +75,7 @@ export default function CarDetailsPage() {
   const car = carQuery.data;
 
   return (
-    <div className="container mx-auto py-6 px-4 grid gap-6">
+    <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
       {backLink}
 
       {/* Header */}
@@ -96,7 +96,7 @@ export default function CarDetailsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="grid gap-6 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6 lg:col-span-2">
           <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
             <Car className="h-24 w-24 text-gray-400" aria-hidden="true" />
           </div>
@@ -139,7 +139,7 @@ export default function CarDetailsPage() {
           <CarMaintenanceHistory car={car} />
         </div>
 
-        <div className="grid gap-6 content-start">
+        <div className="grid grid-cols-1 gap-6 content-start">
           <BookingCard car={car} onBook={(params) => navigate(`/book?${params.toString()}`)} />
 
           {car.branch && (

@@ -92,7 +92,7 @@ export default function CarsPage() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

@@ -20,8 +20,8 @@ const linkClass = (isActive: boolean) =>
   );
 
 /**
- * Header with the app navigation. The seven links only fit in one row from the xl breakpoint;
- * below it they move into a menu behind a hamburger button.
+ * Header with the app navigation. The seven links fit in one row from the xl breakpoint (1280px) with
+ * tight spacing, and with wide spacing from 2xl; below xl they move into a menu behind a hamburger button.
  */
 export default function NavigationBar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,15 +38,15 @@ export default function NavigationBar() {
         <div className="rounded-2xl bg-brand-navy text-white shadow-lg">
           <div className="flex items-center gap-3 px-4 py-3">
             <NavLink to="/" className="flex shrink-0 items-center gap-3 hover:opacity-90 transition-opacity">
-              <img src="/logo.svg" alt="logo" className="h-12 w-12" />
-              <h1 className="text-2xl font-semibold whitespace-nowrap">
+              <img src="/logo.svg" alt="logo" className="h-10 w-10 sm:h-12 sm:w-12" />
+              <h1 className="text-xl sm:text-2xl font-semibold whitespace-nowrap">
                 NextStep <span className="text-brand-emerald">RentACar</span>
               </h1>
             </NavLink>
 
-            <nav aria-label="Main" className="ml-auto hidden xl:flex gap-1 xl:gap-6">
+            <nav aria-label="Main" className="ml-auto hidden xl:flex gap-1 2xl:gap-6">
               {NAV_ITEMS.map((item) => (
-                <NavLink key={item.to} to={item.to} className={({ isActive }) => cn(linkClass(isActive), "px-3 xl:px-6")}>
+                <NavLink key={item.to} to={item.to} className={({ isActive }) => cn(linkClass(isActive), "px-3 2xl:px-6")}>
                   {item.label}
                 </NavLink>
               ))}

@@ -77,7 +77,7 @@ export default function BranchesPage() {
           </Alert>
         ) : (
           <div className="space-y-4">
-            <Table>
+            <Table className="min-w-[960px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -98,7 +98,7 @@ export default function BranchesPage() {
                     <TableCell>{b.address}</TableCell>
                     <TableCell>{b.city}</TableCell>
                     <TableCell>{b.country}</TableCell>
-                    <TableCell>{b.phone}</TableCell>
+                    <TableCell className="whitespace-nowrap">{b.phone}</TableCell>
                     <TableCell>{b.email}</TableCell>
                     <TableCell>{b.openingHours}</TableCell>
                     <TableCell>

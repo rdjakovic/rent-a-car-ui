@@ -173,9 +173,9 @@ export default function ReservationsPage() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-charcoal">Reservations</h1>
             <p className="text-muted-foreground">Manage and track all reservations</p>
@@ -279,7 +279,7 @@ export default function ReservationsPage() {
         {/* Results */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>Reservations</CardTitle>
               <p className="text-sm text-muted-foreground">
                 {isLoading ? (
@@ -326,7 +326,7 @@ export default function ReservationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Table>
+                <Table className="min-w-[1040px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Reservation</TableHead>

@@ -116,7 +116,7 @@ export default function MaintenancePage() {
     setFilters((f) => ({ ...f, [key]: value }));
 
   return (
-    <div className="container mx-auto py-6 px-4 grid gap-6">
+    <div className="container mx-auto py-6 px-4 grid grid-cols-1 gap-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
