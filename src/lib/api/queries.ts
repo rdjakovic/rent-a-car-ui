@@ -284,7 +284,15 @@ export function createUser(user: UserCreateRequestDto) {
   return request<UserResponseDto>(api.POST("/api/v1/users", { body: user }));
 }
 
-/** USER_MANAGE. A full replacement: leave a field out and it is cleared. Disabling ends the user's sessions. */
+/** USER_VIEW. */
+export function getUser(id: number) {
+  return request<UserResponseDto>(api.GET("/api/v1/users/{id}", { params: { path: { id } } }));
+}
+
+/**
+ * USER_MANAGE. Replaces the details and the role, but a branch can only be changed, never removed: leaving
+ * `branchId` out keeps the current one. Disabling ends the user's sessions.
+ */
 export function updateUser(id: number, user: UserUpdateRequestDto) {
   return request<UserResponseDto>(api.PUT("/api/v1/users/{id}", { params: { path: { id } }, body: user }));
 }

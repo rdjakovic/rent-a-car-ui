@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
 import { errorMessage } from "@/lib/api/errors";
-import { useAuthStore, useCan } from "@/lib/auth/authStore";
+import { setAuthUser, useAuthStore, useCan } from "@/lib/auth/authStore";
+import { highestRole } from "@/lib/auth/roles";
 import {
   createUser,
   listBranches,
@@ -90,15 +91,16 @@ export default function UserFormDialog({
       firstName: user.firstName ?? "",
       lastName: user.lastName ?? "",
       phone: user.phone ?? "",
-      role: (user.roles?.[0] as UserRole | undefined) ?? "STAFF",
+      role: highestRole(user) ?? "STAFF",
       branchId: user.branchId != null ? String(user.branchId) : NO_BRANCH,
       enabled: user.enabled ?? true,
     } : EMPTY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
+  // Same list (and cache entry) as the Settings and Availability pickers
   const branches = useQuery({
-    queryKey: ["branches", "for-select", "users"],
+    queryKey: ["branches", "for-select"],
     queryFn: () => listBranches({ page: 0, size: 100 }),
     enabled: open,
     staleTime: 60_000,
@@ -128,9 +130,11 @@ export default function UserFormDialog({
             branchId,
           });
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast({ title: editing ? "User updated" : "User created" });
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      // The menu, and the branch Availability starts with, follow the signed-in user's own details
+      if (editingSelf) setAuthUser(saved);
       onOpenChange(false);
     },
     onError: (error) => toast({
@@ -143,6 +147,8 @@ export default function UserFormDialog({
   const roleOptions = canManage ? ROLES : ROLES.filter((r) => r.value === "STAFF");
   const role = form.watch("role");
   const branchRequired = role !== "ADMIN";
+  // The API can change an account's branch but not remove it
+  const hadBranch = user?.branchId != null;
 
   function onSubmit(values: UserFormValues) {
     if (creating) {
@@ -228,12 +234,13 @@ export default function UserFormDialog({
             <FormField control={form.control} name="role" render={({ field }) => (
               <FormItem>
                 <FormLabel>Role</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange} disabled={!canManage && !creating}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={(!canManage && !creating) || editingSelf}>
                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent>
                     {roleOptions.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {editingSelf && <FormDescription>You can't change your own role.</FormDescription>}
                 <FormMessage />
               </FormItem>
             )} />
@@ -248,13 +255,16 @@ export default function UserFormDialog({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value={NO_BRANCH}>No branch</SelectItem>
-                    {(branches.data?.content ?? []).map((b) => (
+                    {!hadBranch && <SelectItem value={NO_BRANCH}>No branch</SelectItem>}
+                    {/* Closed branches can't be chosen, but an account already there keeps showing it */}
+                    {(branches.data?.content ?? []).filter((b) => b.active || b.id === user?.branchId).map((b) => (
                       <SelectItem key={b.id} value={String(b.id)}>{b.name} ({b.city})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {branchRequired && <FormDescription>Required for staff and managers.</FormDescription>}
+                {hadBranch
+                  ? <FormDescription>An account keeps a branch once it has one; it can be changed.</FormDescription>
+                  : branchRequired && <FormDescription>Required for staff and managers.</FormDescription>}
                 <FormMessage />
               </FormItem>
             )} />

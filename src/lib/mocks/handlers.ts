@@ -362,6 +362,15 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
+  http.get('/api/v1/users/:id', async ({ params }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    const found = mockUsers.find((u) => u.id === Number(params.id));
+    return found
+      ? HttpResponse.json(found)
+      : HttpResponse.json({ title: 'Not Found', status: 404, detail: 'User not found' }, { status: 404 });
+  }),
+
   http.put('/api/v1/users/:id', async ({ params, request }) => {
     await delay();
     if (!mockSession) return unauthorized();
@@ -383,9 +392,11 @@ export const handlers = [
       return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'Branch not found' }, { status: 404 });
     }
 
+    // Like the backend: a branch can be changed but not removed, so leaving it out keeps the current one
     const updated: UserResponseDto = {
       ...existing, ...body, updatedAt: new Date().toISOString(),
-      roles: [body.role], permissions: permissionsForRole(body.role), branchName: branch?.name,
+      roles: [body.role], permissions: permissionsForRole(body.role),
+      branchId: branch ? branch.id : existing.branchId, branchName: branch ? branch.name : existing.branchName,
     };
     mockUsers = mockUsers.map((u) => (u.id === id ? updated : u));
     if (id === mockCurrentUser.id) mockCurrentUser = updated;
