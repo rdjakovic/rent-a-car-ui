@@ -19,7 +19,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - The row actions on the list (Confirm, Cancel) show a fixed "Failed to …" toast instead of the backend's reason (the dialogs show it)
 
 ## Cars
-- Edit a car (price, status, out of service) and see deleted cars; the backend supports both, but the catalog only adds cars today
+- See and restore deleted cars (the API supports both; the catalog only lists live cars today)
 - Delete and restore cars (ADMIN in the API)
 - Show the full booking schedule (only the current or next booking is shown today)
 - Pick up directly from car details or availability results
@@ -65,6 +65,7 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - No image compression or responsive sizes; photos are served as uploaded
 
 ## Done
+- Cars: edit details and status from the details page, including removing current photos and adding new ones (up to 5)
 - Cars: add up to 5 photos when creating a car (JPEG/PNG/WebP, 5 MB each, with previews and validation); cover photo on catalog cards and a gallery on the details page
 - Roles: actions hidden by permission (Add car, branch and settings changes, manager maintenance actions), permission-guarded routes, Users page (managers create staff; administrators manage accounts), Change password page, and the user's own branch pre-selected on Availability
 - Customers: list with search and pagination, create/edit dialog with React Hook Form + Zod

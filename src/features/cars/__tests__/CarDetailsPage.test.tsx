@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import CarDetailsPage from '../CarDetailsPage'
-import { getCarById, findAvailableCars, getSettings, listMaintenance } from '@/lib/api/queries'
+import { getCarById, findAvailableCars, getSettings, listBranches, listMaintenance, updateCar } from '@/lib/api/queries'
 import { signInAs } from '@/test/authUsers'
 
 vi.mock('@/lib/api/queries', () => ({
@@ -12,6 +12,11 @@ vi.mock('@/lib/api/queries', () => ({
   getSettings: vi.fn(),
   listMaintenance: vi.fn(),
   listCars: vi.fn(),
+  createCar: vi.fn(),
+  updateCar: vi.fn(),
+  deleteCarImage: vi.fn(),
+  uploadCarImages: vi.fn(),
+  listBranches: vi.fn(),
   scheduleMaintenance: vi.fn(),
   carImageUrl: (url: string) => url,
 }))
@@ -19,6 +24,7 @@ vi.mock('@/lib/api/queries', () => ({
 const mockGetCarById = getCarById as any
 const mockFindAvailableCars = findAvailableCars as any
 const mockGetSettings = getSettings as any
+const mockUpdateCar = updateCar as any
 
 const car = {
   id: 7,
@@ -44,8 +50,8 @@ function BookingTarget() {
   return <div data-testid="booking-wizard">{location.search}</div>
 }
 
-function renderAt(path: string) {
-  signInAs('STAFF')
+function renderAt(path: string, role: 'STAFF' | 'MANAGER' = 'STAFF') {
+  signInAs(role)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -70,6 +76,10 @@ describe('CarDetailsPage', () => {
     mockGetCarById.mockResolvedValue(car)
     mockGetSettings.mockResolvedValue({ mileageUnit: 'MILES' })
     ;(listMaintenance as any).mockResolvedValue({ content: [], totalElements: 0, totalPages: 0, number: 0 })
+    ;(listBranches as any).mockResolvedValue({
+      content: [{ id: 3, name: 'Downtown Branch', city: 'New York', active: true }],
+    })
+    mockUpdateCar.mockResolvedValue({ ...car, dailyPrice: 59 })
   })
 
   it('shows the car details and its branch', async () => {
@@ -188,5 +198,27 @@ describe('CarDetailsPage', () => {
 
     expect(await screen.findByText(/can't be booked right now/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Book this car' })).not.toBeInTheDocument()
+  })
+
+  it('lets a manager edit the car from the details page', async () => {
+    renderAt('/cars/7', 'MANAGER')
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit car' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByLabelText('Daily price (USD)')).toHaveValue('45.00')
+    fireEvent.change(within(dialog).getByLabelText('Daily price (USD)'), { target: { value: '59' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() => expect(mockUpdateCar).toHaveBeenCalledWith(7, expect.objectContaining({
+      dailyPrice: 59, branchId: 3, status: 'AVAILABLE', vin: '1HGCM82633A004352',
+    })))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('does not offer editing to staff', async () => {
+    renderAt('/cars/7')
+
+    await screen.findByRole('heading', { name: '2023 Toyota Camry' })
+    expect(screen.queryByRole('button', { name: 'Edit car' })).not.toBeInTheDocument()
   })
 })

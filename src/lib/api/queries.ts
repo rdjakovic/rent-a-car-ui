@@ -119,6 +119,33 @@ export function createCar(car: CarRequestDto) {
   return request<CarResponseDto>(api.POST("/api/v1/cars", { body: car }));
 }
 
+/** Replaces the car's details. A duplicate VIN is a 409 with the reason. */
+export function updateCar(id: number, car: CarRequestDto) {
+  return request<CarResponseDto>(api.PUT("/api/v1/cars/{id}", { params: { path: { id } }, body: car }));
+}
+
+/**
+ * Removes one photo; upload and delete need CAR_MANAGE. Uses the same direct fetch as uploads:
+ * the image endpoints are newer than the generated OpenAPI schema.
+ */
+export async function deleteCarImage(carId: number, imageId: number): Promise<void> {
+  const origin = baseUrl || (typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  let response: Response;
+  try {
+    response = await authFetch(new Request(`${origin}/api/v1/cars/${carId}/images/${imageId}`, {
+      method: "DELETE",
+      credentials,
+    }));
+  } catch (error) {
+    throw normalizeError(error);
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => undefined);
+    throw apiErrorFromResponse(response.status, body);
+  }
+}
+
 /** Resolves a car photo URL against the API base (empty when the UI proxies /api). */
 export function carImageUrl(url?: string | null) {
   if (!url) return "";

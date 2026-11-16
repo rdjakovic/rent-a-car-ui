@@ -15,10 +15,12 @@ type Props = {
   onError: (message: string) => void
   error?: string
   disabled?: boolean
+  /** Photos already on the car when editing; they count toward the 5-image limit. */
+  slotsUsed?: number
 }
 
 /** Choose up to 5 car photos, with previews and client-side type/size/count checks. */
-export default function CarImagePicker({ files, onChange, onError, error, disabled }: Props) {
+export default function CarImagePicker({ files, onChange, onError, error, disabled, slotsUsed = 0 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -30,7 +32,7 @@ export default function CarImagePicker({ files, onChange, onError, error, disabl
   function add(selected: FileList | null) {
     const incoming = Array.from(selected ?? [])
     if (incoming.length === 0) return
-    const problem = validateCarImageFiles(incoming, files.length)
+    const problem = validateCarImageFiles(incoming, slotsUsed + files.length)
     if (problem) {
       onError(problem)
       return
@@ -54,7 +56,7 @@ export default function CarImagePicker({ files, onChange, onError, error, disabl
           type="button"
           variant="outline"
           size="sm"
-          disabled={disabled || files.length >= MAX_CAR_IMAGES}
+          disabled={disabled || slotsUsed + files.length >= MAX_CAR_IMAGES}
           onClick={() => inputRef.current?.click()}
         >
           <ImagePlus className="mr-2 h-4 w-4" aria-hidden="true" />

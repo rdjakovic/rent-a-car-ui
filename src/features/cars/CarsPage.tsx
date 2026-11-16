@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel, Plus } from "lucide-react";
 import { NextBooking } from "./NextBooking";
-import AddCarDialog from "./AddCarDialog";
+import CarFormDialog from "./CarFormDialog";
 import { useCarsFilters, useFilterField } from "@/stores/filterStore";
 import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 import { useCan } from "@/lib/auth/authStore";
@@ -403,7 +403,7 @@ export default function CarsPage() {
         )}
       </div>
 
-      {canAddCar && <AddCarDialog open={showAddDialog} onOpenChange={setShowAddDialog} />}
+      {canAddCar && <CarFormDialog open={showAddDialog} onOpenChange={setShowAddDialog} />}
     </div>
   );
 }

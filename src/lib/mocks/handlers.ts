@@ -214,6 +214,37 @@ export const handlers = [
     return HttpResponse.json({ ...created, images: [] });
   }),
 
+  http.put('/api/v1/cars/:id', async ({ params, request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('CAR_MANAGE')) return forbidden('You do not have permission to edit cars');
+
+    const id = Number(params.id);
+    const existing = cars.find((car) => car.id === id);
+    if (!existing) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: `Car not found: ${id}` }, { status: 404 });
+    }
+
+    const body = await request.json() as components['schemas']['CarRequestDto'];
+    if (cars.some((car) => car.id !== id && car.vin === body.vin)) {
+      return HttpResponse.json(
+        { title: 'Conflict', status: 409, detail: `Another car with VIN already exists: ${body.vin}` },
+        { status: 409 }
+      );
+    }
+    const branch = branches.find((candidate) => candidate.id === body.branchId);
+    const updated = {
+      ...existing,
+      ...body,
+      id,
+      status: body.status ?? existing.status,
+      displayName: `${body.year} ${body.make} ${body.model}`,
+      branchName: branch?.name,
+    } as (typeof cars)[number];
+    cars = cars.map((car) => (car.id === id ? updated : car));
+    return HttpResponse.json(withImages(updated));
+  }),
+
   http.get('/api/v1/cars', async ({ request }) => {
     await delay();
 
@@ -340,6 +371,23 @@ export const handlers = [
     }
     carImages.set(carId, [...existing, ...added]);
     return HttpResponse.json(imagesFor(carId));
+  }),
+
+  http.delete('/api/v1/cars/:carId/images/:imageId', ({ params }) => {
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('CAR_MANAGE')) return forbidden('You do not have permission to remove car photos');
+
+    const carId = Number(params.carId);
+    const imageId = Number(params.imageId);
+    const existing = carImages.get(carId) ?? [];
+    if (!existing.some((image) => image.id === imageId)) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'Image not found' }, { status: 404 });
+    }
+    // Keep positions contiguous, as the backend does
+    carImages.set(carId, existing
+      .filter((image) => image.id !== imageId)
+      .map((image, position) => ({ ...image, position })));
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // Public so a plain <img> can load it, like the backend
