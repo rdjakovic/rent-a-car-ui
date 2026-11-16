@@ -27,8 +27,6 @@ export default function CarsPage() {
   // Filter state
   // Kept while you move between pages
   const [search, setSearch] = useFilterField(useCarsFilters, "search");
-  const [make, setMake] = useFilterField(useCarsFilters, "make");
-  const [model, setModel] = useFilterField(useCarsFilters, "model");
   const [year, setYear] = useFilterField(useCarsFilters, "year");
   const [vin, setVin] = useFilterField(useCarsFilters, "vin");
   const [category, setCategory] = useFilterField(useCarsFilters, "category");
@@ -48,8 +46,6 @@ export default function CarsPage() {
   const filterParams: CarFilterParams = useMemo(() => {
     const params: CarFilterParams = { page, size };
     if (search.trim()) params.search = search.trim();
-    if (make.trim()) params.make = make.trim();
-    if (model.trim()) params.model = model.trim();
     if (yearValid) params.year = Number(year);
     if (vinComplete) params.vin = vinValue;
     if (category) params.category = category as any;
@@ -58,10 +54,10 @@ export default function CarsPage() {
     if (minSeats) params.minSeats = Number(minSeats);
     if (maxPrice) params.maxPrice = Number(maxPrice);
     return params;
-  }, [search, make, model, year, yearValid, vinValue, vinComplete, category, transmission, fuelType, minSeats, maxPrice, page, size]);
+  }, [search, year, yearValid, vinValue, vinComplete, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
-  useResetPageOnChange([search, make, model, yearValid ? year : "", vinComplete ? vinValue : "", category, transmission, fuelType, minSeats, maxPrice], setPage);
+  useResetPageOnChange([search, yearValid ? year : "", vinComplete ? vinValue : "", category, transmission, fuelType, minSeats, maxPrice], setPage);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
@@ -79,8 +75,6 @@ export default function CarsPage() {
 
   const clearFilters = () => {
     setSearch("");
-    setMake("");
-    setModel("");
     setYear("");
     setVin("");
     setCategory("");
@@ -91,7 +85,7 @@ export default function CarsPage() {
     setPage(0);
   };
 
-  const hasActiveFilters = search || make || model || year || vin || category || transmission || fuelType || minSeats || maxPrice;
+  const hasActiveFilters = search || year || vin || category || transmission || fuelType || minSeats || maxPrice;
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -204,18 +198,6 @@ export default function CarsPage() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                 />
-              </div>
-
-              {/* Make */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Make</label>
-                <SearchInput placeholder="e.g. Toyota" value={make} onChange={setMake} />
-              </div>
-
-              {/* Model */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Model</label>
-                <SearchInput placeholder="e.g. Camry" value={model} onChange={setModel} />
               </div>
 
               {/* Year */}

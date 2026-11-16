@@ -50,23 +50,17 @@ describe('CarsPage', () => {
     expect(screen.getByRole('heading', { name: 'Add a car' })).toBeInTheDocument()
   })
 
-  it('filters by make, model and year, and combines them with the search', async () => {
+  it('filters by year and combines it with the search', async () => {
     renderPage()
     await screen.findByText('2023 Toyota Camry')
 
-    fireEvent.change(screen.getByPlaceholderText('e.g. Toyota'), { target: { value: 'toy' } })
-    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ make: 'toy', page: 0 })))
-
-    fireEvent.change(screen.getByPlaceholderText('e.g. Camry'), { target: { value: 'cam' } })
-    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ make: 'toy', model: 'cam' })))
-
     fireEvent.change(screen.getByPlaceholderText('e.g. 2023'), { target: { value: '2023' } })
-    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ make: 'toy', model: 'cam', year: 2023 })))
+    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2023, page: 0 })))
 
-    // The free-text search still works alongside them
+    // The free-text search still works alongside it
     fireEvent.change(screen.getByPlaceholderText('Car name, make, model...'), { target: { value: 'silver' } })
     await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(
-      expect.objectContaining({ search: 'silver', make: 'toy', model: 'cam', year: 2023 })))
+      expect.objectContaining({ search: 'silver', year: 2023 })))
   })
 
   it('applies the year and the VIN only when complete', async () => {
@@ -100,12 +94,12 @@ describe('CarsPage', () => {
     fireEvent.change(screen.getByPlaceholderText('e.g. 2023'), { target: { value: '2a0b23' } })
     expect(screen.getByPlaceholderText('e.g. 2023')).toHaveValue('2023')
 
-    fireEvent.change(screen.getByPlaceholderText('e.g. Toyota'), { target: { value: 'toy' } })
+    fireEvent.change(screen.getByPlaceholderText('Car name, make, model...'), { target: { value: 'camry' } })
     // The search boxes apply their value after a short debounce
-    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ make: 'toy', year: 2023 })))
+    await waitFor(() => expect(listCars).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'camry', year: 2023 })))
     fireEvent.click(await screen.findByRole('button', { name: 'Clear All Filters' }))
 
     expect(screen.getByPlaceholderText('e.g. 2023')).toHaveValue('')
-    await waitFor(() => expect(screen.getByPlaceholderText('e.g. Toyota')).toHaveValue(''))
+    await waitFor(() => expect(screen.getByPlaceholderText('Car name, make, model...')).toHaveValue(''))
   })
 })
