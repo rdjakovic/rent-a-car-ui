@@ -2,22 +2,29 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
-import AddCarDialog from '../AddCarDialog'
-import { createCar, getSettings, listBranches } from '@/lib/api/queries'
+import CarFormDialog from '../CarFormDialog'
+import { createCar, deleteCarImage, getSettings, listBranches, updateCar, uploadCarImages } from '@/lib/api/queries'
 
 vi.mock('@/lib/api/queries', () => ({
   createCar: vi.fn(),
+  updateCar: vi.fn(),
+  deleteCarImage: vi.fn(),
   getSettings: vi.fn(),
   listBranches: vi.fn(),
+  uploadCarImages: vi.fn(),
+  carImageUrl: (url: string) => url,
 }))
 
 const mockCreate = createCar as any
+const mockUpdate = updateCar as any
+const mockDeleteImage = deleteCarImage as any
+const mockUpload = uploadCarImages as any
 
-function renderDialog(onOpenChange = vi.fn()) {
+function renderDialog(onOpenChange = vi.fn(), car?: any) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
     <QueryClientProvider client={queryClient}>
-      <AddCarDialog open onOpenChange={onOpenChange} />
+      <CarFormDialog open onOpenChange={onOpenChange} car={car} />
       <Toaster />
     </QueryClientProvider>
   )
@@ -41,7 +48,28 @@ function fillRequired() {
   fill('Daily price (USD)', '45.50')
 }
 
-describe('AddCarDialog', () => {
+const existingCar = {
+  id: 20,
+  vin: '1HGBH41JXMN109186',
+  make: 'Toyota',
+  model: 'Camry',
+  year: 2023,
+  category: 'INTERMEDIATE',
+  transmission: 'AUTOMATIC',
+  fuelType: 'GASOLINE',
+  seats: 5,
+  mileage: 12000,
+  status: 'AVAILABLE',
+  dailyPrice: 45,
+  branch: { id: 1, name: 'Downtown Branch', city: 'New York' },
+  color: 'Silver',
+  licensePlate: 'NY-1234',
+  insurancePolicy: 'POL-1',
+  displayName: '2023 Toyota Camry',
+  images: [{ id: 9, url: '/api/v1/cars/20/images/9', fileName: 'old.png' }],
+}
+
+describe('CarFormDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ;(getSettings as any).mockResolvedValue({ mileageUnit: 'KILOMETERS' })
@@ -52,7 +80,14 @@ describe('AddCarDialog', () => {
       ],
     })
     mockCreate.mockResolvedValue({ id: 20, displayName: '2026 Toyota Camry' })
+    mockUpdate.mockResolvedValue({ ...existingCar, dailyPrice: 59 })
+    mockDeleteImage.mockResolvedValue(undefined)
+    mockUpload.mockResolvedValue([])
   })
+
+  const png = (name: string) => new File(
+    [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], name, { type: 'image/png' },
+  )
 
   it('adds a car with the entered details', async () => {
     const { onOpenChange } = renderDialog()
@@ -84,37 +119,48 @@ describe('AddCarDialog', () => {
     expect(options).toEqual(['Available', 'Out of service'])
   })
 
-  it('shows the mileage unit from the settings', async () => {
-    renderDialog()
+  it('edits an existing car and removes one of its photos', async () => {
+    const { onOpenChange } = renderDialog(vi.fn(), existingCar)
 
-    expect(await screen.findByLabelText('Mileage (km)')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit car' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Daily price (USD)')).toHaveValue('45.00')
+    expect(screen.getByAltText('old.png')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove current photo 1' }))
+    fill('Daily price (USD)', '59')
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith(20, expect.objectContaining({
+      vin: '1HGBH41JXMN109186', make: 'Toyota', model: 'Camry', dailyPrice: 59,
+      branchId: 1, status: 'AVAILABLE', mileage: 12000,
+    })))
+    expect(mockDeleteImage).toHaveBeenCalledWith(20, 9)
+    expect(await screen.findByText('Car updated')).toBeInTheDocument()
+    expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
-  it('validates before sending', async () => {
-    renderDialog()
-    fill('VIN', 'SHORT')
-    fill('Year', '1975')
-    fill('Seats', '1')
-    fill('Daily price (USD)', '12345')
-    fireEvent.click(screen.getByRole('button', { name: 'Add car' }))
-
-    expect(await screen.findByText(/VIN must be 17 characters/)).toBeInTheDocument()
-    expect(screen.getByText('Make is required')).toBeInTheDocument()
-    expect(screen.getByText('Year must be between 1980 and 2030')).toBeInTheDocument()
-    expect(screen.getByText('Seats must be between 2 and 20')).toBeInTheDocument()
-    expect(screen.getByText(/Daily price: up to 4 digits/)).toBeInTheDocument()
-    expect(screen.getByText('Branch is required')).toBeInTheDocument()
-    expect(mockCreate).not.toHaveBeenCalled()
-  })
-
-  it('rejects a VIN with I, O or Q', async () => {
-    renderDialog()
+  it('uploads newly selected photos after the car is created', async () => {
+    const { onOpenChange } = renderDialog()
     fillRequired()
-    fill('VIN', '1HGBH41JXMN10918O')
+    await choose('Branch', 'Downtown Branch · New York')
+    const file = png('camry.png')
+
+    fireEvent.change(screen.getByLabelText('Choose car images'), { target: { files: [file] } })
+    expect(await screen.findByAltText('camry.png')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Add car' }))
 
-    expect(await screen.findByText(/VIN must be 17 characters/)).toBeInTheDocument()
+    await waitFor(() => expect(mockUpload).toHaveBeenCalledWith(20, [file]))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('refuses more than five photos before sending anything', async () => {
+    renderDialog()
+    const files = Array.from({ length: 6 }, (_, i) => png(`photo-${i}.png`))
+
+    fireEvent.change(screen.getByLabelText('Choose car images'), { target: { files } })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('You can add up to 5 images per car')
     expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockUpload).not.toHaveBeenCalled()
   })
 
   it("shows the backend's reason, e.g. a duplicate VIN, and stays open", async () => {

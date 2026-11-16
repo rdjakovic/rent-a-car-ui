@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, Car, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Pencil } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
+import { useCan } from "@/lib/auth/authStore";
 import { formatMileage } from "@/lib/units";
 import { todayString } from "@/lib/dates";
 import { CarMaintenanceHistory } from "@/features/maintenance/CarMaintenanceHistory";
 import { NextBooking } from "./NextBooking";
+import CarGallery from "./CarGallery";
+import CarFormDialog from "./CarFormDialog";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -29,6 +32,9 @@ export default function CarDetailsPage() {
   const carId = Number(id);
   const navigate = useNavigate();
   const settings = useSettings();
+  const can = useCan();
+  const canEdit = can("CAR_MANAGE");
+  const [editOpen, setEditOpen] = useState(false);
 
   const carQuery = useQuery({
     queryKey: ["car", carId],
@@ -89,17 +95,22 @@ export default function CarDetailsPage() {
           </div>
           <NextBooking next={car.nextReservation} emptyText="No upcoming bookings" className="mt-2" />
         </div>
-        <div className="text-right">
-          <span className="text-3xl font-bold text-brand-navy">${car.dailyPrice?.toFixed(2)}</span>
-          <span className="text-sm text-muted-foreground">/day</span>
+        <div className="flex flex-col items-end gap-3">
+          {canEdit && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" aria-hidden="true" /> Edit car
+            </Button>
+          )}
+          <div className="text-right">
+            <span className="text-3xl font-bold text-brand-navy">${car.dailyPrice?.toFixed(2)}</span>
+            <span className="text-sm text-muted-foreground">/day</span>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="grid grid-cols-1 gap-6 lg:col-span-2">
-          <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-            <Car className="h-24 w-24 text-gray-400" aria-hidden="true" />
-          </div>
+          <CarGallery images={car.images} name={car.displayName ?? "Car"} />
 
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
@@ -161,6 +172,8 @@ export default function CarDetailsPage() {
           )}
         </div>
       </div>
+
+      {canEdit && <CarFormDialog open={editOpen} onOpenChange={setEditOpen} car={car} />}
     </div>
   );
 }

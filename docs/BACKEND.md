@@ -53,6 +53,9 @@ for the permission names and the user-account rules.
 ## Rules the UI depends on
 
 - A car's status is its physical state (AVAILABLE, RENTED, MAINTENANCE, OUT_OF_SERVICE); bookings are date-based and shown through `nextReservation` on car responses
+- Editing a car is `PUT /api/v1/cars/{id}` with the full `CarRequestDto` (a duplicate VIN is a 409); photos are changed separately through the image endpoints
+- Car responses include `images` (id, relative `url`, fileName, contentType, sizeBytes, position) in upload order. Upload with `POST /api/v1/cars/{id}/images` as `multipart/form-data` and repeated `files` fields: at most 5 per car, 5 MB each, JPEG/PNG/WebP only (the backend checks the bytes, not the declared type). `DELETE /api/v1/cars/{carId}/images/{imageId}` removes one; both need `CAR_MANAGE`
+- Photo `url`s are relative to the API host and need no token, because a plain `<img>` can't send the bearer token; the UI resolves them with `carImageUrl`. Files are stored under `CAR_IMAGES_DIR` (`./data/car-images` by default) while the database keeps their metadata, so reset both together
 - Reservations: PENDING → CONFIRMED → ACTIVE (picked up) → COMPLETED (returned); only PENDING can be edited, only PENDING/CONFIRMED cancelled
 - Same-day rentals are allowed and charged as one day
 - Scheduled maintenance blocks bookings on its date; a car can't go into the shop while rented

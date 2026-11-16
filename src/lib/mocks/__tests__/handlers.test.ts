@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
 import { ApiError } from '@/lib/api/errors'
 import { login } from '@/lib/auth/session'
 import {
@@ -19,8 +20,10 @@ import {
   startMaintenance,
   updateBranch,
   updateSettings,
+  uploadCarImages,
 } from '@/lib/api/queries'
 import { daysFromToday } from '@/lib/dates'
+import { server } from '@/lib/mocks/server'
 
 // The handlers sleep 500 ms per request to feel like a network in the dev UI; not needed here
 vi.mock('@/lib/mocks/data', async importOriginal => ({
@@ -92,6 +95,29 @@ describe('mock API handlers', () => {
 
       expect(error).toBeInstanceOf(ApiError)
       expect((error as ApiError).status).toBe(404)
+    })
+
+    // Node's Request.formData cannot parse a jsdom FormData, so the upload endpoint is stubbed here;
+    // the MSW handler itself is what the browser dev server uses.
+    it('posts photos as multipart form data to the car image endpoint', async () => {
+      await login('maria.manager', 'admin123')
+      const png = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'car.png', { type: 'image/png' })
+      let contentType: string | null = null
+      let url = ''
+
+      server.use(http.post('/api/v1/cars/:id/images', ({ request }) => {
+        contentType = request.headers.get('content-type')
+        url = new URL(request.url).pathname
+        return HttpResponse.json([
+          { id: 1, url: '/api/v1/cars/7/images/1', fileName: 'car.png', contentType: 'image/png', sizeBytes: 4, position: 0 },
+        ])
+      }))
+
+      const [image] = await uploadCarImages(7, [png])
+
+      expect(url).toBe('/api/v1/cars/7/images')
+      expect(contentType).toContain('multipart/form-data')
+      expect(image.url).toBe('/api/v1/cars/7/images/1')
     })
 
     it('rejects a duplicate VIN with 409', async () => {

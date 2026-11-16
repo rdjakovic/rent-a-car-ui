@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { listCars, type CarFilterParams } from "@/lib/api/queries";
+import { carImageUrl, listCars, type CarFilterParams } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Car, Users, Fuel, Plus } from "lucide-react";
 import { NextBooking } from "./NextBooking";
-import AddCarDialog from "./AddCarDialog";
+import CarFormDialog from "./CarFormDialog";
 import { useCarsFilters, useFilterField } from "@/stores/filterStore";
 import { useResetPageOnChange } from "@/hooks/useResetPageOnChange";
 import { useCan } from "@/lib/auth/authStore";
@@ -27,8 +27,6 @@ export default function CarsPage() {
   // Filter state
   // Kept while you move between pages
   const [search, setSearch] = useFilterField(useCarsFilters, "search");
-  const [make, setMake] = useFilterField(useCarsFilters, "make");
-  const [model, setModel] = useFilterField(useCarsFilters, "model");
   const [year, setYear] = useFilterField(useCarsFilters, "year");
   const [vin, setVin] = useFilterField(useCarsFilters, "vin");
   const [category, setCategory] = useFilterField(useCarsFilters, "category");
@@ -48,8 +46,6 @@ export default function CarsPage() {
   const filterParams: CarFilterParams = useMemo(() => {
     const params: CarFilterParams = { page, size };
     if (search.trim()) params.search = search.trim();
-    if (make.trim()) params.make = make.trim();
-    if (model.trim()) params.model = model.trim();
     if (yearValid) params.year = Number(year);
     if (vinComplete) params.vin = vinValue;
     if (category) params.category = category as any;
@@ -58,10 +54,10 @@ export default function CarsPage() {
     if (minSeats) params.minSeats = Number(minSeats);
     if (maxPrice) params.maxPrice = Number(maxPrice);
     return params;
-  }, [search, make, model, year, yearValid, vinValue, vinComplete, category, transmission, fuelType, minSeats, maxPrice, page, size]);
+  }, [search, year, yearValid, vinValue, vinComplete, category, transmission, fuelType, minSeats, maxPrice, page, size]);
 
   // Reset page when filters change
-  useResetPageOnChange([search, make, model, yearValid ? year : "", vinComplete ? vinValue : "", category, transmission, fuelType, minSeats, maxPrice], setPage);
+  useResetPageOnChange([search, yearValid ? year : "", vinComplete ? vinValue : "", category, transmission, fuelType, minSeats, maxPrice], setPage);
 
   const carsQuery = useQuery({
     queryKey: ["cars", filterParams],
@@ -79,8 +75,6 @@ export default function CarsPage() {
 
   const clearFilters = () => {
     setSearch("");
-    setMake("");
-    setModel("");
     setYear("");
     setVin("");
     setCategory("");
@@ -91,7 +85,7 @@ export default function CarsPage() {
     setPage(0);
   };
 
-  const hasActiveFilters = search || make || model || year || vin || category || transmission || fuelType || minSeats || maxPrice;
+  const hasActiveFilters = search || year || vin || category || transmission || fuelType || minSeats || maxPrice;
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -206,18 +200,6 @@ export default function CarsPage() {
                 />
               </div>
 
-              {/* Make */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Make</label>
-                <SearchInput placeholder="e.g. Toyota" value={make} onChange={setMake} />
-              </div>
-
-              {/* Model */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Model</label>
-                <SearchInput placeholder="e.g. Camry" value={model} onChange={setModel} />
-              </div>
-
               {/* Year */}
               <div>
                 <label htmlFor="car-year" className="block text-sm font-medium mb-1">Year</label>
@@ -315,10 +297,19 @@ export default function CarsPage() {
                 {cars.map((car) => (
                   <Card key={car.id} className="group hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
-                      {/* Car Image Placeholder */}
-                      <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                        <Car className="h-16 w-16 text-gray-400" />
-                      </div>
+                      {/* One cover photo; the details page shows the rest */}
+                      {car.images?.[0] ? (
+                        <img
+                          src={carImageUrl(car.images[0].url)}
+                          alt={car.displayName ?? "Car"}
+                          loading="lazy"
+                          className="h-40 w-full rounded-lg mb-4 object-cover"
+                        />
+                      ) : (
+                        <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                          <Car className="h-16 w-16 text-gray-400" />
+                        </div>
+                      )}
 
                       {/* Car Info */}
                       <div className="space-y-3">
@@ -394,7 +385,7 @@ export default function CarsPage() {
         )}
       </div>
 
-      {canAddCar && <AddCarDialog open={showAddDialog} onOpenChange={setShowAddDialog} />}
+      {canAddCar && <CarFormDialog open={showAddDialog} onOpenChange={setShowAddDialog} />}
     </div>
   );
 }
