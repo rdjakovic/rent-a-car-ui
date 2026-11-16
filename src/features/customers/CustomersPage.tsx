@@ -39,7 +39,7 @@ export default function CustomersPage() {
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="grid grid-cols-1 gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-charcoal">Customers</h1>
             <p className="text-muted-foreground">Search and manage customers</p>
@@ -72,7 +72,7 @@ export default function CustomersPage() {
           <CardHeader>
             <CardTitle>Results</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
             {isLoading ? (
               <div className="space-y-2">
                 <Skeleton className="h-6 w-48" />
@@ -82,7 +82,7 @@ export default function CustomersPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Table>
+                <Table responsive>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
@@ -97,12 +97,12 @@ export default function CustomersPage() {
                   <TableBody>
                     {rows.map((c: CustomerResponseDto) => (
                       <TableRow key={c.id} data-testid="customer-row">
-                        <TableCell>{c.fullName ?? `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}</TableCell>
-                        <TableCell>{c.email}</TableCell>
-                        <TableCell className="whitespace-nowrap">{c.phone}</TableCell>
-                        <TableCell>{c.driverLicenseNo}</TableCell>
-                        <TableCell>{c.city}</TableCell>
-                        <TableCell>{c.country}</TableCell>
+                        <TableCell data-label="Name">{c.fullName ?? `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}</TableCell>
+                        <TableCell data-label="Email">{c.email}</TableCell>
+                        <TableCell data-label="Phone" className="sm:whitespace-nowrap">{c.phone}</TableCell>
+                        <TableCell data-label="Driver License">{c.driverLicenseNo}</TableCell>
+                        <TableCell data-label="City">{c.city}</TableCell>
+                        <TableCell data-label="Country">{c.country}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="outline" size="sm" onClick={() => { setEditing(c); setOpen(true); }}>Edit</Button>
                         </TableCell>
@@ -118,7 +118,7 @@ export default function CustomersPage() {
                   </TableBody>
                 </Table>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm text-muted-foreground">Page {current + 1} of {Math.max(totalPages, 1)}</div>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={!hasPrev || query.isFetching}>Previous</Button>

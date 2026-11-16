@@ -272,14 +272,14 @@ export default function MaintenancePage() {
       {/* Jobs */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-lg">Jobs</CardTitle>
             {jobsQuery.data && (
               <p className="text-sm text-muted-foreground">{jobsQuery.data.totalElements ?? 0} jobs</p>
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {jobsQuery.isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -301,7 +301,7 @@ export default function MaintenancePage() {
             </div>
           ) : (
             <>
-              <Table>
+              <Table responsive>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Job</TableHead>
@@ -315,18 +315,18 @@ export default function MaintenancePage() {
                 <TableBody>
                   {jobs.map((job) => (
                     <TableRow key={job.id}>
-                      <TableCell>
+                      <TableCell data-label="Job">
                         <div className="font-medium flex items-center gap-2">
                           {isOpenRecall(job) && <ShieldAlert className="h-4 w-4 text-destructive" aria-label="Open recall" />}
                           {job.description}
                         </div>
                         <div className="text-sm text-muted-foreground">#{job.id} · {typeLabel(job.maintenanceType)}</div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label="Car">
                         <div className="font-medium">{job.car?.displayName}</div>
                         <div className="text-sm text-muted-foreground">{job.car?.branchName}</div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell data-label="Scheduled" className="sm:whitespace-nowrap">
                         <div>{job.scheduledDate}</div>
                         {isOverdue(job) && (
                           <Badge variant="destructive" className="mt-1">
@@ -337,10 +337,10 @@ export default function MaintenancePage() {
                           <div className="text-sm text-muted-foreground">Done {job.completedDate}</div>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label="Status">
                         <Badge variant={statusBadgeVariant(job.status)} className="whitespace-nowrap">{statusLabel(job.status)}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">{formatCost(job.cost, job.currency) ?? "—"}</TableCell>
+                      <TableCell data-label="Cost" className="sm:text-right">{formatCost(job.cost, job.currency) ?? "—"}</TableCell>
                       <TableCell className="text-right">
                         <Button asChild variant="ghost" size="sm">
                           <Link to={`/maintenance/${job.id}`}>View</Link>
@@ -352,7 +352,7 @@ export default function MaintenancePage() {
               </Table>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
                   <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))}
                           disabled={current === 0 || jobsQuery.isFetching}>
                     Previous

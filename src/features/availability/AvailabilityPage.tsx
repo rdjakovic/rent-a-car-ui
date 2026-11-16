@@ -276,7 +276,7 @@ export default function AvailabilityPage() {
         <CardHeader>
           <CardTitle>Results</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {!submitted ? (
             <div className="text-sm text-muted-foreground">Enter criteria and click Search.</div>
           ) : isLoading ? (
@@ -292,7 +292,7 @@ export default function AvailabilityPage() {
             </Alert>
           ) : (
             <div className="space-y-4">
-              <Table>
+              <Table responsive>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Car</TableHead>
@@ -310,20 +310,20 @@ export default function AvailabilityPage() {
                 <TableBody>
                   {results.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.displayName}</TableCell>
-                      <TableCell>{c.category}</TableCell>
-                      <TableCell>{c.transmission}</TableCell>
-                      <TableCell>{c.fuelType}</TableCell>
-                      <TableCell>{c.seats}</TableCell>
-                      <TableCell>${" "}{c.dailyPrice?.toFixed?.(2) ?? c.dailyPrice}</TableCell>
-                      <TableCell>{c.branchName}</TableCell>
-                      <TableCell>{c.color}</TableCell>
-                      <TableCell>
+                      <TableCell data-label="Car" className="font-medium">{c.displayName}</TableCell>
+                      <TableCell data-label="Category">{c.category}</TableCell>
+                      <TableCell data-label="Transmission">{c.transmission}</TableCell>
+                      <TableCell data-label="Fuel">{c.fuelType}</TableCell>
+                      <TableCell data-label="Seats">{c.seats}</TableCell>
+                      <TableCell data-label="Daily Price">${" "}{c.dailyPrice?.toFixed?.(2) ?? c.dailyPrice}</TableCell>
+                      <TableCell data-label="Branch">{c.branchName}</TableCell>
+                      <TableCell data-label="Color">{c.color}</TableCell>
+                      <TableCell data-label="Status">
                         <Badge>{c.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
-                          className="bg-brand-emerald text-white hover:brightness-95"
+                          className="bg-brand-emerald text-white hover:brightness-95 max-sm:mt-2"
                           onClick={() => handleBookCar(c)}
                         >
                           Book
@@ -333,7 +333,7 @@ export default function AvailabilityPage() {
                   ))}
                   {results.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center text-sm text-muted-foreground">
                         No cars available for selected dates.
                       </TableCell>
                     </TableRow>
@@ -341,7 +341,7 @@ export default function AvailabilityPage() {
                 </TableBody>
               </Table>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">Page {current + 1} of {Math.max(totalPages, 1)}</div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={!hasPrev || availQuery.isFetching}>

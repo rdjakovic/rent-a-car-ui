@@ -116,7 +116,7 @@ export default function UsersPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium mb-1">Search</label>
@@ -150,7 +150,7 @@ export default function UsersPage() {
             </Alert>
           ) : (
             <div className="space-y-4">
-              <Table className="min-w-[960px]">
+              <Table responsive className="sm:min-w-[960px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -165,19 +165,19 @@ export default function UsersPage() {
                 <TableBody>
                   {rows.map((u) => (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">{fullName(u)}</TableCell>
-                      <TableCell>{u.username}</TableCell>
-                      <TableCell>{u.email}</TableCell>
-                      <TableCell>{highestRole(u) ? ROLE_LABELS[highestRole(u)!] : "—"}</TableCell>
-                      <TableCell>{u.branchName ?? "—"}</TableCell>
-                      <TableCell>
+                      <TableCell data-label="Name" className="font-medium">{fullName(u)}</TableCell>
+                      <TableCell data-label="Username">{u.username}</TableCell>
+                      <TableCell data-label="Email">{u.email}</TableCell>
+                      <TableCell data-label="Role">{highestRole(u) ? ROLE_LABELS[highestRole(u)!] : "—"}</TableCell>
+                      <TableCell data-label="Branch">{u.branchName ?? "—"}</TableCell>
+                      <TableCell data-label="Status">
                         {u.enabled === false
                           ? <Badge variant="secondary">Disabled</Badge>
                           : <Badge variant="default">Active</Badge>}
                       </TableCell>
                       <TableCell className="text-right">
                         {canManage ? (
-                          <div className="flex flex-wrap justify-end gap-1">
+                          <div className="flex flex-wrap justify-end gap-1 max-sm:mt-2">
                             <Button variant="outline" size="sm" onClick={() => setForm({ user: u })}
                                     aria-label={`Edit ${u.username}`}>
                               Edit
@@ -220,7 +220,7 @@ export default function UsersPage() {
                 </TableBody>
               </Table>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
                   Page {current + 1} of {Math.max(totalPages, 1)}
                 </div>
