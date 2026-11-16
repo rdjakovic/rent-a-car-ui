@@ -13,6 +13,7 @@ vi.mock('@/lib/api/queries', () => ({
   listMaintenance: vi.fn(),
   listCars: vi.fn(),
   scheduleMaintenance: vi.fn(),
+  carImageUrl: (url: string) => url,
 }))
 
 const mockGetCarById = getCarById as any
@@ -82,6 +83,22 @@ describe('CarDetailsPage', () => {
     expect(screen.getByText('123 Main Street')).toBeInTheDocument()
     expect(await screen.findByText(`${(12000).toLocaleString()} mi`)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Back to catalog/ })).toHaveAttribute('href', '/cars')
+  })
+
+  it('shows every photo and lets the user switch between them', async () => {
+    mockGetCarById.mockResolvedValue({
+      ...car,
+      images: [
+        { id: 1, url: '/api/v1/cars/7/images/1', position: 0 },
+        { id: 2, url: '/api/v1/cars/7/images/2', position: 1 },
+      ],
+    })
+
+    renderAt('/cars/7')
+
+    expect(await screen.findByAltText('2023 Toyota Camry photo 1 of 2')).toHaveAttribute('src', '/api/v1/cars/7/images/1')
+    fireEvent.click(screen.getByRole('button', { name: 'Show photo 2' }))
+    expect(screen.getByAltText('2023 Toyota Camry photo 2 of 2')).toHaveAttribute('src', '/api/v1/cars/7/images/2')
   })
 
   it("shows the car's maintenance history", async () => {

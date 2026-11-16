@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,9 @@ import { toast } from "@/hooks/use-toast";
 import { useSettings } from "@/hooks/useSettings";
 import { errorMessage } from "@/lib/api/errors";
 import { mileageUnitLabel } from "@/lib/units";
-import { createCar, listBranches, type CarRequestDto } from "@/lib/api/queries";
+import { createCar, listBranches, uploadCarImages, type CarRequestDto } from "@/lib/api/queries";
+import CarImagePicker from "./CarImagePicker";
+import { validateCarImageFiles } from "./carImages";
 
 const CATEGORIES = ["ECONOMY", "COMPACT", "INTERMEDIATE", "STANDARD", "FULL_SIZE", "PREMIUM", "LUXURY", "SUV", "VAN"] as const;
 const TRANSMISSIONS = ["MANUAL", "AUTOMATIC", "CVT"] as const;
@@ -67,9 +69,16 @@ export default function AddCarDialog({ open, onOpenChange }: { open: boolean; on
   const queryClient = useQueryClient();
   const settings = useSettings();
   const form = useForm<CarFormValues>({ resolver: zodResolver(carSchema), defaultValues: EMPTY });
+  const [images, setImages] = useState<File[]>([]);
+  const [imageError, setImageError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) form.reset(EMPTY);
+    if (open) {
+      form.reset(EMPTY);
+      setImages([]);
+      setImageError("");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -84,32 +93,60 @@ export default function AddCarDialog({ open, onOpenChange }: { open: boolean; on
 
   const create = useMutation({
     mutationFn: (payload: CarRequestDto) => createCar(payload),
-    onSuccess: (car) => {
-      toast({ title: "Car added", description: car.displayName });
-      queryClient.invalidateQueries({ queryKey: ["cars"] });
-      onOpenChange(false);
-    },
-    onError: (error) => toast({ title: "Could not add the car", description: errorMessage(error), variant: "destructive" }),
   });
 
-  function onSubmit(v: CarFormValues) {
-    create.mutate({
-      vin: v.vin,
-      make: v.make,
-      model: v.model,
-      year: Number(v.year),
-      category: v.category,
-      transmission: v.transmission,
-      fuelType: v.fuelType,
-      seats: Number(v.seats),
-      mileage: Number(v.mileage),
-      status: v.status,
-      dailyPrice: Number(v.dailyPrice),
-      branchId: Number(v.branchId),
-      color: v.color || undefined,
-      licensePlate: v.licensePlate || undefined,
-      insurancePolicy: v.insurancePolicy || undefined,
-    });
+  async function onSubmit(v: CarFormValues) {
+    const problem = validateCarImageFiles(images);
+    if (problem) {
+      setImageError(problem);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const car = await create.mutateAsync({
+        vin: v.vin,
+        make: v.make,
+        model: v.model,
+        year: Number(v.year),
+        category: v.category,
+        transmission: v.transmission,
+        fuelType: v.fuelType,
+        seats: Number(v.seats),
+        mileage: Number(v.mileage),
+        status: v.status,
+        dailyPrice: Number(v.dailyPrice),
+        branchId: Number(v.branchId),
+        color: v.color || undefined,
+        licensePlate: v.licensePlate || undefined,
+        insurancePolicy: v.insurancePolicy || undefined,
+      });
+
+      if (images.length > 0 && car.id != null) {
+        try {
+          await uploadCarImages(car.id, images);
+        } catch (error) {
+          // The car exists now; closing and explaining beats a retry that would duplicate the VIN
+          toast({
+            title: "Car added, but the photos could not be uploaded",
+            description: errorMessage(error),
+            variant: "destructive",
+          });
+          queryClient.invalidateQueries({ queryKey: ["cars"] });
+          onOpenChange(false);
+          return;
+        }
+      }
+
+      toast({ title: "Car added", description: car.displayName });
+      queryClient.invalidateQueries({ queryKey: ["cars"] });
+      if (car.id != null) queryClient.invalidateQueries({ queryKey: ["car", car.id] });
+      onOpenChange(false);
+    } catch (error) {
+      toast({ title: "Could not add the car", description: errorMessage(error), variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const unit = mileageUnitLabel(settings.data?.mileageUnit);
@@ -144,7 +181,7 @@ export default function AddCarDialog({ open, onOpenChange }: { open: boolean; on
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add a car</DialogTitle>
-          <DialogDescription>Add a vehicle to the fleet. VIN, make, model, year, daily price and branch are required.</DialogDescription>
+          <DialogDescription>Add a vehicle to the fleet. VIN, make, model, year, daily price and branch are required. Photos are optional: up to 5, 5 MB each.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -195,9 +232,17 @@ export default function AddCarDialog({ open, onOpenChange }: { open: boolean; on
             {text("licensePlate", "License plate")}
             {text("insurancePolicy", "Insurance policy", {}, "md:col-span-2")}
 
+            <CarImagePicker
+              files={images}
+              onChange={setImages}
+              onError={setImageError}
+              error={imageError}
+              disabled={saving}
+            />
+
             <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={create.isPending}>{create.isPending ? "Adding…" : "Add car"}</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Adding…" : "Add car"}</Button>
             </DialogFooter>
           </form>
         </Form>

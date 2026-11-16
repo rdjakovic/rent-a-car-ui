@@ -3,15 +3,17 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import AddCarDialog from '../AddCarDialog'
-import { createCar, getSettings, listBranches } from '@/lib/api/queries'
+import { createCar, getSettings, listBranches, uploadCarImages } from '@/lib/api/queries'
 
 vi.mock('@/lib/api/queries', () => ({
   createCar: vi.fn(),
   getSettings: vi.fn(),
   listBranches: vi.fn(),
+  uploadCarImages: vi.fn(),
 }))
 
 const mockCreate = createCar as any
+const mockUpload = uploadCarImages as any
 
 function renderDialog(onOpenChange = vi.fn()) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -52,7 +54,12 @@ describe('AddCarDialog', () => {
       ],
     })
     mockCreate.mockResolvedValue({ id: 20, displayName: '2026 Toyota Camry' })
+    mockUpload.mockResolvedValue([])
   })
+
+  const png = (name: string) => new File(
+    [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], name, { type: 'image/png' },
+  )
 
   it('adds a car with the entered details', async () => {
     const { onOpenChange } = renderDialog()
@@ -115,6 +122,31 @@ describe('AddCarDialog', () => {
 
     expect(await screen.findByText(/VIN must be 17 characters/)).toBeInTheDocument()
     expect(mockCreate).not.toHaveBeenCalled()
+  })
+
+  it('uploads the selected photos after the car is created', async () => {
+    const { onOpenChange } = renderDialog()
+    fillRequired()
+    await choose('Branch', 'Downtown Branch · New York')
+    const file = png('camry.png')
+
+    fireEvent.change(screen.getByLabelText('Choose car images'), { target: { files: [file] } })
+    expect(await screen.findByAltText('camry.png')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add car' }))
+
+    await waitFor(() => expect(mockUpload).toHaveBeenCalledWith(20, [file]))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('refuses more than five photos before sending anything', async () => {
+    renderDialog()
+    const files = Array.from({ length: 6 }, (_, i) => png(`photo-${i}.png`))
+
+    fireEvent.change(screen.getByLabelText('Choose car images'), { target: { files } })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('You can add up to 5 images per car')
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockUpload).not.toHaveBeenCalled()
   })
 
   it("shows the backend's reason, e.g. a duplicate VIN, and stays open", async () => {

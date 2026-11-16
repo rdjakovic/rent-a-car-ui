@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, Car, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { formatMileage } from "@/lib/units";
 import { todayString } from "@/lib/dates";
 import { CarMaintenanceHistory } from "@/features/maintenance/CarMaintenanceHistory";
 import { NextBooking } from "./NextBooking";
+import CarGallery from "./CarGallery";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -97,9 +98,7 @@ export default function CarDetailsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="grid grid-cols-1 gap-6 lg:col-span-2">
-          <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-            <Car className="h-24 w-24 text-gray-400" aria-hidden="true" />
-          </div>
+          <CarGallery images={car.images} name={car.displayName ?? "Car"} />
 
           <div className="grid gap-6 md:grid-cols-2">
             <Card>

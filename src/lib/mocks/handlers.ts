@@ -25,6 +25,11 @@ let cars = [...mockCars];
 let customers = [...mockCustomers];
 let reservations = [...mockReservations];
 
+type MockCarImage = { id: number; fileName: string; contentType: string; bytes: Uint8Array; position: number };
+/** Uploaded photos per car; in the real app the backend keeps them. */
+const carImages = new Map<number, MockCarImage[]>();
+let nextCarImageId = 1;
+
 // Sign-in mock: the three seeded accounts, and "a session" is just a flag (the real refresh cookie is httpOnly)
 const STAFF_PERMISSIONS = ['CUSTOMER_MANAGE', 'RESERVATION_MANAGE', 'MAINTENANCE_SCHEDULE'];
 const MANAGER_PERMISSIONS = [...STAFF_PERMISSIONS, 'CUSTOMER_DELETE', 'CAR_MANAGE', 'MAINTENANCE_MANAGE',
@@ -61,6 +66,8 @@ export function resetMockAuth() {
   mockSession = false;
   mockCurrentUser = null;
   mockUsers = MOCK_USERS.map((u) => ({ ...u }));
+  carImages.clear();
+  nextCarImageId = 1;
 }
 const loginResponse = (user: UserResponseDto) => ({
   access_token: 'mock-access-token', token_type: 'Bearer', expires_in: 900,
@@ -78,6 +85,25 @@ type MaintenanceUpdateRequestDto = components['schemas']['MaintenanceUpdateReque
 type MaintenanceCompleteRequestDto = components['schemas']['MaintenanceCompleteRequestDto'];
 
 const daysFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+function imagesFor(carId?: number) {
+  if (carId == null) return [];
+  return [...(carImages.get(carId) ?? [])]
+    .sort((a, b) => a.position - b.position)
+    .map((image) => ({
+      id: image.id,
+      url: `/api/v1/cars/${carId}/images/${image.id}`,
+      fileName: image.fileName,
+      contentType: image.contentType,
+      sizeBytes: image.bytes.length,
+      position: image.position,
+    }));
+}
+
+/** Car responses carry their photos, like the backend's CarListResponseDto and CarResponseDto. */
+function withImages<T extends { id?: number }>(car: T) {
+  return { ...car, images: imagesFor(car.id) };
+}
 
 let maintenanceJobs: MaintenanceResponseDto[] = [
   { id: 9001, car: mockCars[0], maintenanceType: 'ROUTINE', description: 'Oil and filter change',
@@ -185,7 +211,7 @@ export const handlers = [
       branchName: branch?.name,
     };
     cars = [...cars, created as (typeof cars)[number]];
-    return HttpResponse.json(created);
+    return HttpResponse.json({ ...created, images: [] });
   }),
 
   http.get('/api/v1/cars', async ({ request }) => {
@@ -232,7 +258,7 @@ export const handlers = [
       filteredCars = filteredCars.filter(car => car.fuelType === fuelType);
     }
 
-    const response = generatePaginatedResponse(filteredCars, page, size);
+    const response = generatePaginatedResponse(filteredCars.map(withImages), page, size);
     return HttpResponse.json(response);
   }),
 
@@ -252,7 +278,7 @@ export const handlers = [
     // For mock purposes, we'll just return available cars
     availableCars = availableCars.filter(car => car.status === 'AVAILABLE');
 
-    const response = generatePaginatedResponse(availableCars, page, size);
+    const response = generatePaginatedResponse(availableCars.map(withImages), page, size);
     return HttpResponse.json(response);
   }),
 
@@ -269,7 +295,63 @@ export const handlers = [
       );
     }
 
-    return HttpResponse.json(car);
+    return HttpResponse.json(withImages(car));
+  }),
+
+  // Car photos: up to 5 per car, 5 MB each, JPEG/PNG/WebP (same rules as the backend)
+  http.post('/api/v1/cars/:id/images', async ({ params, request }) => {
+    await delay();
+    if (!mockSession) return unauthorized();
+    if (!mockCurrentUser?.permissions?.includes('CAR_MANAGE')) return forbidden('You do not have permission to add car photos');
+
+    const carId = Number(params.id);
+    if (!cars.some((car) => car.id === carId)) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: `Car not found: ${carId}` }, { status: 404 });
+    }
+
+    const form = await request.formData();
+    const files = form.getAll('files').filter((entry): entry is File => entry instanceof File);
+    if (files.length === 0) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Choose at least one image' }, { status: 400 });
+    }
+    const existing = carImages.get(carId) ?? [];
+    if (existing.length + files.length > 5) {
+      return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'A car can have at most 5 images' }, { status: 400 });
+    }
+    for (const file of files) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Images must be JPEG, PNG or WebP' }, { status: 400 });
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return HttpResponse.json({ title: 'Bad Request', status: 400, detail: 'Each image must be 5 MB or smaller' }, { status: 400 });
+      }
+    }
+
+    const start = existing.length ? Math.max(...existing.map((image) => image.position)) + 1 : 0;
+    const added: MockCarImage[] = [];
+    for (const [index, file] of files.entries()) {
+      added.push({
+        id: nextCarImageId++,
+        fileName: file.name,
+        contentType: file.type,
+        bytes: new Uint8Array(await file.arrayBuffer()),
+        position: start + index,
+      });
+    }
+    carImages.set(carId, [...existing, ...added]);
+    return HttpResponse.json(imagesFor(carId));
+  }),
+
+  // Public so a plain <img> can load it, like the backend
+  http.get('/api/v1/cars/:carId/images/:imageId', ({ params }) => {
+    const image = (carImages.get(Number(params.carId)) ?? [])
+      .find((candidate) => candidate.id === Number(params.imageId));
+    if (!image) {
+      return HttpResponse.json({ title: 'Not Found', status: 404, detail: 'Image not found' }, { status: 404 });
+    }
+    return new HttpResponse(new Blob([image.bytes], { type: image.contentType }), {
+      headers: { 'Content-Type': image.contentType, 'Cache-Control': 'public, max-age=604800' },
+    });
   }),
 
   // Auth endpoints (every seeded account uses admin123)

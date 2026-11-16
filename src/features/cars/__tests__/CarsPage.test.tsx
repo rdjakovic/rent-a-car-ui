@@ -11,6 +11,8 @@ vi.mock('@/lib/api/queries', () => ({
   createCar: vi.fn(),
   getSettings: vi.fn(),
   listBranches: vi.fn(),
+  uploadCarImages: vi.fn(),
+  carImageUrl: (url: string) => url,
 }))
 
 function renderPage(role: TestRole = 'MANAGER') {

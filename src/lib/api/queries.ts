@@ -1,6 +1,8 @@
 import { api } from "./client";
 import type { components } from "./schema";
 import { apiErrorFromResponse, normalizeError } from "./errors";
+import { authFetch } from "@/lib/auth/session";
+import { baseUrl, credentials } from "./base";
 
 /**
  * Runs an openapi-fetch call and returns its data, or throws an ApiError: for any non-2xx response
@@ -22,8 +24,21 @@ async function request<T>(call: Promise<{ data?: unknown; error?: unknown; respo
 
 export type PageBranchResponseDto = components["schemas"]["PageBranchResponseDto"];
 export type BranchResponseDto = components["schemas"]["BranchResponseDto"];
-export type PageCarListResponseDto = components["schemas"]["PageCarListResponseDto"];
-export type CarListResponseDto = components["schemas"]["CarListResponseDto"];
+
+/** A car photo; `url` is relative to the API host unless it is already absolute. */
+export type CarImageDto = {
+  id: number;
+  url: string;
+  fileName?: string;
+  contentType?: string;
+  sizeBytes?: number;
+  position?: number;
+};
+
+export type CarListResponseDto = components["schemas"]["CarListResponseDto"] & { images?: CarImageDto[] };
+export type PageCarListResponseDto = Omit<components["schemas"]["PageCarListResponseDto"], "content"> & {
+  content?: CarListResponseDto[];
+};
 
 export type BranchRequestDto = components["schemas"]["BranchRequestDto"];
 
@@ -95,13 +110,47 @@ export function listCars(params: CarFilterParams = {}) {
   return request<PageCarListResponseDto>(api.GET("/api/v1/cars", { params: { query: params } }));
 }
 
-export type CarResponseDto = components["schemas"]["CarResponseDto"];
+export type CarResponseDto = components["schemas"]["CarResponseDto"] & { images?: CarImageDto[] };
 
 export type CarRequestDto = components["schemas"]["CarRequestDto"];
 
 /** Staff only with the real security rules. A duplicate VIN is a 409 with the reason. */
 export function createCar(car: CarRequestDto) {
   return request<CarResponseDto>(api.POST("/api/v1/cars", { body: car }));
+}
+
+/** Resolves a car photo URL against the API base (empty when the UI proxies /api). */
+export function carImageUrl(url?: string | null) {
+  if (!url) return "";
+  return /^https?:\/\//.test(url) ? url : `${baseUrl}${url}`;
+}
+
+/**
+ * Uploads photos after the car exists. The backend accepts up to 5 per car, 5 MB each,
+ * and sniffs the real type (JPEG, PNG or WebP).
+ */
+export async function uploadCarImages(carId: number, files: File[]): Promise<CarImageDto[]> {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+
+  // An absolute URL keeps Request valid in tests/Node; in the browser it is the same origin.
+  const origin = baseUrl || (typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  let response: Response;
+  try {
+    response = await authFetch(new Request(`${origin}/api/v1/cars/${carId}/images`, {
+      method: "POST",
+      body: form,
+      credentials,
+    }));
+  } catch (error) {
+    throw normalizeError(error);
+  }
+
+  const body = await response.json().catch(() => undefined);
+  if (!response.ok) {
+    throw apiErrorFromResponse(response.status, body);
+  }
+  return body as CarImageDto[];
 }
 
 export function getCarById(id: number) {

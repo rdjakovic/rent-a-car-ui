@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { listCars, type CarFilterParams } from "@/lib/api/queries";
+import { carImageUrl, listCars, type CarFilterParams } from "@/lib/api/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -315,10 +315,19 @@ export default function CarsPage() {
                 {cars.map((car) => (
                   <Card key={car.id} className="group hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
-                      {/* Car Image Placeholder */}
-                      <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                        <Car className="h-16 w-16 text-gray-400" />
-                      </div>
+                      {/* One cover photo; the details page shows the rest */}
+                      {car.images?.[0] ? (
+                        <img
+                          src={carImageUrl(car.images[0].url)}
+                          alt={car.displayName ?? "Car"}
+                          loading="lazy"
+                          className="h-40 w-full rounded-lg mb-4 object-cover"
+                        />
+                      ) : (
+                        <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                          <Car className="h-16 w-16 text-gray-400" />
+                        </div>
+                      )}
 
                       {/* Car Info */}
                       <div className="space-y-3">

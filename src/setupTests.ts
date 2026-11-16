@@ -4,6 +4,12 @@ import { resetFilterStores } from '@/stores/filterStore';
 import { resetMockAuth } from '@/lib/mocks/handlers';
 import { resetAuth } from '@/lib/auth/authStore';
 
+// jsdom does not implement object URLs; the car photo previews use them.
+if (!URL.createObjectURL) {
+  URL.createObjectURL = () => "blob:preview";
+  URL.revokeObjectURL = () => {};
+}
+
 // jsdom does not implement scrollIntoView; Radix UI's Select calls it internally.
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 

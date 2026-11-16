@@ -24,7 +24,8 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Show the full booking schedule (only the current or next booking is shown today)
 - Pick up directly from car details or availability results
 - Search by part of a VIN (the backend matches the `vin` filter exactly and case-sensitively, so the page applies it at 17 characters; partial search needs a backend change)
-- Image handling (placeholder now) – static asset or CDN strategy
+- Remove or replace photos after upload (the API supports delete; there is no car edit screen yet)
+- Thumbnails, compression and a CDN/object-storage strategy for photos (originals are served from the backend's disk today)
 
 ## Maintenance
 - Assign jobs to staff (the API returns an assigned employee when set; there is no UI to choose one)
@@ -61,9 +62,10 @@ This document tracks unfinished features and improvements. Items are grouped by 
 - Add basic Playwright smoke tests (optional). Layout can't be checked in jsdom; overflow was verified in a real browser by hand
 
 ## Known gaps
-- Car images are placeholders; performance/image loading strategy TBD
+- No image compression or responsive sizes; photos are served as uploaded
 
 ## Done
+- Cars: add up to 5 photos when creating a car (JPEG/PNG/WebP, 5 MB each, with previews and validation); cover photo on catalog cards and a gallery on the details page
 - Roles: actions hidden by permission (Add car, branch and settings changes, manager maintenance actions), permission-guarded routes, Users page (managers create staff; administrators manage accounts), Change password page, and the user's own branch pre-selected on Availability
 - Customers: list with search and pagination, create/edit dialog with React Hook Form + Zod
 - Booking: "Book" from availability results and car details, wizard (customer, dates, branch, price preview), confirmation screen; the link's parameters are validated in one place
