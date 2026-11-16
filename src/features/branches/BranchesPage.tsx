@@ -56,7 +56,7 @@ export default function BranchesPage() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
@@ -82,7 +82,7 @@ export default function BranchesPage() {
           </Alert>
         ) : (
           <div className="space-y-4">
-            <Table className="min-w-[960px]">
+            <Table responsive className="sm:min-w-[960px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -99,14 +99,14 @@ export default function BranchesPage() {
               <TableBody>
                 {rows.map((b) => (
                   <TableRow key={b.id}>
-                    <TableCell>{b.name}</TableCell>
-                    <TableCell>{b.address}</TableCell>
-                    <TableCell>{b.city}</TableCell>
-                    <TableCell>{b.country}</TableCell>
-                    <TableCell className="whitespace-nowrap">{b.phone}</TableCell>
-                    <TableCell>{b.email}</TableCell>
-                    <TableCell>{b.openingHours}</TableCell>
-                    <TableCell>
+                    <TableCell data-label="Name">{b.name}</TableCell>
+                    <TableCell data-label="Address">{b.address}</TableCell>
+                    <TableCell data-label="City">{b.city}</TableCell>
+                    <TableCell data-label="Country">{b.country}</TableCell>
+                    <TableCell data-label="Phone" className="sm:whitespace-nowrap">{b.phone}</TableCell>
+                    <TableCell data-label="Email">{b.email}</TableCell>
+                    <TableCell data-label="Hours">{b.openingHours}</TableCell>
+                    <TableCell data-label="Status">
                       {b.active ? (
                         <Badge variant="default">Active</Badge>
                       ) : (
@@ -132,7 +132,7 @@ export default function BranchesPage() {
               </TableBody>
             </Table>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm text-muted-foreground">
                 Page {current + 1} of {Math.max(totalPages, 1)}
               </div>

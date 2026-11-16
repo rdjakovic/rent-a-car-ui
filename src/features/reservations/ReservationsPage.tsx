@@ -292,7 +292,7 @@ export default function ReservationsPage() {
               </p>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
             {isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -326,7 +326,7 @@ export default function ReservationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Table className="min-w-[1040px]">
+                <Table responsive className="sm:min-w-[1040px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Reservation</TableHead>
@@ -341,16 +341,14 @@ export default function ReservationsPage() {
                   <TableBody>
                     {reservations.map((reservation) => (
                       <TableRow key={reservation.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">#{reservation.id}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {formatDate(reservation.createdAt)}
-                            </div>
+                        <TableCell data-label="Reservation">
+                          <span className="font-medium">#{reservation.id}</span>
+                          <div className="text-sm text-muted-foreground">
+                            {formatDate(reservation.createdAt)}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell data-label="Customer">
+                          <div className="flex max-sm:inline-flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
@@ -363,8 +361,8 @@ export default function ReservationsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell data-label="Car">
+                          <div className="flex max-sm:inline-flex items-center gap-2">
                             <Car className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
@@ -377,26 +375,24 @@ export default function ReservationsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {reservation.durationDays} days
-                            </div>
-                            {isOverdueReturn(reservation) && (
-                              <Badge variant="destructive" className="mt-1">Overdue return</Badge>
-                            )}
+                        <TableCell data-label="Dates">
+                          <span className="font-medium">
+                            {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
+                          </span>
+                          <div className="text-sm text-muted-foreground">
+                            {reservation.durationDays} days
                           </div>
+                          {isOverdueReturn(reservation) && (
+                            <Badge variant="destructive" className="mt-1">Overdue return</Badge>
+                          )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Status">
                           <ReservationStatusBadge status={reservation.status} />
                         </TableCell>
-                        <TableCell>
-                          <div className="font-medium">
+                        <TableCell data-label="Total">
+                          <span className="font-medium">
                             {formatCurrency(reservation.totalPrice, reservation.currency)}
-                          </div>
+                          </span>
                           {reservation.dailyRate && (
                             <div className="text-sm text-muted-foreground">
                               {formatCurrency(reservation.dailyRate, reservation.currency)}/day
@@ -404,7 +400,7 @@ export default function ReservationsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex flex-wrap gap-1">
                             <Button asChild variant="ghost" size="sm">
                               <Link to={`/reservations/${reservation.id}`}>
                                 <Eye className="h-4 w-4 mr-1" />
@@ -462,7 +458,7 @@ export default function ReservationsPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
                     <Button
                       variant="outline"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
