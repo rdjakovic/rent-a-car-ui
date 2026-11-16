@@ -12,7 +12,7 @@ export default function CarGallery({ images = [], name }: { images?: CarImageDto
 
   if (images.length === 0) {
     return (
-      <div className="flex h-56 items-center justify-center rounded-lg bg-gradient-to-br from-gray-100 to-gray-200">
+      <div className="flex aspect-video items-center justify-center rounded-lg bg-gradient-to-br from-gray-100 to-gray-200">
         <Car className="h-24 w-24 text-gray-400" aria-hidden="true" />
       </div>
     )
@@ -26,7 +26,7 @@ export default function CarGallery({ images = [], name }: { images?: CarImageDto
       <img
         src={carImageUrl(current.url)}
         alt={`${name} photo ${visible + 1} of ${images.length}`}
-        className="h-64 w-full rounded-lg bg-muted object-cover"
+        className="aspect-video w-full rounded-lg bg-muted object-contain"
       />
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Car photos">

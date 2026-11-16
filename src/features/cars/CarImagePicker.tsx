@@ -100,7 +100,7 @@ export default function CarImagePicker({ files, onChange, onError, error, disabl
                   onError("")
                   onChange(files.filter((_, i) => i !== index))
                 }}
-                className="absolute -right-1.5 -top-1.5 rounded-full bg-charcoal p-1 text-white shadow hover:bg-charcoal/80 disabled:opacity-50"
+                className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive p-1 text-destructive-foreground shadow hover:bg-destructive/90 disabled:opacity-50"
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>
